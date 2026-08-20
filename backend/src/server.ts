@@ -1,0 +1,94 @@
+import express from 'express';
+import cors from 'cors';
+import { config } from './config';
+import { authMiddleware } from './api/middleware/auth';
+import { errorHandler } from './api/middleware/errorHandler';
+import { realtimeService } from './services/realtimeService';
+import { authService } from './services/authService';
+
+import authRouter from './api/routes/auth';
+import storesRouter from './api/routes/stores';
+import productsRouter from './api/routes/products';
+import ordersRouter from './api/routes/orders';
+import paymentsRouter from './api/routes/payments';
+import queueRouter from './api/routes/queue';
+import analyticsRouter from './api/routes/analytics';
+import syncRouter from './api/routes/sync';
+import publicRouter from './api/routes/public';
+
+export function createServer() {
+  const app = express();
+
+  app.use(cors({ origin: config.corsOrigin, credentials: true }));
+  app.use(express.json());
+
+  // Health check
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      service: 'floq-backend',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  // Public auth routes (Unauthenticated)
+  app.use('/api/auth', authRouter);
+
+  // Realtime Server-Sent Events (SSE) stream (Authenticated via query token or Bearer header)
+  app.get('/api/realtime', (req, res) => {
+    const authHeader = req.headers.authorization;
+    const queryToken = req.query.token as string;
+    let token = queryToken;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+
+    if (!token) {
+      res.status(401).json({ error: 'UNAUTHORIZED', message: 'Realtime SSE requires authentication token' });
+      return;
+    }
+
+    try {
+      const payload = authService.verifyToken(token);
+      const storeId = (req.query.storeId as string) || (payload.storeIds && payload.storeIds[0]);
+
+      if (!storeId) {
+        res.status(400).json({ error: 'STORE_REQUIRED', message: 'storeId is required for realtime stream' });
+        return;
+      }
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+
+      realtimeService.subscribe(storeId, res);
+    } catch {
+      res.status(401).json({ error: 'INVALID_TOKEN', message: 'Realtime token verification failed' });
+    }
+  });
+
+  // Public customer routes (Unauthenticated)
+  app.use('/api/public', publicRouter);
+
+  // Authenticated Merchant API Routes (with Data Isolation Middleware)
+  app.use('/api/stores', authMiddleware, storesRouter);
+  app.use('/api/products', authMiddleware, productsRouter);
+  app.use('/api/orders', authMiddleware, ordersRouter);
+  app.use('/api/payments', authMiddleware, paymentsRouter);
+  app.use('/api/queue', authMiddleware, queueRouter);
+  app.use('/api/analytics', authMiddleware, analyticsRouter);
+  app.use('/api/sync', authMiddleware, syncRouter);
+
+  // Central Error Handler
+  app.use(errorHandler);
+
+  return app;
+}
+
+if (require.main === module) {
+  const app = createServer();
+  app.listen(config.port, '0.0.0.0', () => {
+    console.log(`🚀 FLOQ Backend Server running on 0.0.0.0:${config.port}`);
+  });
+}

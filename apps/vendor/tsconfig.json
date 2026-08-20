@@ -1,0 +1,14 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "bundler",
+    "paths": {
+      "@floq/types": ["../../packages/types/src"],
+      "@floq/validation": ["../../packages/validation/src"],
+      "@floq/constants": ["../../packages/constants/src"],
+      "@floq/utils": ["../../packages/utils/src"]
+    }
+  },
+  "include": ["src/**/*", "index.js"]
+}
