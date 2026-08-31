@@ -29,7 +29,11 @@ export const config = {
   isDevelopment,
   isTest,
   databaseUrl: process.env.DATABASE_URL || 'postgresql://floq:floq_dev_password_2026@localhost:5432/floq_db',
-  corsOrigin: process.env.CORS_ORIGIN || '*',
+  corsOrigin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.includes(',')
+      ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+      : process.env.CORS_ORIGIN
+    : '*',
   jwtSecret,
   allowMockAuth,
   allowMockPayments,
