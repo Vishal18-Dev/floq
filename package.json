@@ -12,7 +12,7 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:vendor\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:vendor": "npm run dev --workspace=apps/vendor",
-    "build": "esbuild backend/src/server.ts --bundle --platform=node --target=node20 --outdir=backend/dist --external:pg-native",
+    "build": "npx esbuild backend/src/server.ts --bundle --platform=node --target=node20 --outdir=backend/dist --external:pg-native",
     "build:all": "npm run build --workspaces --if-present",
     "test": "npm run test --workspace=backend",
     "seed": "npm run seed --workspace=backend"
