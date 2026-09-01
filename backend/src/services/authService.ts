@@ -20,12 +20,26 @@ export class MockAuthProvider implements AuthProvider {
     const expiresAt = new Date(now.getTime() + 10 * 60 * 1000).toISOString();
     const otpCode = '123456';
 
-    const user = await queryOne('SELECT * FROM users WHERE phone = $1', [phone]);
+    const user = await queryOne(
+      'SELECT * FROM users WHERE phone = $1 OR phone = $2 OR phone LIKE $3',
+      [phone, `+91${phone}`, `%${phone}`]
+    );
 
     if (!user) {
-      const userId = `user_${crypto.randomUUID().slice(0, 8)}`;
-      const merchantId = 'merchant_sharma_01';
-      const storeId = 'store_sharma_01';
+      let merchant = await queryOne('SELECT id FROM merchants WHERE id = $1', ['merchant_sharma_01']);
+      if (!merchant) {
+        merchant = await queryOne('SELECT id FROM merchants ORDER BY created_at ASC LIMIT 1');
+      }
+      let store = await queryOne('SELECT id FROM stores WHERE id = $1', ['store_sharma_01']);
+      if (!store) {
+        store = await queryOne('SELECT id FROM stores ORDER BY created_at ASC LIMIT 1');
+      }
+
+      if (!merchant || !store) {
+        throw new Error('No pilot merchant or store exists in database. Please run /api/seed first.');
+      }
+
+      const userId = `user_${phone}`;
 
       await query(
         `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, otp_code, otp_expires_at, status, created_at, updated_at)
@@ -33,10 +47,10 @@ export class MockAuthProvider implements AuthProvider {
         [
           userId,
           phone,
-          'Merchant Staff',
+          'Sharma Corner Staff',
           'OWNER',
-          merchantId,
-          JSON.stringify([storeId]),
+          merchant.id,
+          JSON.stringify([store.id]),
           otpCode,
           expiresAt,
           'ACTIVE',
@@ -45,11 +59,11 @@ export class MockAuthProvider implements AuthProvider {
         ]
       );
     } else {
-      await query('UPDATE users SET otp_code = $1, otp_expires_at = $2, updated_at = $3 WHERE phone = $4', [
+      await query('UPDATE users SET otp_code = $1, otp_expires_at = $2, updated_at = $3 WHERE id = $4', [
         otpCode,
         expiresAt,
         now.toISOString(),
-        phone,
+        user.id,
       ]);
     }
 
@@ -62,7 +76,10 @@ export class MockAuthProvider implements AuthProvider {
 
   public async verifyOTP(rawPhone: string, otpInput: string): Promise<UserSession> {
     const phone = rawPhone.replace(/\D/g, '').slice(-10);
-    const user = await queryOne('SELECT * FROM users WHERE phone = $1', [phone]);
+    const user = await queryOne(
+      'SELECT * FROM users WHERE phone = $1 OR phone = $2 OR phone LIKE $3',
+      [phone, `+91${phone}`, `%${phone}`]
+    );
 
     if (!user) {
       throw new Error('User not found. Please request OTP first.');
