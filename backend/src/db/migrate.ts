@@ -3,8 +3,17 @@ import path from 'path';
 import { query, queryOne, transaction } from './index';
 
 export async function runMigrations(): Promise<void> {
-  const migrationsDir = path.join(__dirname, 'migrations');
-  if (!fs.existsSync(migrationsDir)) {
+  const possibleDirs = [
+    path.join(__dirname, 'migrations'),
+    path.join(__dirname, '../src/db/migrations'),
+    path.join(process.cwd(), 'src/db/migrations'),
+    path.join(process.cwd(), 'backend/src/db/migrations'),
+  ];
+
+  const migrationsDir = possibleDirs.find((d) => fs.existsSync(d));
+
+  if (!migrationsDir) {
+    console.log('⚠️ No migrations directory found.');
     return;
   }
 
