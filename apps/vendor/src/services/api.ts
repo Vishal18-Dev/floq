@@ -14,8 +14,12 @@ import {
 import Constants from 'expo-constants';
 import { CreateOrderInput } from '@floq/validation';
 
-// Resolve host IP dynamically from Expo Go developer module or fallback
+// Resolve host: prefer explicit env var (production APK), then Expo Go LAN host, then emulator fallback
 const getBaseHost = () => {
+  // Set EXPO_PUBLIC_API_URL=https://floq.onrender.com in .env for production builds
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl) return envUrl;
+
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest2?.extra?.expoGo?.developerModuleHost;
   if (hostUri) {
     const ip = hostUri.split(':')[0];

@@ -63,16 +63,16 @@ export const UPICheckoutModal: React.FC<UPICheckoutModalProps> = ({
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>UPI Dynamic QR</Text>
+            <Text style={styles.modalTitle}>UPI QR Payment</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Sandbox Notice Pill */}
+          {/* Soundbox Verification Pill */}
           <View style={styles.sandboxPill}>
-            <Icon name="sparkles" size={12} color="#0284c7" />
-            <Text style={styles.sandboxText}>Sandbox UPI Simulator (Demo)</Text>
+            <Icon name="volume-2" size={12} color="#0284c7" />
+            <Text style={styles.sandboxText}>Paytm / PhonePe Soundbox Verification</Text>
           </View>
 
           {/* QR Code Frame */}
@@ -119,7 +119,7 @@ export const UPICheckoutModal: React.FC<UPICheckoutModalProps> = ({
             <Text style={styles.amountText}>{formatINR(totalAmount)}</Text>
           </View>
 
-          {/* Simulation Triggers */}
+          {/* Actions */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
               style={styles.successSimBtn}
@@ -132,7 +132,7 @@ export const UPICheckoutModal: React.FC<UPICheckoutModalProps> = ({
               ) : (
                 <Icon name="check-circle" size={16} color="#ffffff" />
               )}
-              <Text style={styles.successSimText}>Simulate Customer Paid (Success)</Text>
+              <Text style={styles.successSimText}>Payment Received (Soundbox Confirmed)</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -141,7 +141,7 @@ export const UPICheckoutModal: React.FC<UPICheckoutModalProps> = ({
               disabled={isSimulating}
               activeOpacity={0.7}
             >
-              <Text style={styles.failSimText}>Simulate Payment Declined</Text>
+              <Text style={styles.failSimText}>Payment Failed / Cancelled</Text>
             </TouchableOpacity>
           </View>
 

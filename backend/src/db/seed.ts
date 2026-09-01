@@ -4,10 +4,10 @@ import { runMigrations } from './migrate';
 import { STORE_TEMPLATES } from '@floq/constants';
 import { config } from '../config';
 
-export async function seedDatabase(): Promise<void> {
-  // Safety Guard: Never run seed automatically in production
-  if (config.isProduction) {
-    throw new Error('FATAL: Database seeding is strictly forbidden in production mode!');
+export async function seedDatabase(force: boolean = false): Promise<void> {
+  // Safety Guard: Never run seed in production mode unless forced
+  if (config.isProduction && !force && process.env.ALLOW_SEED !== 'true') {
+    throw new Error('FATAL: Database seeding is strictly forbidden in production mode unless forced!');
   }
 
   await runMigrations();

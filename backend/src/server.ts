@@ -31,6 +31,29 @@ export function createServer() {
     });
   });
 
+  // Admin Seed Route (guarded by admin key)
+  app.post('/api/seed', async (req, res, next) => {
+    const key = (req.headers['x-admin-key'] as string) || (req.query.key as string);
+    const expectedKey = process.env.ADMIN_KEY || 'floq_admin_seed_secret';
+
+    if (!key || key !== expectedKey) {
+      res.status(403).json({ error: 'FORBIDDEN', message: 'Invalid or missing admin seed key' });
+      return;
+    }
+
+    try {
+      const { seedDatabase } = require('./db/seed');
+      await seedDatabase(true);
+      res.json({
+        success: true,
+        message: 'Database seeded successfully with pilot merchant data!',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: 'SEED_FAILED', message: err.message || 'Seeding failed' });
+    }
+  });
+
   // Public auth routes (Unauthenticated)
   app.use('/api/auth', authRouter);
 

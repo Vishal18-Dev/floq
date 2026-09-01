@@ -39,3 +39,5 @@ web-build/
 .turbo/
 .npm/
 *.tsbuildinfo
+apps/vendor/.env
+.env.local
