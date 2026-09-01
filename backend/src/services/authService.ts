@@ -132,9 +132,7 @@ export class ProductionAuthProvider implements AuthProvider {
 
 export class AuthService {
   private getProvider(): AuthProvider {
-    if (process.env.TWILIO_ACCOUNT_SID || process.env.SMS_PROVIDER) {
-      return new ProductionAuthProvider();
-    }
+    // Pilot scope: Always use MockAuthProvider with mock OTP 123456
     return new MockAuthProvider();
   }
 
