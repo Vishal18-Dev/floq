@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { query, queryOne, transaction } from './index';
+import { config } from '../config';
 
 export async function runMigrations(): Promise<void> {
   const possibleDirs = [
@@ -41,20 +42,30 @@ export async function runMigrations(): Promise<void> {
     if (!existing) {
       const sqlContent = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
 
-      const statements = sqlContent
-        .split(';')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0 && !s.startsWith('--'));
+      if (config.isTest && !process.env.DATABASE_URL) {
+        const statements = sqlContent
+          .split(';')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0 && !s.startsWith('--'));
 
-      await transaction(async (client) => {
-        for (const stmt of statements) {
-          await client.query(stmt);
-        }
-        await client.query(
-          'INSERT INTO schema_migrations (version, name, applied_at) VALUES ($1, $2, $3)',
-          [version, file, new Date().toISOString()]
-        );
-      });
+        await transaction(async (client) => {
+          for (const stmt of statements) {
+            await client.query(stmt);
+          }
+          await client.query(
+            'INSERT INTO schema_migrations (version, name, applied_at) VALUES ($1, $2, $3)',
+            [version, file, new Date().toISOString()]
+          );
+        });
+      } else {
+        await transaction(async (client) => {
+          await client.query(sqlContent);
+          await client.query(
+            'INSERT INTO schema_migrations (version, name, applied_at) VALUES ($1, $2, $3)',
+            [version, file, new Date().toISOString()]
+          );
+        });
+      }
       console.log(`✅ Applied migration: ${file}`);
     }
   }
