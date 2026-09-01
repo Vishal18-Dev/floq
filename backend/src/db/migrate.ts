@@ -71,7 +71,7 @@ export async function runMigrations(): Promise<void> {
   }
 }
 
-if (require.main === module) {
+if (require.main === module && (process.argv[1]?.endsWith('migrate.js') || process.argv[1]?.endsWith('migrate.ts'))) {
   runMigrations()
     .then(() => {
       console.log('🎉 Database migrations completed successfully.');
