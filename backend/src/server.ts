@@ -34,7 +34,7 @@ export function createServer() {
   let lastSeedResult: any = { status: 'none' };
 
   // Admin Seed Route (guarded by admin key)
-  app.post('/api/seed', (req, res) => {
+  app.post('/api/seed', async (req, res) => {
     const key = (req.headers['x-admin-key'] as string) || (req.query.key as string);
     const expectedKey = process.env.ADMIN_KEY || 'floq_admin_seed_secret';
 
@@ -48,30 +48,26 @@ export function createServer() {
       const seedFn = typeof seedModule.seedDatabase === 'function' ? seedModule.seedDatabase : seedModule.default?.seedDatabase;
 
       if (typeof seedFn !== 'function') {
-        res.status(500).json({ error: 'MODULE_ERROR', message: `seedDatabase function not found in module. Keys: ${Object.keys(seedModule)}` });
+        res.status(500).json({ error: 'MODULE_ERROR', message: `seedDatabase function not found` });
         return;
       }
 
-      lastSeedResult = { status: 'running', startedAt: new Date().toISOString() };
-
-      // Trigger seeding asynchronously to prevent HTTP proxy timeout
-      seedFn(true)
-        .then(() => {
-          lastSeedResult = { status: 'success', completedAt: new Date().toISOString() };
-          console.log('✅ Live database seeded successfully!');
-        })
-        .catch((err: any) => {
-          lastSeedResult = { status: 'error', error: err.message, detail: err.detail || null, stack: err.stack || null };
-          console.error('❌ Database seeding error:', err);
-        });
+      await seedFn(true);
+      console.log('✅ Synchronous database seeding succeeded!');
 
       res.json({
         success: true,
-        message: 'Database seeding initiated in background! Check /api/seed/status.',
+        message: 'Database seeded successfully on live PostgreSQL!',
         timestamp: new Date().toISOString(),
       });
     } catch (err: any) {
-      res.status(500).json({ error: 'SEED_INIT_FAILED', message: err.message });
+      console.error('❌ Synchronous database seed error:', err);
+      res.status(500).json({
+        error: 'SEED_FAILED',
+        message: err.message,
+        detail: err.detail || null,
+        stack: err.stack || null,
+      });
     }
   });
 
