@@ -144,7 +144,7 @@ if (require.main === module) {
       const merchantCount = await queryOne('SELECT COUNT(*) as count FROM merchants');
       if (!merchantCount || parseInt(merchantCount.count, 10) === 0) {
         console.log('🌱 Merchants table empty. Auto-seeding pilot merchants on boot...');
-        await seedDatabase(false);
+        await seedDatabase(true);
         console.log('✅ Auto-seed completed on boot!');
       }
     } catch (err) {
