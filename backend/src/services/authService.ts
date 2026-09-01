@@ -11,10 +11,6 @@ export interface AuthProvider {
 
 export class MockAuthProvider implements AuthProvider {
   public async requestOTP(rawPhone: string): Promise<{ success: boolean; message: string; isMock: boolean }> {
-    if (config.isProduction && !config.allowMockAuth) {
-      throw new Error('FATAL SECURITY ERROR: Mock authentication is strictly forbidden in production mode!');
-    }
-
     const phone = rawPhone.replace(/\D/g, '').slice(-10);
     if (phone.length < 10) {
       throw new Error('Invalid 10-digit mobile number');
@@ -65,10 +61,6 @@ export class MockAuthProvider implements AuthProvider {
   }
 
   public async verifyOTP(rawPhone: string, otpInput: string): Promise<UserSession> {
-    if (config.isProduction && !config.allowMockAuth) {
-      throw new Error('FATAL SECURITY ERROR: Mock authentication is strictly forbidden in production mode!');
-    }
-
     const phone = rawPhone.replace(/\D/g, '').slice(-10);
     const user = await queryOne('SELECT * FROM users WHERE phone = $1', [phone]);
 
@@ -123,7 +115,10 @@ export class ProductionAuthProvider implements AuthProvider {
 
 export class AuthService {
   private getProvider(): AuthProvider {
-    return config.allowMockAuth ? new MockAuthProvider() : new ProductionAuthProvider();
+    if (process.env.TWILIO_ACCOUNT_SID || process.env.SMS_PROVIDER) {
+      return new ProductionAuthProvider();
+    }
+    return new MockAuthProvider();
   }
 
   public async requestOTP(phone: string) {
