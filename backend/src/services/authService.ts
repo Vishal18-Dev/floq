@@ -76,7 +76,7 @@ export class MockAuthProvider implements AuthProvider {
       throw new Error('User not found. Please request OTP first.');
     }
 
-    const isValidOtp = otpInput === '123456' || otpInput === '1234' || user.otp_code === otpInput;
+    const isValidOtp = otpInput === '123456' || otpInput === '1234' || otpInput === '000000' || user.otp_code === otpInput;
     if (!isValidOtp) {
       throw new Error('Invalid OTP code');
     }
