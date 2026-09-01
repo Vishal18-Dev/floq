@@ -5,7 +5,7 @@
   "main": "./dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --external:pg-native --external:better-sqlite3 && npx esbuild src/db/migrate.ts --bundle --platform=node --target=node20 --outdir=dist/db --external:pg-native --external:better-sqlite3",
+    "build": "NODE_PATH=../node_modules:node_modules npx esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --external:pg-native --external:better-sqlite3 && NODE_PATH=../node_modules:node_modules npx esbuild src/db/migrate.ts --bundle --platform=node --target=node20 --outdir=dist/db --external:pg-native --external:better-sqlite3",
     "start": "node dist/server.js",
     "db:migrate": "node dist/db/migrate.js",
     "db:seed": "tsx src/db/seed.ts",
