@@ -12,10 +12,14 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:vendor\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:vendor": "npm run dev --workspace=apps/vendor",
-    "build": "npm run build --workspace=backend",
+    "build": "npm run build --workspace=packages/types --if-present && npm run build --workspace=packages/constants --if-present && npm run build --workspace=packages/utils --if-present && npm run build --workspace=packages/validation --if-present && npm run build --workspace=backend",
     "build:all": "npm run build --workspaces --if-present",
     "test": "npm run test --workspace=backend",
     "seed": "npm run seed --workspace=backend"
+  },
+  "dependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.4.5"
   },
   "keywords": [
     "floq",
