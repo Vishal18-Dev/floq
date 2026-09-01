@@ -79,6 +79,17 @@ export function createServer() {
     res.json(lastSeedResult);
   });
 
+  app.get('/api/debug/users', async (req, res) => {
+    try {
+      const { query } = require('./db');
+      const users = await query('SELECT id, phone, name, merchant_id FROM users');
+      const merchants = await query('SELECT id, name, phone FROM merchants');
+      res.json({ users: users.rows, merchants: merchants.rows });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Public auth routes (Unauthenticated)
   app.use('/api/auth', authRouter);
 
