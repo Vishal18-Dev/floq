@@ -43,25 +43,36 @@ export function createServer() {
       return;
     }
 
-    const { seedDatabase } = require('./db/seed');
-    lastSeedResult = { status: 'running', startedAt: new Date().toISOString() };
+    try {
+      const seedModule = require('./db/seed');
+      const seedFn = typeof seedModule.seedDatabase === 'function' ? seedModule.seedDatabase : seedModule.default?.seedDatabase;
 
-    // Trigger seeding asynchronously to prevent HTTP proxy timeout
-    seedDatabase(true)
-      .then(() => {
-        lastSeedResult = { status: 'success', completedAt: new Date().toISOString() };
-        console.log('✅ Live database seeded successfully!');
-      })
-      .catch((err: any) => {
-        lastSeedResult = { status: 'error', error: err.message, detail: err.detail || null, stack: err.stack || null };
-        console.error('❌ Database seeding error:', err);
+      if (typeof seedFn !== 'function') {
+        res.status(500).json({ error: 'MODULE_ERROR', message: `seedDatabase function not found in module. Keys: ${Object.keys(seedModule)}` });
+        return;
+      }
+
+      lastSeedResult = { status: 'running', startedAt: new Date().toISOString() };
+
+      // Trigger seeding asynchronously to prevent HTTP proxy timeout
+      seedFn(true)
+        .then(() => {
+          lastSeedResult = { status: 'success', completedAt: new Date().toISOString() };
+          console.log('✅ Live database seeded successfully!');
+        })
+        .catch((err: any) => {
+          lastSeedResult = { status: 'error', error: err.message, detail: err.detail || null, stack: err.stack || null };
+          console.error('❌ Database seeding error:', err);
+        });
+
+      res.json({
+        success: true,
+        message: 'Database seeding initiated in background! Check /api/seed/status.',
+        timestamp: new Date().toISOString(),
       });
-
-    res.json({
-      success: true,
-      message: 'Database seeding initiated in background! Check /api/seed/status.',
-      timestamp: new Date().toISOString(),
-    });
+    } catch (err: any) {
+      res.status(500).json({ error: 'SEED_INIT_FAILED', message: err.message });
+    }
   });
 
   app.get('/api/seed/status', (req, res) => {
