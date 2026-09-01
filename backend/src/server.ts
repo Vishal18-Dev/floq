@@ -137,7 +137,18 @@ export function createServer() {
 
 if (require.main === module) {
   const app = createServer();
-  app.listen(config.port, '0.0.0.0', () => {
+  app.listen(config.port, '0.0.0.0', async () => {
     console.log(`🚀 FLOQ Backend Server running on 0.0.0.0:${config.port}`);
+    try {
+      const { queryOne } = await import('./db');
+      const merchantCount = await queryOne('SELECT COUNT(*) as count FROM merchants');
+      if (!merchantCount || parseInt(merchantCount.count, 10) === 0) {
+        console.log('🌱 Merchants table empty. Auto-seeding pilot merchants on boot...');
+        await seedDatabase(false);
+        console.log('✅ Auto-seed completed on boot!');
+      }
+    } catch (err) {
+      console.error('⚠️ Auto-seed check warning:', err);
+    }
   });
 }
