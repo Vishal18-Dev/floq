@@ -12,14 +12,13 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:vendor\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:vendor": "npm run dev --workspace=apps/vendor",
-    "build": "npx esbuild backend/src/server.ts --bundle --platform=node --target=node20 --outdir=backend/dist --external:pg-native",
+    "build": "npm run build --workspace=packages/types && npm run build --workspace=packages/constants && npm run build --workspace=packages/utils && npm run build --workspace=packages/validation && npm run build --workspace=backend",
     "build:all": "npm run build --workspaces --if-present",
     "test": "npm run test --workspace=backend",
     "seed": "npm run seed --workspace=backend"
   },
   "dependencies": {
     "@types/node": "^20.14.9",
-    "esbuild": "^0.23.0",
     "typescript": "^5.4.5"
   },
   "keywords": [
