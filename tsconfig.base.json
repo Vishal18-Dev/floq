@@ -11,6 +11,13 @@
     "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@floq/types": ["packages/types/src/index.ts", "packages/types/dist/index.d.ts"],
+      "@floq/constants": ["packages/constants/src/index.ts", "packages/constants/dist/index.d.ts"],
+      "@floq/utils": ["packages/utils/src/index.ts", "packages/utils/dist/index.d.ts"],
+      "@floq/validation": ["packages/validation/src/index.ts", "packages/validation/dist/index.d.ts"]
+    }
   }
 }
