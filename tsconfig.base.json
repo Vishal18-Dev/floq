@@ -12,12 +12,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "paths": {
-      "@floq/types": ["./packages/types/src/index.ts"],
-      "@floq/constants": ["./packages/constants/src/index.ts"],
-      "@floq/utils": ["./packages/utils/src/index.ts"],
-      "@floq/validation": ["./packages/validation/src/index.ts"]
-    }
+    "isolatedModules": true
   }
 }

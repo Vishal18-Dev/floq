@@ -12,7 +12,7 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:vendor\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:vendor": "npm run dev --workspace=apps/vendor",
-    "build": "npx esbuild backend/src/server.ts --bundle --platform=node --target=node20 --outdir=backend/dist --external:pg-native --external:better-sqlite3 && npx esbuild backend/src/db/migrate.ts --bundle --platform=node --target=node20 --outdir=backend/dist/db --external:pg-native --external:better-sqlite3",
+    "build": "npm run build --workspace=packages/types --if-present && npm run build --workspace=packages/constants --if-present && npm run build --workspace=packages/utils --if-present && npm run build --workspace=packages/validation --if-present && npm run build --workspace=backend",
     "build:all": "npm run build --workspaces --if-present",
     "test": "npm run test --workspace=backend",
     "seed": "npm run seed --workspace=backend"
