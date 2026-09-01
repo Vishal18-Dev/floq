@@ -13,26 +13,29 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
   await runMigrations();
 
   await transaction(async (client) => {
-    // Reset existing tables in correct dependency order for pg-mem & PostgreSQL
-    const tables = [
-      'audit_logs',
-      'ticket_sequences',
-      'queue_tickets',
-      'payments',
-      'order_items',
-      'orders',
-      'products',
-      'categories',
-      'devices',
-      'staff',
-      'users',
-      'store_settings',
-      'stores',
-      'merchants',
-    ];
-
-    for (const tbl of tables) {
-      await client.query(`DELETE FROM ${tbl}`);
+    // Fast reset existing tables in dependency order for PostgreSQL & pg-mem
+    try {
+      await client.query('TRUNCATE audit_logs, ticket_sequences, queue_tickets, payments, order_items, orders, products, categories, devices, staff, users, store_settings, stores, merchants CASCADE');
+    } catch {
+      const tables = [
+        'audit_logs',
+        'ticket_sequences',
+        'queue_tickets',
+        'payments',
+        'order_items',
+        'orders',
+        'products',
+        'categories',
+        'devices',
+        'staff',
+        'users',
+        'store_settings',
+        'stores',
+        'merchants',
+      ];
+      for (const tbl of tables) {
+        await client.query(`DELETE FROM ${tbl}`);
+      }
     }
 
     const now = new Date();

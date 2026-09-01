@@ -32,7 +32,7 @@ export function createServer() {
   });
 
   // Admin Seed Route (guarded by admin key)
-  app.post('/api/seed', async (req, res, next) => {
+  app.post('/api/seed', async (req, res) => {
     const key = (req.headers['x-admin-key'] as string) || (req.query.key as string);
     const expectedKey = process.env.ADMIN_KEY || 'floq_admin_seed_secret';
 
@@ -43,10 +43,14 @@ export function createServer() {
 
     try {
       const { seedDatabase } = require('./db/seed');
-      await seedDatabase(true);
+      // Fire seed task in background to prevent proxy timeouts
+      seedDatabase(true)
+        .then(() => console.log('✅ Live database seeded successfully!'))
+        .catch((err: any) => console.error('❌ Database seeding error:', err));
+
       res.json({
         success: true,
-        message: 'Database seeded successfully with pilot merchant data!',
+        message: 'Database seeding triggered successfully! Pilot merchant data is being populated.',
         timestamp: new Date().toISOString(),
       });
     } catch (err: any) {
