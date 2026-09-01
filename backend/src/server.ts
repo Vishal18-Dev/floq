@@ -5,6 +5,7 @@ import { authMiddleware } from './api/middleware/auth';
 import { errorHandler } from './api/middleware/errorHandler';
 import { realtimeService } from './services/realtimeService';
 import { authService } from './services/authService';
+import { seedDatabase } from './db/seed';
 
 import authRouter from './api/routes/auth';
 import storesRouter from './api/routes/stores';
@@ -44,16 +45,9 @@ export function createServer() {
     }
 
     try {
-      const seedModule = require('./db/seed');
-      const seedFn = typeof seedModule.seedDatabase === 'function' ? seedModule.seedDatabase : seedModule.default?.seedDatabase;
-
-      if (typeof seedFn !== 'function') {
-        res.status(500).json({ error: 'MODULE_ERROR', message: `seedDatabase function not found` });
-        return;
-      }
-
-      await seedFn(true);
-      console.log('✅ Synchronous database seeding succeeded!');
+      console.log('🌱 Seeding database...');
+      await seedDatabase(true);
+      console.log('✅ Database seeded successfully!');
 
       res.json({
         success: true,
@@ -61,7 +55,7 @@ export function createServer() {
         timestamp: new Date().toISOString(),
       });
     } catch (err: any) {
-      console.error('❌ Synchronous database seed error:', err);
+      console.error('❌ Database seed error:', err);
       res.status(500).json({
         error: 'SEED_FAILED',
         message: err.message,
