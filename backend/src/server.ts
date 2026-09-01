@@ -43,18 +43,20 @@ export function createServer() {
 
     try {
       const { seedDatabase } = require('./db/seed');
-      // Fire seed task in background to prevent proxy timeouts
-      seedDatabase(true)
-        .then(() => console.log('✅ Live database seeded successfully!'))
-        .catch((err: any) => console.error('❌ Database seeding error:', err));
-
+      await seedDatabase(true);
       res.json({
         success: true,
-        message: 'Database seeding triggered successfully! Pilot merchant data is being populated.',
+        message: 'Database seeded successfully with pilot merchant data!',
         timestamp: new Date().toISOString(),
       });
     } catch (err: any) {
-      res.status(500).json({ error: 'SEED_FAILED', message: err.message || 'Seeding failed' });
+      console.error('❌ Database seeding error:', err);
+      res.status(500).json({
+        error: 'SEED_FAILED',
+        message: err.message || 'Seeding failed',
+        detail: err.detail || null,
+        stack: err.stack || null,
+      });
     }
   });
 
