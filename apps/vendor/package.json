@@ -4,8 +4,8 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "dev": "expo start -c",
-    "start": "expo start -c",
+    "dev": "expo start --offline -c",
+    "start": "expo start --offline -c",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
