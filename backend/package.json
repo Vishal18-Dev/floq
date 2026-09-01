@@ -5,7 +5,7 @@
   "main": "./dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --external:pg-native",
     "start": "node dist/server.js",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
@@ -24,6 +24,7 @@
     "@types/pg": "^8.23.1",
     "better-sqlite3": "^11.8.1",
     "cors": "^2.8.5",
+    "esbuild": "^0.23.0",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.23.0",
