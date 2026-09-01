@@ -38,3 +38,4 @@ web-build/
 .cache/
 .turbo/
 .npm/
+*.tsbuildinfo

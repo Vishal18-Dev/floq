@@ -1,16 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
     "module": "CommonJS",
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
-      "@floq/types": ["../types/src/index.ts"]
+      "@floq/types": ["../types/dist/index.d.ts"]
     }
   },
-  "include": ["src/**/*"],
-  "references": [
-    { "path": "../types" }
-  ]
+  "include": ["src/**/*"]
 }
