@@ -16,6 +16,7 @@ import queueRouter from './api/routes/queue';
 import analyticsRouter from './api/routes/analytics';
 import syncRouter from './api/routes/sync';
 import publicRouter from './api/routes/public';
+import adminRouter from './api/routes/admin';
 
 export function createServer() {
   const app = express();
@@ -117,8 +118,9 @@ export function createServer() {
     }
   });
 
-  // Public customer routes (Unauthenticated)
+  // Public customer & admin routes
   app.use('/api/public', publicRouter);
+  app.use('/api/admin', adminRouter);
 
   // Authenticated Merchant API Routes (with Data Isolation Middleware)
   app.use('/api/stores', authMiddleware, storesRouter);

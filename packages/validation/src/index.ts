@@ -195,3 +195,18 @@ export const SyncPayloadSchema = z.object({
 });
 
 export type SyncPayloadInput = z.input<typeof SyncPayloadSchema>;
+
+// Admin White-Glove Merchant Onboarding Schema
+export const OnboardMerchantSchema = z.object({
+  merchantName: z.string().min(1, 'Merchant/Admin name is required'),
+  phone: z.string().min(10, '10-digit mobile number required'),
+  email: z.string().email().optional().nullable(),
+  storeName: z.string().min(1, 'Store name is required'),
+  storeType: StoreTypeEnum.default('TEA_STALL'),
+  address: z.string().optional(),
+  upiId: z.string().optional(),
+  upiName: z.string().optional(),
+  initialCategoryName: z.string().default('General'),
+});
+
+export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
