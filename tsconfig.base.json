@@ -11,14 +11,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "baseUrl": ".",
-    "paths": {
-      "@floq/constants": ["packages/constants/src"],
-      "@floq/types": ["packages/types/src"],
-      "@floq/ui": ["packages/ui/src"],
-      "@floq/utils": ["packages/utils/src"],
-      "@floq/validation": ["packages/validation/src"]
-    }
+    "isolatedModules": true
   }
 }
