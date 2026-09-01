@@ -36,6 +36,19 @@ export class MockAuthProvider implements AuthProvider {
       }
 
       if (!merchant || !store) {
+        try {
+          const { seedDatabase } = await import('../db/seed');
+          await seedDatabase(true);
+          merchant = (await queryOne('SELECT id FROM merchants WHERE id = $1', ['merchant_sharma_01'])) ||
+                     (await queryOne('SELECT id FROM merchants ORDER BY created_at ASC LIMIT 1'));
+          store = (await queryOne('SELECT id FROM stores WHERE id = $1', ['store_sharma_01'])) ||
+                  (await queryOne('SELECT id FROM stores ORDER BY created_at ASC LIMIT 1'));
+        } catch (err) {
+          console.error('⚠️ On-demand seed error during OTP request:', err);
+        }
+      }
+
+      if (!merchant || !store) {
         throw new Error('No pilot merchant or store exists in database. Please run /api/seed first.');
       }
 
