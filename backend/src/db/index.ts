@@ -1,15 +1,16 @@
 import { Pool as PgPool, PoolClient } from 'pg';
-import { newDb, IMemoryDb } from 'pg-mem';
 import { config } from '../config';
 
 let pool: any = null;
-let memDbInstance: IMemoryDb | null = null;
+let memDbInstance: any | null = null;
 
 export function getPool(): any {
   if (pool) return pool;
 
   // Use in-memory pg-mem database for Vitest unit tests if no live DATABASE_URL is configured
   if (config.isTest && !process.env.DATABASE_URL) {
+    // Dynamic import so esbuild does NOT bundle pg-mem into production artifacts
+    const { newDb } = require('pg-mem');
     memDbInstance = newDb();
 
     memDbInstance.public.registerFunction({

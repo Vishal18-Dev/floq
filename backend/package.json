@@ -5,7 +5,7 @@
   "main": "./dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --packages=external && npx esbuild src/db/migrate.ts --bundle --platform=node --target=node20 --outdir=dist/db --packages=external",
+    "build": "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --packages=external --external:pg-mem && npx esbuild src/db/migrate.ts --bundle --platform=node --target=node20 --outdir=dist/db --packages=external --external:pg-mem",
     "start": "node dist/server.js",
     "db:migrate": "node dist/db/migrate.js",
     "db:seed": "tsx src/db/seed.ts",
