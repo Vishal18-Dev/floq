@@ -5,7 +5,7 @@
   "main": "./dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outdir=dist --packages=external",
     "start": "node dist/server.js",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
@@ -32,6 +32,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/supertest": "^6.0.2",
+    "esbuild": "^0.23.0",
     "pg-mem": "^3.0.14",
     "supertest": "^7.0.0",
     "tsx": "^4.15.7",

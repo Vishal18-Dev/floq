@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
+    "moduleResolution": "node",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
     "esModuleInterop": true,
@@ -11,6 +12,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@floq/types": ["./packages/types/src/index.ts"],
+      "@floq/constants": ["./packages/constants/src/index.ts"],
+      "@floq/utils": ["./packages/utils/src/index.ts"],
+      "@floq/validation": ["./packages/validation/src/index.ts"]
+    }
   }
 }
