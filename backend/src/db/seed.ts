@@ -253,8 +253,8 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
   });
 }
 
-if (require.main === module) {
-  seedDatabase()
+if (require.main === module && (process.argv[1]?.endsWith('seed.js') || process.argv[1]?.endsWith('seed.ts'))) {
+  seedDatabase(true)
     .then(() => process.exit(0))
     .catch((err) => {
       console.error('❌ Seeding failed:', err);
