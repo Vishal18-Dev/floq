@@ -24,9 +24,9 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     return;
   }
 
-  if (err.message && err.message.includes('not found')) {
-    res.status(404).json({
-      error: 'NOT_FOUND',
+  if (err.message && (err.message.includes('Invalid') || err.message.includes('not found') || err.message.includes('OTP') || err.message.includes('mobile'))) {
+    res.status(400).json({
+      error: 'BAD_REQUEST',
       message: err.message,
     });
     return;
@@ -35,6 +35,6 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
   // Graceful fallback error response
   res.status(500).json({
     error: 'INTERNAL_ERROR',
-    message: 'An unexpected issue occurred while processing your request. Please try again.',
+    message: err.message || 'An unexpected issue occurred while processing your request. Please try again.',
   });
 }

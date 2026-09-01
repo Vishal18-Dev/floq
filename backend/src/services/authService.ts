@@ -122,14 +122,16 @@ export class ProductionAuthProvider implements AuthProvider {
 }
 
 export class AuthService {
-  private provider: AuthProvider = config.allowMockAuth ? new MockAuthProvider() : new ProductionAuthProvider();
+  private getProvider(): AuthProvider {
+    return config.allowMockAuth ? new MockAuthProvider() : new ProductionAuthProvider();
+  }
 
   public async requestOTP(phone: string) {
-    return this.provider.requestOTP(phone);
+    return this.getProvider().requestOTP(phone);
   }
 
   public async verifyOTP(phone: string, otp: string) {
-    return this.provider.verifyOTP(phone, otp);
+    return this.getProvider().verifyOTP(phone, otp);
   }
 
   public verifyToken(token: string): JWTPayload {
