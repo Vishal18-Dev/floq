@@ -31,6 +31,8 @@ export function createServer() {
     });
   });
 
+  let lastSeedResult: any = { status: 'none' };
+
   // Admin Seed Route (guarded by admin key)
   app.post('/api/seed', (req, res) => {
     const key = (req.headers['x-admin-key'] as string) || (req.query.key as string);
@@ -42,17 +44,28 @@ export function createServer() {
     }
 
     const { seedDatabase } = require('./db/seed');
+    lastSeedResult = { status: 'running', startedAt: new Date().toISOString() };
 
     // Trigger seeding asynchronously to prevent HTTP proxy timeout
     seedDatabase(true)
-      .then(() => console.log('✅ Live database seeded successfully!'))
-      .catch((err: any) => console.error('❌ Database seeding error:', err));
+      .then(() => {
+        lastSeedResult = { status: 'success', completedAt: new Date().toISOString() };
+        console.log('✅ Live database seeded successfully!');
+      })
+      .catch((err: any) => {
+        lastSeedResult = { status: 'error', error: err.message, detail: err.detail || null, stack: err.stack || null };
+        console.error('❌ Database seeding error:', err);
+      });
 
     res.json({
       success: true,
-      message: 'Database seeding initiated in background! Pilot merchant data is being populated.',
+      message: 'Database seeding initiated in background! Check /api/seed/status.',
       timestamp: new Date().toISOString(),
     });
+  });
+
+  app.get('/api/seed/status', (req, res) => {
+    res.json(lastSeedResult);
   });
 
   // Public auth routes (Unauthenticated)
