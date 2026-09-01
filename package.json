@@ -18,9 +18,9 @@
     "seed": "npm run seed --workspace=backend"
   },
   "dependencies": {
-    "@types/node": "^20.14.9",
-    "esbuild": "^0.23.0",
-    "typescript": "^5.4.5"
+    "@types/node": "20.14.9",
+    "esbuild": "0.23.0",
+    "typescript": "5.4.5"
   },
   "keywords": [
     "floq",

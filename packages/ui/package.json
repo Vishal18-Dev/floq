@@ -14,10 +14,10 @@
     "@floq/utils": "*"
   },
   "devDependencies": {
-    "@types/react": "~19.1.10",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "19.1.10",
+    "@types/react-dom": "19.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "typescript": "^5.4.5"
+    "typescript": "5.4.5"
   }
 }

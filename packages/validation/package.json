@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@floq/types": "*",
-    "zod": "^3.25.76"
+    "zod": "3.25.76"
   },
   "devDependencies": {
-    "typescript": "^5.4.5"
+    "typescript": "5.4.5"
   }
 }
