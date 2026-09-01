@@ -140,10 +140,17 @@ if (require.main === module) {
   app.listen(config.port, '0.0.0.0', async () => {
     console.log(`🚀 FLOQ Backend Server running on 0.0.0.0:${config.port}`);
     try {
-      const { queryOne } = await import('./db');
-      const merchantCount = await queryOne('SELECT COUNT(*) as count FROM merchants');
-      if (!merchantCount || parseInt(merchantCount.count, 10) === 0) {
-        console.log('🌱 Merchants table empty. Auto-seeding pilot merchants on boot...');
+      let count = 0;
+      try {
+        const { queryOne } = await import('./db');
+        const merchantCount = await queryOne('SELECT COUNT(*) as count FROM merchants');
+        count = merchantCount ? parseInt(merchantCount.count, 10) : 0;
+      } catch {
+        count = 0;
+      }
+
+      if (count === 0) {
+        console.log('🌱 Merchants table empty or unseeded. Auto-seeding pilot merchants on boot...');
         await seedDatabase(true);
         console.log('✅ Auto-seed completed on boot!');
       }
