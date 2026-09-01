@@ -5,7 +5,10 @@
     "module": "CommonJS",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "paths": {
+      "@floq/types": ["../types/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "references": [

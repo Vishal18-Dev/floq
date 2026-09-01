@@ -4,7 +4,10 @@
     "composite": true,
     "module": "CommonJS",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "paths": {
+      "@floq/types": ["../types/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "references": [
