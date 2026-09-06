@@ -24,6 +24,8 @@
         "ACCESS_NETWORK_STATE"
       ]
     },
-    "plugins": []
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

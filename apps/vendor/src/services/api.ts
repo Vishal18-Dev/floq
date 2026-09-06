@@ -34,8 +34,8 @@ const API_BASE = `${getBaseHost()}/api`;
 
 class NativeApiClient {
   private authToken: string | null = null;
-  private merchantId: string = 'merchant_sharma_01';
-  private storeId: string = 'store_sharma_01';
+  private merchantId: string = '';
+  private storeId: string = '';
   private baseUrl: string = API_BASE;
   private onUnauthorizedCallback?: () => void;
 
@@ -84,7 +84,8 @@ class NativeApiClient {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    // Indian counters run on patchy 3G/4G — a short timeout aborts real sales.
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -118,18 +119,11 @@ class NativeApiClient {
     }
   }
 
-  // Auth Methods (P0-1)
-  public async requestOTP(phone: string): Promise<{ success: boolean; message: string; isMock: boolean }> {
-    return this.request('/auth/otp/request', {
+  // Auth — phone + fixed PIN
+  public async login(phone: string, pin: string): Promise<UserSession> {
+    const session: UserSession = await this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ phone }),
-    });
-  }
-
-  public async verifyOTP(phone: string, otp: string): Promise<UserSession> {
-    const session: UserSession = await this.request('/auth/otp/verify', {
-      method: 'POST',
-      body: JSON.stringify({ phone, otp }),
+      body: JSON.stringify({ phone, pin }),
     });
     this.setAuthToken(session.token);
     if (session.storeIds && session.storeIds[0]) {
@@ -190,6 +184,13 @@ class NativeApiClient {
     });
   }
 
+  public async setProductAvailability(id: string, isAvailable: boolean): Promise<{ product: Product }> {
+    return this.request(`/products/${id}/availability`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isAvailable }),
+    });
+  }
+
   public async getOrders(status?: OrderStatus): Promise<{ orders: Order[] }> {
     const query = status ? `?status=${status}` : '';
     return this.request(`/orders${query}`);
@@ -212,6 +213,14 @@ class NativeApiClient {
   public async getDailyAnalytics(date?: string): Promise<DailySalesSummary> {
     const query = date ? `?date=${date}` : '';
     return this.request(`/analytics/daily${query}`);
+  }
+
+  public async getDayStatus(): Promise<{ carriedOverTokens: number; businessDate: string; closed: boolean }> {
+    return this.request('/analytics/day-status');
+  }
+
+  public async closeDay(): Promise<{ success: boolean; summary: DailySalesSummary }> {
+    return this.request('/analytics/close-day', { method: 'POST', body: JSON.stringify({}) });
   }
 
   public async syncOfflineRecords(payload: SyncPayload): Promise<SyncResult> {

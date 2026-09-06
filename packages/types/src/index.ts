@@ -30,12 +30,23 @@ export type StoreType =
 
 export type StoreStatus = 'ACTIVE' | 'INACTIVE' | 'CLOSED_TEMPORARILY';
 
+/**
+ * Operating mode drives the whole UX:
+ * - FOOD: made-to-order counter with a live queue, prep timers, tokens and
+ *   optional voice call-outs (tea stall, breakfast joint).
+ * - RETAIL: sell → charge → receipt, no kitchen queue (reseller / distributor
+ *   of packaged goods). Orders complete instantly at charge time.
+ */
+export type StoreMode = 'FOOD' | 'RETAIL';
+
 export interface Store {
   id: string;
   merchantId: string;
   name: string;
+  nameLocal?: string;
   slug: string;
   storeType: StoreType;
+  mode: StoreMode;
   address?: string;
   phone?: string;
   openingTime?: string;
@@ -74,6 +85,7 @@ export interface Category {
   id: string;
   storeId: string;
   name: string;
+  nameLocal?: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -100,6 +112,7 @@ export interface Product {
   storeId: string;
   categoryId: string;
   name: string;
+  nameLocal?: string;
   description?: string;
   price: number;
   imageUrl?: string;
@@ -207,12 +220,16 @@ export interface QueueTicket {
   completedAt?: string | null;
 }
 
-export type VoiceLanguage = 'en-IN' | 'hi-IN' | 'mr-IN';
+export type VoiceLanguage = 'en-IN' | 'hi-IN' | 'mr-IN' | 'ta-IN';
 export type VoiceVerbosity = 'BRIEF' | 'DETAILED';
+
+/** Second language shown alongside English throughout the UI. */
+export type SecondaryLanguage = 'ta' | 'hi' | 'mr' | 'none';
 
 export interface StoreSettings {
   id: string;
   storeId: string;
+  secondaryLanguage: SecondaryLanguage;
   voiceEnabled: boolean;
   voiceLanguage: VoiceLanguage;
   voiceVerbosity: VoiceVerbosity;

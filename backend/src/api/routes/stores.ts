@@ -25,8 +25,10 @@ router.get('/current', async (req: AuthenticatedRequest, res: Response, next) =>
         id: store.id,
         merchantId: store.merchant_id,
         name: store.name,
+        nameLocal: store.name_local || undefined,
         slug: store.slug,
         storeType: store.store_type,
+        mode: store.mode || 'FOOD',
         address: store.address,
         phone: store.phone,
         openingTime: store.opening_time,
@@ -37,6 +39,7 @@ router.get('/current', async (req: AuthenticatedRequest, res: Response, next) =>
       settings: settings ? {
         id: settings.id,
         storeId: settings.store_id,
+        secondaryLanguage: settings.secondary_language || 'none',
         voiceEnabled: Boolean(settings.voice_enabled),
         voiceLanguage: settings.voice_language,
         voiceVerbosity: settings.voice_verbosity,
@@ -63,6 +66,10 @@ router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next)
     const values: any[] = [];
     let idx = 1;
 
+    if (data.secondaryLanguage !== undefined) {
+      fields.push(`secondary_language = $${idx++}`);
+      values.push(data.secondaryLanguage);
+    }
     if (data.voiceEnabled !== undefined) {
       fields.push(`voice_enabled = $${idx++}`);
       values.push(data.voiceEnabled);
@@ -107,6 +114,7 @@ router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next)
       settings: {
         id: updated.id,
         storeId: updated.store_id,
+        secondaryLanguage: updated.secondary_language || 'none',
         voiceEnabled: Boolean(updated.voice_enabled),
         voiceLanguage: updated.voice_language,
         voiceVerbosity: updated.voice_verbosity,

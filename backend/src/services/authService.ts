@@ -4,108 +4,99 @@ import { query, queryOne } from '../db';
 import { config } from '../config';
 import { JWTPayload, StaffRole, UserSession } from '@floq/types';
 
-export interface AuthProvider {
-  requestOTP(phone: string): Promise<{ success: boolean; message: string; isMock: boolean }>;
-  verifyOTP(phone: string, otpInput: string): Promise<UserSession>;
+/**
+ * PIN authentication. Merchants are provisioned by FLOQ (white-glove) with a
+ * phone number and a fixed numeric PIN; there is no SMS OTP. PINs are stored
+ * only as salted scrypt hashes. Repeated wrong PINs lock the account for a
+ * cooldown window to blunt brute-forcing of a short numeric PIN.
+ */
+
+const SCRYPT_KEYLEN = 32;
+
+export function hashPin(pin: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(pin, salt, SCRYPT_KEYLEN).toString('hex');
+  return `scrypt$${salt}$${derived}`;
 }
 
-export class MockAuthProvider implements AuthProvider {
-  public async requestOTP(rawPhone: string): Promise<{ success: boolean; message: string; isMock: boolean }> {
-    const phone = rawPhone.replace(/\D/g, '').slice(-10);
-    if (phone.length < 10) {
-      throw new Error('Invalid 10-digit mobile number');
-    }
+export function verifyPinHash(pin: string, stored: string | null | undefined): boolean {
+  if (!stored) return false;
+  const parts = stored.split('$');
+  if (parts.length !== 3 || parts[0] !== 'scrypt') return false;
+  const [, salt, expected] = parts;
+  const derived = crypto.scryptSync(pin, salt, SCRYPT_KEYLEN).toString('hex');
+  const a = Buffer.from(derived, 'hex');
+  const b = Buffer.from(expected, 'hex');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
 
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000).toISOString();
-    const otpCode = '123456';
+function normalizePhone(raw: string): string {
+  return raw.replace(/\D/g, '').slice(-10);
+}
 
-    const user = await queryOne(
-      'SELECT * FROM users WHERE phone = $1 OR phone = $2 OR phone LIKE $3',
-      [phone, `+91${phone}`, `%${phone}`]
-    );
-
-    if (!user) {
-      let merchant = await queryOne('SELECT id FROM merchants WHERE id = $1', ['merchant_sharma_01']);
-      if (!merchant) {
-        merchant = await queryOne('SELECT id FROM merchants ORDER BY created_at ASC LIMIT 1');
-      }
-      let store = await queryOne('SELECT id FROM stores WHERE id = $1', ['store_sharma_01']);
-      if (!store) {
-        store = await queryOne('SELECT id FROM stores ORDER BY created_at ASC LIMIT 1');
-      }
-
-      if (!merchant || !store) {
-        try {
-          const { seedDatabase } = await import('../db/seed');
-          await seedDatabase(true);
-          merchant = (await queryOne('SELECT id FROM merchants WHERE id = $1', ['merchant_sharma_01'])) ||
-                     (await queryOne('SELECT id FROM merchants ORDER BY created_at ASC LIMIT 1'));
-          store = (await queryOne('SELECT id FROM stores WHERE id = $1', ['store_sharma_01'])) ||
-                  (await queryOne('SELECT id FROM stores ORDER BY created_at ASC LIMIT 1'));
-        } catch (err) {
-          console.error('⚠️ On-demand seed error during OTP request:', err);
-        }
-      }
-
-      if (!merchant || !store) {
-        throw new Error('No pilot merchant or store exists in database. Please run /api/seed first.');
-      }
-
-      const userId = `user_${phone}`;
-
-      await query(
-        `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, otp_code, otp_expires_at, status, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [
-          userId,
-          phone,
-          'Sharma Corner Staff',
-          'OWNER',
-          merchant.id,
-          JSON.stringify([store.id]),
-          otpCode,
-          expiresAt,
-          'ACTIVE',
-          now.toISOString(),
-          now.toISOString(),
-        ]
-      );
-    } else {
-      await query('UPDATE users SET otp_code = $1, otp_expires_at = $2, updated_at = $3 WHERE id = $4', [
-        otpCode,
-        expiresAt,
-        now.toISOString(),
-        user.id,
-      ]);
-    }
-
-    return {
-      success: true,
-      message: 'OTP sent successfully (Use mock code: 123456)',
-      isMock: true,
-    };
+export class AuthService {
+  /** Set or reset a user's PIN (used by the admin onboarding flow). */
+  public async setUserPin(userId: string, pin: string): Promise<void> {
+    await query('UPDATE users SET pin_hash = $1, pin_attempts = 0, pin_locked_until = NULL, updated_at = $2 WHERE id = $3', [
+      hashPin(pin),
+      new Date().toISOString(),
+      userId,
+    ]);
   }
 
-  public async verifyOTP(rawPhone: string, otpInput: string): Promise<UserSession> {
-    const phone = rawPhone.replace(/\D/g, '').slice(-10);
+  public async login(rawPhone: string, pin: string): Promise<UserSession> {
+    const phone = normalizePhone(rawPhone);
+    if (phone.length < 10) {
+      throw new Error('Enter a valid 10-digit mobile number');
+    }
+
     const user = await queryOne(
       'SELECT * FROM users WHERE phone = $1 OR phone = $2 OR phone LIKE $3',
       [phone, `+91${phone}`, `%${phone}`]
     );
 
+    // Uniform message: do not reveal whether the number is registered.
+    const GENERIC = 'Phone number or PIN is incorrect';
+
     if (!user) {
-      throw new Error('User not found. Please request OTP first.');
+      throw new Error(GENERIC);
     }
 
-    const isValidOtp = otpInput === '123456' || otpInput === '1234' || otpInput === '000000' || user.otp_code === otpInput;
-    if (!isValidOtp) {
-      throw new Error('Invalid OTP code');
+    if (user.status && user.status !== 'ACTIVE') {
+      throw new Error('This account is not active. Please contact FLOQ support.');
     }
 
-    await query('UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE id = $1', [user.id]);
+    // Lockout check
+    if (user.pin_locked_until) {
+      const until = new Date(user.pin_locked_until).getTime();
+      if (Date.now() < until) {
+        const mins = Math.ceil((until - Date.now()) / 60000);
+        throw new Error(`Too many wrong attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`);
+      }
+    }
 
-    const storeIds: string[] = typeof user.store_ids_json === 'string' ? JSON.parse(user.store_ids_json) : (user.store_ids_json || []);
+    if (!user.pin_hash) {
+      throw new Error('No PIN set for this account. Please contact FLOQ to complete setup.');
+    }
+
+    if (!verifyPinHash(pin, user.pin_hash)) {
+      const attempts = Number(user.pin_attempts || 0) + 1;
+      if (attempts >= config.pinMaxAttempts) {
+        const lockUntil = new Date(Date.now() + config.pinLockoutMinutes * 60000).toISOString();
+        await query('UPDATE users SET pin_attempts = $1, pin_locked_until = $2 WHERE id = $3', [attempts, lockUntil, user.id]);
+        throw new Error(`Too many wrong attempts. Try again in ${config.pinLockoutMinutes} minutes.`);
+      }
+      await query('UPDATE users SET pin_attempts = $1 WHERE id = $2', [attempts, user.id]);
+      throw new Error(GENERIC);
+    }
+
+    // Success — reset counters
+    await query('UPDATE users SET pin_attempts = 0, pin_locked_until = NULL WHERE id = $1', [user.id]);
+
+    const storeIds: string[] =
+      typeof user.store_ids_json === 'string' ? JSON.parse(user.store_ids_json) : user.store_ids_json || [];
+
     const payload: JWTPayload = {
       userId: user.id,
       phone: user.phone,
@@ -114,8 +105,8 @@ export class MockAuthProvider implements AuthProvider {
       role: user.role as StaffRole,
     };
 
-    const token = jwt.sign(payload, config.jwtSecret, { expiresIn: '30d' });
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const token = jwt.sign(payload, config.jwtSecret, { expiresIn: '180d' });
+    const expiresAt = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
 
     return {
       userId: user.id,
@@ -127,34 +118,6 @@ export class MockAuthProvider implements AuthProvider {
       token,
       expiresAt,
     };
-  }
-}
-
-export class ProductionAuthProvider implements AuthProvider {
-  public async requestOTP(phone: string): Promise<{ success: boolean; message: string; isMock: boolean }> {
-    if (!process.env.TWILIO_ACCOUNT_SID && !process.env.SMS_PROVIDER) {
-      throw new Error('Production SMS Gateway credentials (TWILIO_ACCOUNT_SID) not configured!');
-    }
-    return { success: true, message: 'OTP sent to your mobile number via SMS', isMock: false };
-  }
-
-  public async verifyOTP(): Promise<UserSession> {
-    throw new Error('Production SMS verification requires active SMS provider configuration.');
-  }
-}
-
-export class AuthService {
-  private getProvider(): AuthProvider {
-    // Pilot scope: Always use MockAuthProvider with mock OTP 123456
-    return new MockAuthProvider();
-  }
-
-  public async requestOTP(phone: string) {
-    return this.getProvider().requestOTP(phone);
-  }
-
-  public async verifyOTP(phone: string, otp: string) {
-    return this.getProvider().verifyOTP(phone, otp);
   }
 
   public verifyToken(token: string): JWTPayload {

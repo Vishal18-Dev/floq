@@ -3,6 +3,10 @@ import { transaction } from './index';
 import { runMigrations } from './migrate';
 import { STORE_TEMPLATES } from '@floq/constants';
 import { config } from '../config';
+import { hashPin } from '../services/authService';
+
+// Known PIN for seeded demo/test users (dev + test only).
+export const SEED_PIN = '1234';
 
 export async function seedDatabase(force: boolean = false): Promise<void> {
   // Safety Guard: Never run seed in production mode unless forced
@@ -16,6 +20,7 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     // Reset existing tables in dependency order
     const tables = [
       'audit_logs',
+      'day_closures',
       'ticket_sequences',
       'queue_tickets',
       'payments',
@@ -50,14 +55,15 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     );
 
     await client.query(
-      `INSERT INTO stores (id, merchant_id, name, slug, store_type, address, phone, opening_time, closing_time, timezone, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      `INSERT INTO stores (id, merchant_id, name, slug, store_type, mode, address, phone, opening_time, closing_time, timezone, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         store1Id,
         merchant1Id,
         'Sharma Breakfast Corner',
         'sharma-breakfast-corner',
         'BREAKFAST',
+        'FOOD',
         'Shop 4, Opp Railway Station, FC Road, Pune',
         '+919876543210',
         '06:30',
@@ -76,8 +82,8 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     );
 
     await client.query(
-      `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, pin_hash, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         'user_sharma_owner',
         '9876543210',
@@ -85,6 +91,7 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
         'OWNER',
         merchant1Id,
         JSON.stringify([store1Id]),
+        hashPin(SEED_PIN),
         'ACTIVE',
         now.toISOString(),
         now.toISOString(),
@@ -210,14 +217,15 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     );
 
     await client.query(
-      `INSERT INTO stores (id, merchant_id, name, slug, store_type, address, phone, opening_time, closing_time, timezone, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      `INSERT INTO stores (id, merchant_id, name, slug, store_type, mode, address, phone, opening_time, closing_time, timezone, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         store2Id,
         merchant2Id,
         'Chai Point Express',
         'chai-point-express',
         'TEA_SNACKS',
+        'FOOD',
         'Kothrud, Pune',
         '+919822334455',
         '07:00',
@@ -236,8 +244,8 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     );
 
     await client.query(
-      `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, pin_hash, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         'user_chaipoint_owner',
         '9822334455',
@@ -245,6 +253,7 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
         'OWNER',
         merchant2Id,
         JSON.stringify([store2Id]),
+        hashPin(SEED_PIN),
         'ACTIVE',
         now.toISOString(),
         now.toISOString(),

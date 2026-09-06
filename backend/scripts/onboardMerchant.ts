@@ -1,117 +1,76 @@
-import readline from 'readline';
-import http from 'http';
-import https from 'https';
-import { URL } from 'url';
+/**
+ * White-glove merchant onboarding CLI.
+ *
+ * Reads a merchant profile JSON and POSTs it to the onboarding endpoint using
+ * the admin key. Works against a local or a deployed backend — this is the tool
+ * you run to stand up each of the 3 beta merchants.
+ *
+ * Usage:
+ *   ADMIN_KEY=... API_URL=https://your-host tsx scripts/onboardMerchant.ts scripts/profiles/hotel-tamilnadu.json
+ *   # or against localhost:
+ *   ADMIN_KEY=... tsx scripts/onboardMerchant.ts scripts/profiles/tea-shop.json
+ *
+ * Env:
+ *   API_URL     Backend base URL (default http://localhost:4000)
+ *   ADMIN_KEY   Admin key (must match the server's ADMIN_KEY)
+ */
 
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const params: Record<string, string> = {};
-  for (const arg of args) {
-    if (arg.startsWith('--')) {
-      const [key, value] = arg.slice(2).split('=');
-      if (key && value) {
-        params[key] = value;
-      }
-    }
-  }
-  return params;
-}
-
-async function prompt(question: string, defaultValue?: string): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    const displayQuestion = defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `;
-    rl.question(displayQuestion, (answer) => {
-      rl.close();
-      resolve(answer.trim() || defaultValue || '');
-    });
-  });
-}
+import fs from 'fs';
+import path from 'path';
 
 async function main() {
-  console.log('\n🏪 FLOQ Merchant White-Glove Onboarding CLI\n==========================================\n');
-
-  const cliParams = parseArgs();
-
-  const merchantName = cliParams.name || (await prompt('Merchant / Admin Full Name'));
-  const phone = cliParams.phone || (await prompt('10-Digit Mobile Number'));
-  const storeName = cliParams.store || (await prompt('Store / Stall Name'));
-  const storeType = cliParams.type || (await prompt('Store Type (TEA_STALL/BREAKFAST/FOOD_STALL/BAKERY/JUICE)', 'TEA_STALL'));
-  const address = cliParams.address || (await prompt('Store Address / Location', 'Pune, India'));
-  const upiId = cliParams.upi || (await prompt('Paytm Soundbox Static UPI ID', `${phone.slice(-10)}@okhdfcbank`));
-  const upiName = cliParams.upiName || merchantName;
-
-  if (!merchantName || !phone || !storeName) {
-    console.error('❌ Error: Merchant Name, Phone Number, and Store Name are required!');
+  const profilePath = process.argv[2];
+  if (!profilePath) {
+    console.error('Usage: tsx scripts/onboardMerchant.ts <profile.json>');
     process.exit(1);
   }
 
-  const payload = JSON.stringify({
-    merchantName,
-    phone,
-    storeName,
-    storeType,
-    address,
-    upiId,
-    upiName,
-    initialCategoryName: 'General',
+  const apiUrl = (process.env.API_URL || 'http://localhost:4000').replace(/\/$/, '');
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.error('ERROR: ADMIN_KEY env var is required (must match the server ADMIN_KEY).');
+    process.exit(1);
+  }
+
+  const raw = fs.readFileSync(path.resolve(profilePath), 'utf8');
+  const profile = JSON.parse(raw);
+
+  if (!profile.pin) {
+    console.error('ERROR: profile is missing a "pin" (4-6 digits). Set the PIN you will give this merchant.');
+    process.exit(1);
+  }
+
+  console.log(`\n→ Onboarding "${profile.merchantName}" (${profile.storeName}) in ${profile.mode || 'FOOD'} mode`);
+  console.log(`  API: ${apiUrl}`);
+
+  const res = await fetch(`${apiUrl}/api/admin/onboard-merchant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+    body: JSON.stringify(profile),
   });
 
-  const apiUrl = process.env.API_URL || 'https://floq.onrender.com';
-  const adminKey = process.env.ADMIN_KEY || 'floq_admin_seed_secret';
-  const endpoint = `${apiUrl}/api/admin/onboard-merchant`;
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error(`\n✗ Onboarding failed (${res.status}):`, body.message || body.error || body);
+    process.exit(1);
+  }
 
-  console.log(`\n⏳ Submitting onboarding request to ${endpoint}...`);
-
-  const urlObj = new URL(endpoint);
-  const requestModule = urlObj.protocol === 'https:' ? https : http;
-
-  const req = requestModule.request(
-    urlObj,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-key': adminKey,
-        'Content-Length': Buffer.byteLength(payload),
-      },
-    },
-    (res) => {
-      let data = '';
-      res.on('data', (chunk) => (data += chunk));
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-            console.log('\n🎉 MERCHANT ONBOARDED SUCCESSFULLY! 🎉\n');
-            console.log(`  Merchant Name: ${merchantName}`);
-            console.log(`  Store Name:    ${storeName}`);
-            console.log(`  Phone Number:  ${json.phone}`);
-            console.log(`  Merchant ID:   ${json.merchantId}`);
-            console.log(`  Store ID:      ${json.storeId}`);
-            console.log(`  Soundbox UPI:  ${upiId}`);
-            console.log(`  Mock OTP:      123456\n`);
-            console.log(`👉 The vendor can now open FLOQ Vendor App and log in with phone ${json.phone} and OTP 123456!\n`);
-          } else {
-            console.error('\n❌ Onboarding Failed:', json.message || data);
-          }
-        } catch {
-          console.error('\n❌ Invalid server response:', data);
-        }
-      });
-    }
-  );
-
-  req.on('error', (err) => {
-    console.error('\n❌ Request error:', err.message);
-  });
-
-  req.write(payload);
-  req.end();
+  if (body.alreadyExisted) {
+    console.log(`\nℹ️  Already onboarded. Merchant ${body.merchantId}. To change the PIN, use /api/admin/reset-pin.`);
+  } else {
+    console.log(`\n✓ Onboarded successfully`);
+    console.log(`  merchantId : ${body.merchantId}`);
+    console.log(`  storeId    : ${body.storeId}`);
+    console.log(`  mode       : ${body.mode}`);
+    console.log(`  language   : ${body.secondaryLanguage}`);
+    console.log(`  items      : ${body.itemsCreated}`);
+    console.log(`\n  Merchant logs in with:`);
+    console.log(`    phone : ${body.phone}`);
+    console.log(`    PIN   : ${profile.pin}  (give this to the merchant; it is not stored in plain text)`);
+  }
 }
 
-main();
+main().catch((err) => {
+  console.error('Unexpected error:', err);
+  process.exit(1);
+});

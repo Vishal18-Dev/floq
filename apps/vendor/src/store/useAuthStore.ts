@@ -9,7 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  loginWithOTP: (phone: string, otp: string) => Promise<UserSession>;
+  loginWithPin: (phone: string, pin: string) => Promise<UserSession>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
   clearError: () => void;
@@ -46,10 +46,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  loginWithOTP: async (phone: string, otp: string) => {
+  loginWithPin: async (phone: string, pin: string) => {
     try {
       set({ isLoading: true, error: null });
-      const session = await api.verifyOTP(phone, otp);
+      const session = await api.login(phone, pin);
       await authStorage.saveSession(session);
 
       api.setUnauthorizedCallback(() => {

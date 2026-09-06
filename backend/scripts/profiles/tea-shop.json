@@ -1,0 +1,23 @@
+{
+  "merchantName": "REPLACE_WITH_OWNER_NAME",
+  "phone": "REPLACE_WITH_10_DIGIT_PHONE",
+  "pin": "REPLACE_WITH_PIN",
+  "storeName": "REPLACE_WITH_TEA_SHOP_NAME",
+  "storeType": "TEA_STALL",
+  "mode": "FOOD",
+  "secondaryLanguage": "hi",
+  "address": "",
+  "upiId": "REPLACE_WITH_UPI_ID",
+  "upiName": "REPLACE_WITH_TEA_SHOP_NAME",
+  "typicalPrepTimeMinutes": 4,
+  "items": [
+    { "name": "Chai", "nameLocal": "चाय", "price": 12, "category": "Tea", "station": "BEVERAGE" },
+    { "name": "Special Chai", "nameLocal": "स्पेशल चाय", "price": 20, "category": "Tea", "station": "BEVERAGE" },
+    { "name": "Coffee", "nameLocal": "कॉफ़ी", "price": 20, "category": "Tea", "station": "BEVERAGE" },
+    { "name": "Vada Pav", "nameLocal": "वड़ा पाव", "price": 18, "category": "Snacks", "station": "HOT_FOOD" },
+    { "name": "Poha", "nameLocal": "पोहा", "price": 30, "category": "Snacks", "station": "HOT_FOOD" },
+    { "name": "Samosa", "nameLocal": "समोसा", "price": 15, "category": "Snacks", "station": "HOT_FOOD" },
+    { "name": "Bun Maska", "nameLocal": "बन मस्का", "price": 25, "category": "Snacks", "station": "BAKERY" },
+    { "name": "Biscuit", "nameLocal": "बिस्किट", "price": 10, "category": "Snacks", "station": "PACKAGED" }
+  ]
+}

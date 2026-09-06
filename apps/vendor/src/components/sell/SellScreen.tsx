@@ -1,504 +1,374 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  ScrollView,
-  Modal,
-  StyleSheet,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Category, DailySalesSummary, Order, PaymentMethod, Product, StoreSettings } from '@floq/types';
 import { formatINR } from '@floq/utils';
-import { ProductCard } from './ProductCard';
-import { CartItem, LiveCart } from './LiveCart';
-import { CashCheckoutModal } from './CashCheckoutModal';
-import { UPICheckoutModal } from './UPICheckoutModal';
-import { TicketSuccessModal } from './TicketSuccessModal';
-import { Icon } from '../common/Icon';
-import { colors, radius, spacing } from '../../theme';
+import { palette, fonts, borders, spacing } from '../../theme';
 import { HapticFeedback } from '../../services/haptics';
+import { useT } from '../../i18n';
+import { BiText, Kicker, Numpad, PrimaryBar, EmptyState } from '../common/ui';
+import { UpiQr } from './UpiQr';
 
-interface SellScreenProps {
-  categories: Category[];
-  products: Product[];
-  dailySummary: DailySalesSummary | null;
-  settings: StoreSettings | null;
-  isOnline: boolean;
-  onChargeCash: (cartItems: CartItem[]) => Promise<Order>;
-  onChargeUPI: (cartItems: CartItem[]) => Promise<Order>;
+export interface ChargeLine {
+  productId?: string;
+  name?: string;
+  unitPrice?: number;
+  quantity: number;
 }
 
-export const SellScreen: React.FC<SellScreenProps> = ({
-  categories,
-  products,
-  dailySummary,
-  settings,
-  isOnline,
-  onChargeCash,
-  onChargeUPI,
-}) => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
+interface Props {
+  products: Product[];
+  categories: Category[];
+  dailySummary: DailySalesSummary | null;
+  settings: StoreSettings | null;
+  onCharge: (lines: ChargeLine[], method: PaymentMethod) => Promise<Order>;
+  onToggleAvailability: (id: string, isAvailable: boolean) => void;
+}
+
+type Phase = 'SELL' | 'PAY' | 'CASH' | 'UPI' | 'TICKET';
+type CartItem = { product: Product; quantity: number };
+
+export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary, settings, onCharge, onToggleAvailability }) => {
+  const { bi, t } = useT();
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
-  const [isCashModalOpen, setIsCashModalOpen] = useState(false);
-  const [isUPIModalOpen, setIsUPIModalOpen] = useState(false);
-  const [recentSuccessOrder, setRecentSuccessOrder] = useState<Order | null>(null);
+  const [padMode, setPadMode] = useState(false);
+  const [padAmount, setPadAmount] = useState('');
+  const [phase, setPhase] = useState<Phase>('SELL');
+  const [pendingLines, setPendingLines] = useState<ChargeLine[]>([]);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [tender, setTender] = useState(0);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleAddToCart = (product: Product) => {
-    setCart((prev) => {
-      const idx = prev.findIndex((item) => item.product.id === product.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + 1 };
-        return updated;
-      }
-      return [...prev, { product, quantity: 1 }];
-    });
-  };
+  const revenue = dailySummary?.revenue ?? 0;
+  const orders = dailySummary?.orders ?? 0;
 
-  const handleDecrementFromCart = (productId: string) => {
-    setCart((prev) => {
-      const idx = prev.findIndex((item) => item.product.id === productId);
-      if (idx < 0) return prev;
-      if (prev[idx].quantity > 1) {
-        const updated = [...prev];
-        updated[idx] = { ...updated[idx], quantity: updated[idx].quantity - 1 };
-        return updated;
-      }
-      return prev.filter((item) => item.product.id !== productId);
-    });
-  };
+  const cartTotal = cart.reduce((s, c) => s + c.product.price * c.quantity, 0);
 
-  const handleClearCart = () => {
-    setCart([]);
-  };
-
-  const getCartQuantityForProduct = (productId: string): number => {
-    const item = cart.find((i) => i.product.id === productId);
-    return item ? item.quantity : 0;
-  };
-
-  const totalAmount = cart.reduce((sum, it) => sum + it.product.price * it.quantity, 0);
-
-  const handleSelectPaymentMethod = (method: PaymentMethod) => {
+  const addToCart = (p: Product) => {
     HapticFeedback.light();
-    setIsPaymentMethodModalOpen(false);
-    if (method === 'CASH') {
-      setIsCashModalOpen(true);
-    } else {
-      setIsUPIModalOpen(true);
-    }
+    setCart((prev) => {
+      const i = prev.findIndex((c) => c.product.id === p.id);
+      if (i >= 0) {
+        const next = [...prev];
+        next[i] = { ...next[i], quantity: next[i].quantity + 1 };
+        return next;
+      }
+      return [...prev, { product: p, quantity: 1 }];
+    });
+  };
+  const dec = (id: string) =>
+    setCart((prev) => {
+      const i = prev.findIndex((c) => c.product.id === id);
+      if (i < 0) return prev;
+      if (prev[i].quantity > 1) {
+        const next = [...prev];
+        next[i] = { ...next[i], quantity: next[i].quantity - 1 };
+        return next;
+      }
+      return prev.filter((c) => c.product.id !== id);
+    });
+
+  const startChargeFromCart = () => {
+    if (cartTotal <= 0) return;
+    setPendingLines(cart.map((c) => ({ productId: c.product.id, quantity: c.quantity })));
+    setPendingTotal(cartTotal);
+    setPhase('PAY');
   };
 
-  const handleConfirmCashPayment = async (tender: number, change: number) => {
-    setIsCashModalOpen(false);
+  const startChargeFromPad = () => {
+    const amt = parseInt(padAmount || '0', 10);
+    if (amt <= 0) return;
+    setPendingLines([{ name: 'Quick sale', unitPrice: amt, quantity: 1 }]);
+    setPendingTotal(amt);
+    setPhase('PAY');
+  };
+
+  const confirmCharge = async (method: PaymentMethod) => {
+    if (busy) return;
+    setBusy(true);
     try {
-      const order = await onChargeCash(cart);
+      const order = await onCharge(pendingLines, method);
+      setLastOrder(order);
       setCart([]);
-      setRecentSuccessOrder(order);
-    } catch (err: any) {
-      alert(err.message || 'Could not process cash sale');
+      setPadAmount('');
+      setTender(0);
+      setPhase('TICKET');
+    } catch (e: any) {
+      // Surface failure without losing the cart.
+      setPhase('SELL');
+      alert(e?.message || 'Could not complete the sale. Try again.');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleConfirmUPIPayment = async () => {
-    setIsUPIModalOpen(false);
-    try {
-      const order = await onChargeUPI(cart);
-      setCart([]);
-      setRecentSuccessOrder(order);
-    } catch (err: any) {
-      alert(err.message || 'Could not process UPI sale');
-    }
-  };
+  // ---- Payment overlays ----
+  if (phase === 'TICKET' && lastOrder) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.ticket}
+        onPress={() => { setLastOrder(null); setPhase('SELL'); }}
+      >
+        <Kicker color={palette.onAccent}>{t('paid')} · {lastOrder.paymentStatus === 'SUCCESS' ? 'OK' : lastOrder.status}</Kicker>
+        <Text style={styles.ticketTokenLabel}>{bi('token').primary}{bi('token').secondary ? ` · ${bi('token').secondary}` : ''}</Text>
+        <Text style={styles.ticketToken}>{lastOrder.ticketNumber}</Text>
+        <Text style={styles.ticketItems}>{formatINR(lastOrder.total)}</Text>
+        <Text style={styles.ticketHint}>{bi('tapToKeepSelling').primary}{bi('tapToKeepSelling').secondary ? ` · ${bi('tapToKeepSelling').secondary}` : ''}</Text>
+      </TouchableOpacity>
+    );
+  }
 
-  const filteredProducts =
-    selectedCategoryId === 'ALL'
-      ? products
-      : products.filter((p) => p.categoryId === selectedCategoryId);
-
-  return (
-    <View style={styles.screenContainer}>
-      {/* 1. Today's Quick Bar */}
-      <View style={styles.todayStrip}>
-        <View style={styles.todayRevenueRow}>
-          <Text style={styles.todayLabel}>TODAY</Text>
-          <Text style={styles.todayRevenueAmount}>
-            {dailySummary ? formatINR(dailySummary.revenue) : '₹8,420'}
-          </Text>
+  if (phase === 'PAY' || phase === 'CASH' || phase === 'UPI') {
+    return (
+      <View style={styles.overlay}>
+        <View style={styles.dueHead}>
+          <Kicker>{bi('amountDue').primary}{bi('amountDue').secondary ? ` · ${bi('amountDue').secondary}` : ''}</Kicker>
+          <Text style={styles.dueAmount}>{formatINR(pendingTotal)}</Text>
         </View>
-        <View style={styles.todayOrdersRow}>
-          <Text style={styles.todayOrdersText}>
-            {dailySummary ? dailySummary.orders : '126'} orders
-          </Text>
-          {dailySummary && dailySummary.delayedOrdersCount > 0 && (
-            <View style={styles.delayBadge}>
-              <Text style={styles.delayBadgeText}>
-                ⚠️ {dailySummary.delayedOrdersCount} delayed
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
 
-      {/* 2. Category Filter Pills */}
-      <View style={styles.categoryScrollContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-          <TouchableOpacity
-            style={[
-              styles.categoryChip,
-              selectedCategoryId === 'ALL' && styles.categoryChipActive,
-            ]}
-            onPress={() => {
-              HapticFeedback.light();
-              setSelectedCategoryId('ALL');
-            }}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.categoryChipText,
-                selectedCategoryId === 'ALL' && styles.categoryChipTextActive,
-              ]}
-            >
-              All Items ({products.length})
-            </Text>
-          </TouchableOpacity>
-
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.categoryChip,
-                selectedCategoryId === cat.id && styles.categoryChipActive,
-              ]}
-              onPress={() => {
-                HapticFeedback.light();
-                setSelectedCategoryId(cat.id);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.categoryChipText,
-                  selectedCategoryId === cat.id && styles.categoryChipTextActive,
-                ]}
-              >
-                {cat.name}
-              </Text>
+        {phase === 'PAY' && (
+          <View style={{ flex: 1 }}>
+            <TouchableOpacity style={styles.payCash} activeOpacity={0.85} onPress={() => { HapticFeedback.medium(); setPhase('CASH'); }}>
+              <BiText k="cash" style={styles.payBig} />
             </TouchableOpacity>
-          ))}
+            <TouchableOpacity style={styles.payUpi} activeOpacity={0.85} onPress={() => { HapticFeedback.medium(); setPhase('UPI'); }}>
+              <BiText k="upiQr" style={[styles.payBig, { color: palette.onAccent }]} localStyle={{ color: palette.onAccent, opacity: 0.85 }} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelRow} onPress={() => setPhase('SELL')}>
+              <Text style={styles.cancelText}>← {bi('back').primary}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {phase === 'CASH' && (
+          <View style={{ flex: 1 }}>
+            <View style={styles.tenderRow}>
+              {tenderOptions(pendingTotal).map((amt) => (
+                <TouchableOpacity key={amt} style={[styles.tenderChip, tender === amt && styles.tenderChipActive]} onPress={() => { HapticFeedback.light(); setTender(amt); }}>
+                  <Text style={[styles.tenderChipText, tender === amt && styles.tenderChipTextActive]}>{amt === pendingTotal ? 'EXACT' : formatINR(amt)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {tender > 0 && tender >= pendingTotal ? (
+              <View style={styles.changeBox}>
+                <Kicker>CHANGE · वापसी</Kicker>
+                <Text style={styles.changeAmount}>{formatINR(tender - pendingTotal)}</Text>
+              </View>
+            ) : (
+              <View style={styles.changeBox}><Text style={styles.changeHint}>Pick the note the customer gave (optional)</Text></View>
+            )}
+            <View style={{ flex: 1 }} />
+            <PrimaryBar label={busy ? '…' : `${bi('cashReceived').primary}`} sub={bi('cashReceived').secondary || undefined} onPress={() => confirmCharge('CASH')} disabled={busy} />
+            <TouchableOpacity style={styles.cancelRow} onPress={() => setPhase('PAY')}><Text style={styles.cancelText}>← {bi('back').primary}</Text></TouchableOpacity>
+          </View>
+        )}
+
+        {phase === 'UPI' && (
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={styles.showToCustomer}>{bi('showToCustomer').primary}{bi('showToCustomer').secondary ? ` · ${bi('showToCustomer').secondary}` : ''}</Text>
+            <View style={{ marginVertical: spacing.lg }}>
+              <UpiQr upiId={settings?.upiId} name={settings?.upiName} amount={pendingTotal} note={`FLOQ sale`} />
+            </View>
+            <Text style={styles.upiVpa}>{settings?.upiId || '—'}</Text>
+            <View style={{ flex: 1 }} />
+            <PrimaryBar label={busy ? '…' : bi('paymentReceived').primary} sub={bi('paymentReceived').secondary || undefined} onPress={() => confirmCharge('UPI')} disabled={busy} />
+            <TouchableOpacity style={styles.cancelRow} onPress={() => setPhase('PAY')}><Text style={styles.cancelText}>← {bi('back').primary}</Text></TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  // ---- Quick-charge amount pad ----
+  if (padMode) {
+    const amt = parseInt(padAmount || '0', 10);
+    return (
+      <View style={styles.screen}>
+        <TodayStrip revenue={revenue} orders={orders} rightLabel="ITEMS" onToggle={() => { setPadMode(false); setPadAmount(''); }} />
+        <View style={styles.padDisplay}>
+          <BiText k="amount" />
+          <Text style={styles.padAmount}>{formatINR(amt)}</Text>
+        </View>
+        <Numpad onKey={(d) => setPadAmount((padAmount + d).slice(0, 7))} onBackspace={() => setPadAmount(padAmount.slice(0, -1))} minHeight={200} />
+        <PrimaryBar label={bi('charge').primary} sub={bi('charge').secondary || undefined} right={formatINR(amt)} disabled={amt <= 0} onPress={startChargeFromPad} />
+      </View>
+    );
+  }
+
+  // ---- Sell grid ----
+  return (
+    <View style={styles.screen}>
+      <TodayStrip revenue={revenue} orders={orders} rightLabel={t('amount')} onToggle={() => setPadMode(true)} />
+
+      {products.length === 0 ? (
+        <EmptyState title="No items yet" subtitle="Add products in Business, or ask FLOQ to set up your menu." />
+      ) : (
+        <ScrollView contentContainerStyle={styles.grid}>
+          {products.map((p) => {
+            const qty = cart.find((c) => c.product.id === p.id)?.quantity || 0;
+            const out = !p.isAvailable;
+            return (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.tile, out && styles.tileOut]}
+                activeOpacity={0.7}
+                onPress={() => (out ? undefined : addToCart(p))}
+                onLongPress={() => { HapticFeedback.medium(); onToggleAvailability(p.id, out); }}
+              >
+                <View style={styles.tileTop}>
+                  <Text style={styles.tileName} numberOfLines={2}>{p.name}</Text>
+                  {qty > 0 && <View style={styles.qtyBadge}><Text style={styles.qtyBadgeText}>{qty}</Text></View>}
+                </View>
+                {p.nameLocal ? <Text style={styles.tileLocal} numberOfLines={1}>{p.nameLocal}</Text> : null}
+                <View style={styles.tileBottom}>
+                  <Text style={styles.tilePrice}>{formatINR(p.price)}</Text>
+                  {out && <View style={styles.soldOut}><Text style={styles.soldOutText}>{t('soldOut')}</Text></View>}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
-      </View>
+      )}
 
-      {/* 3. Product Cards Grid (2 columns on mobile) */}
-      <View style={styles.gridContainer}>
-        <FlatList
-          data={filteredProducts}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.gridContent}
-          renderItem={({ item }) => (
-            <ProductCard
-              product={item}
-              quantityInCart={getCartQuantityForProduct(item.id)}
-              onAdd={handleAddToCart}
-            />
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyProducts}>
-              <Icon name="coffee" size={32} color="#cbd5e1" />
-              <Text style={styles.emptyProductsText}>No items in this category</Text>
-            </View>
-          }
-        />
-      </View>
-
-      {/* 4. Persistent Live Cart */}
-      <LiveCart
-        items={cart}
-        onIncrement={handleAddToCart}
-        onDecrement={handleDecrementFromCart}
-        onClear={handleClearCart}
-        onCheckout={() => setIsPaymentMethodModalOpen(true)}
-      />
-
-      {/* 5. Payment Selector Modal */}
-      <Modal visible={isPaymentMethodModalOpen} transparent animationType="fade" onRequestClose={() => setIsPaymentMethodModalOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.paymentModalCard}>
-            <View style={styles.paymentHeader}>
-              <Text style={styles.paymentTitle}>Select Payment Method</Text>
-              <TouchableOpacity onPress={() => setIsPaymentMethodModalOpen(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.amountCallout}>
-              <Text style={styles.dueLabel}>AMOUNT DUE</Text>
-              <Text style={styles.dueAmount}>{formatINR(totalAmount)}</Text>
-            </View>
-
-            <View style={styles.methodsRow}>
-              {/* CASH BUTTON */}
-              <TouchableOpacity
-                style={styles.cashMethodBtn}
-                onPress={() => handleSelectPaymentMethod('CASH')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.methodIconBoxCash}>
-                  <Icon name="banknote" size={24} color="#ffffff" />
-                </View>
-                <Text style={styles.cashMethodText}>CASH</Text>
-              </TouchableOpacity>
-
-              {/* UPI BUTTON */}
-              <TouchableOpacity
-                style={styles.upiMethodBtn}
-                onPress={() => handleSelectPaymentMethod('UPI')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.methodIconBoxUpi}>
-                  <Icon name="qr-code" size={24} color="#ffffff" />
-                </View>
-                <Text style={styles.upiMethodText}>UPI QR</Text>
-              </TouchableOpacity>
-            </View>
+      {/* Cart / charge bar */}
+      {cart.length === 0 ? (
+        <View style={styles.cartHintBar}>
+          <Text style={styles.cartHint}>{bi('tapItemsToStart').primary}{bi('tapItemsToStart').secondary ? ` · ${bi('tapItemsToStart').secondary}` : ''}</Text>
+        </View>
+      ) : (
+        <View style={styles.cartBox}>
+          <ScrollView style={{ maxHeight: 150 }}>
+            {cart.map((c) => (
+              <View key={c.product.id} style={styles.cartLine}>
+                <TouchableOpacity style={styles.stepBtn} onPress={() => dec(c.product.id)}><Text style={styles.stepText}>−</Text></TouchableOpacity>
+                <Text style={styles.cartQty}>{c.quantity}</Text>
+                <Text style={styles.cartName} numberOfLines={1}>{c.product.name}</Text>
+                <Text style={styles.cartAmt}>{formatINR(c.product.price * c.quantity)}</Text>
+                <TouchableOpacity style={styles.stepBtn} onPress={() => addToCart(c.product)}><Text style={styles.stepText}>+</Text></TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+          <View style={styles.chargeRow}>
+            <TouchableOpacity style={styles.clearBtn} onPress={() => setCart([])}><Text style={styles.clearText}>{t('clear')}</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.chargeBtn} activeOpacity={0.85} onPress={startChargeFromCart}>
+              <View>
+                <Text style={styles.chargeLabel}>{bi('charge').primary}</Text>
+                {bi('charge').secondary ? <Text style={styles.chargeSub}>{bi('charge').secondary}</Text> : null}
+              </View>
+              <Text style={styles.chargeTotal}>{formatINR(cartTotal)}</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      )}
+    </View>
+  );
+};
 
-      {/* 6. Cash Modal */}
-      <CashCheckoutModal
-        isOpen={isCashModalOpen}
-        totalAmount={totalAmount}
-        onClose={() => setIsCashModalOpen(false)}
-        onConfirm={handleConfirmCashPayment}
-      />
+function tenderOptions(total: number): number[] {
+  const opts = new Set<number>([total]);
+  for (const step of [10, 50, 100, 500]) {
+    const up = Math.ceil(total / step) * step;
+    if (up > total) opts.add(up);
+  }
+  return Array.from(opts).sort((a, b) => a - b).slice(0, 4);
+}
 
-      {/* 7. UPI Modal */}
-      <UPICheckoutModal
-        isOpen={isUPIModalOpen}
-        totalAmount={totalAmount}
-        ticketNumber="NEW"
-        upiId={settings?.upiId || 'sharma.stall@okhdfcbank'}
-        upiName={settings?.upiName || 'Sharma Breakfast Corner'}
-        onClose={() => setIsUPIModalOpen(false)}
-        onSuccess={handleConfirmUPIPayment}
-      />
-
-      {/* 8. Success Modal */}
-      <TicketSuccessModal
-        isOpen={Boolean(recentSuccessOrder)}
-        order={recentSuccessOrder}
-        onClose={() => setRecentSuccessOrder(null)}
-      />
+const TodayStrip = ({ revenue, orders, rightLabel, onToggle }: { revenue: number; orders: number; rightLabel: string; onToggle: () => void }) => {
+  const { t } = useT();
+  return (
+    <View style={styles.todayStrip}>
+      <View style={styles.todayLeft}>
+        <Text style={styles.todayKicker}>{t('today')}</Text>
+        <Text style={styles.todayAmount}>{formatINR(revenue)}</Text>
+        <Text style={styles.todayOrders}>{orders} {t('orders')}</Text>
+      </View>
+      <TouchableOpacity style={styles.modeToggle} onPress={() => { HapticFeedback.light(); onToggle(); }}>
+        <Text style={styles.modeToggleText}>{rightLabel}</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  todayStrip: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
+  screen: { flex: 1, backgroundColor: palette.bg },
+  todayStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
+  todayLeft: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  todayKicker: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 10, letterSpacing: 1.2, color: palette.neutral[700] },
+  todayAmount: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, letterSpacing: -0.4, color: palette.ink },
+  todayOrders: { fontFamily: fonts.body, fontSize: 11, color: palette.neutral[700] },
+  modeToggle: { borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 8, paddingVertical: 6 },
+  modeToggleText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 10, letterSpacing: 1, color: palette.ink },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: palette.bg },
+  // 2px grid lines via borders (a flex `gap` would push two 50% tiles onto
+  // separate rows). Right/bottom borders draw the dividers between tiles.
+  tile: {
+    width: '50%',
+    minHeight: 108,
+    backgroundColor: palette.bg,
+    padding: 12,
     justifyContent: 'space-between',
+    borderRightWidth: borders.rule,
+    borderBottomWidth: borders.rule,
+    borderColor: palette.divider,
   },
-  todayRevenueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  todayLabel: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#64748b',
-    letterSpacing: 0.8,
-  },
-  todayRevenueAmount: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.textPrimary,
-  },
-  todayOrdersRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  todayOrdersText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748b',
-  },
-  delayBadge: {
-    backgroundColor: '#fef2f2',
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  delayBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#e11d48',
-  },
-  categoryScrollContainer: {
-    backgroundColor: '#f1f5f9',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  categoryScroll: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
-    flexDirection: 'row',
-  },
-  categoryChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.md,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  categoryChipActive: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
-  },
-  categoryChipText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#475569',
-  },
-  categoryChipTextActive: {
-    color: '#ffffff',
-  },
-  gridContainer: {
-    flex: 1,
-  },
-  gridContent: {
-    padding: 8,
-    paddingBottom: 20,
-  },
-  emptyProducts: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  emptyProductsText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#94a3b8',
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  paymentModalCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    width: '100%',
-    maxWidth: 360,
-    elevation: 12,
-  },
-  paymentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  paymentTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  closeBtnText: {
-    fontSize: 16,
-    color: '#94a3b8',
-    fontWeight: '700',
-  },
-  amountCallout: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  dueLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#64748b',
-    letterSpacing: 0.8,
-  },
-  dueAmount: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.textPrimary,
-    marginTop: 2,
-  },
-  methodsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  cashMethodBtn: {
-    flex: 1,
-    backgroundColor: '#f0fdf4',
-    borderWidth: 2,
-    borderColor: '#16a34a',
-    borderRadius: radius.lg,
-    paddingVertical: 18,
-    alignItems: 'center',
-    gap: 8,
-  },
-  methodIconBoxCash: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cashMethodText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#14532d',
-  },
-  upiMethodBtn: {
-    flex: 1,
-    backgroundColor: '#f0f9ff',
-    borderWidth: 2,
-    borderColor: '#0284c7',
-    borderRadius: radius.lg,
-    paddingVertical: 18,
-    alignItems: 'center',
-    gap: 8,
-  },
-  methodIconBoxUpi: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: '#0284c7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  upiMethodText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#0c4a6e',
-  },
+  tileOut: { backgroundColor: palette.neutral[200] },
+  tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 },
+  tileName: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink, flex: 1, letterSpacing: -0.2 },
+  tileLocal: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[700], marginTop: 2 },
+  tileBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  tilePrice: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, letterSpacing: -0.4, color: palette.ink },
+  qtyBadge: { minWidth: 28, height: 28, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  qtyBadgeText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 15, color: palette.onAccent },
+  soldOut: { backgroundColor: palette.ink, paddingHorizontal: 6, paddingVertical: 3 },
+  soldOutText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 10, letterSpacing: 1, color: palette.bg },
+
+  cartHintBar: { padding: 16, borderTopWidth: borders.rule, borderTopColor: palette.divider },
+  cartHint: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[700] },
+  cartBox: { borderTopWidth: borders.rule, borderTopColor: palette.divider },
+  cartLine: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: borders.hair, borderBottomColor: palette.dividerFaint },
+  stepBtn: { width: 44, height: 44, borderWidth: borders.rule, borderColor: palette.divider, alignItems: 'center', justifyContent: 'center' },
+  stepText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 24, color: palette.ink },
+  cartQty: { width: 30, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 18, color: palette.ink },
+  cartName: { flex: 1, fontFamily: fonts.semibold, fontSize: 15, color: palette.ink },
+  cartAmt: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
+  chargeRow: { flexDirection: 'row', gap: borders.rule, backgroundColor: palette.divider },
+  clearBtn: { width: 96, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center' },
+  clearText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, letterSpacing: 1, color: palette.ink },
+  chargeBtn: { flex: 1, backgroundColor: palette.accent, minHeight: 78, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
+  chargeLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, color: palette.onAccent, letterSpacing: 0.3 },
+  chargeSub: { fontFamily: fonts.body, fontSize: 13, color: palette.onAccent, opacity: 0.85 },
+  chargeTotal: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, color: palette.onAccent, letterSpacing: -0.5 },
+
+  // pad
+  padDisplay: { flex: 1, justifyContent: 'center', paddingHorizontal: 20 },
+  padAmount: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 56, letterSpacing: -2, color: palette.ink, marginTop: 8 },
+
+  // overlays
+  overlay: { flex: 1, backgroundColor: palette.bg },
+  dueHead: { padding: 18, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
+  dueAmount: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 60, letterSpacing: -2.5, color: palette.ink, lineHeight: 62 },
+  payCash: { flex: 1, borderBottomWidth: borders.rule, borderBottomColor: palette.divider, justifyContent: 'center', paddingHorizontal: 22 },
+  payUpi: { flex: 1, backgroundColor: palette.accent, justifyContent: 'center', paddingHorizontal: 22 },
+  payBig: { fontSize: 40, letterSpacing: -0.5 },
+  cancelRow: { minHeight: 54, alignItems: 'center', justifyContent: 'center' },
+  cancelText: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700] },
+  tenderRow: { flexDirection: 'row', flexWrap: 'wrap', gap: borders.rule, backgroundColor: palette.divider, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
+  tenderChip: { flexGrow: 1, minWidth: '48%', backgroundColor: palette.bg, paddingVertical: 18, alignItems: 'center' },
+  tenderChipActive: { backgroundColor: palette.ink },
+  tenderChipText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 18, color: palette.ink },
+  tenderChipTextActive: { color: palette.onAccent },
+  changeBox: { padding: 18 },
+  changeAmount: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 44, letterSpacing: -1.5, color: palette.accent },
+  changeHint: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[600] },
+  showToCustomer: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, letterSpacing: 1, color: palette.neutral[700], paddingTop: 18 },
+  upiVpa: { fontFamily: fonts.semibold, fontSize: 14, color: palette.ink },
+
+  // ticket
+  ticket: { flex: 1, backgroundColor: palette.accent, justifyContent: 'center', paddingHorizontal: 26 },
+  ticketTokenLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, letterSpacing: 2, color: palette.onAccent, opacity: 0.85, marginTop: 24 },
+  ticketToken: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 120, letterSpacing: -5, color: palette.onAccent, lineHeight: 128 },
+  ticketItems: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 28, color: palette.onAccent, opacity: 0.9 },
+  ticketHint: { fontFamily: fonts.body, fontSize: 14, color: palette.onAccent, opacity: 0.8, marginTop: 30 },
 });

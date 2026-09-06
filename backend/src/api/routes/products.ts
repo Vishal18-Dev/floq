@@ -23,6 +23,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
       storeId: p.store_id,
       categoryId: p.category_id,
       name: p.name,
+      nameLocal: p.name_local || undefined,
       description: p.description || undefined,
       price: Number(p.price),
       imageUrl: p.image_url || undefined,
@@ -39,6 +40,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
         id: c.id,
         storeId: c.store_id,
         name: c.name,
+        nameLocal: c.name_local || undefined,
         sortOrder: c.sort_order,
         isActive: Boolean(c.is_active),
         createdAt: new Date(c.created_at).toISOString(),
@@ -58,13 +60,14 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
     const now = new Date().toISOString();
 
     await query(
-      `INSERT INTO products (id, store_id, category_id, name, description, price, is_available, sort_order, station, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      `INSERT INTO products (id, store_id, category_id, name, name_local, description, price, is_available, sort_order, station, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         id,
         req.storeId,
         input.categoryId,
         input.name,
+        input.nameLocal || null,
         input.description || null,
         input.price,
         input.isAvailable !== false,
@@ -110,6 +113,10 @@ router.patch('/:id', async (req: AuthenticatedRequest, res: Response, next) => {
     if (input.name !== undefined) {
       fields.push(`name = $${idx++}`);
       values.push(input.name);
+    }
+    if (input.nameLocal !== undefined) {
+      fields.push(`name_local = $${idx++}`);
+      values.push(input.nameLocal || null);
     }
     if (input.price !== undefined) {
       fields.push(`price = $${idx++}`);
@@ -172,6 +179,39 @@ router.patch('/:id', async (req: AuthenticatedRequest, res: Response, next) => {
   }
 });
 
+// PATCH /api/products/:id/availability - Toggle sold-out (store-scoped)
+router.patch('/:id/availability', async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const isAvailable = Boolean(req.body?.isAvailable);
+    const changes = await execute(
+      'UPDATE products SET is_available = $1, updated_at = $2 WHERE id = $3 AND store_id = $4',
+      [isAvailable, new Date().toISOString(), req.params.id, req.storeId]
+    );
+    if (changes === 0) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+    const updated = await queryOne('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    res.json({
+      product: {
+        id: updated.id,
+        storeId: updated.store_id,
+        categoryId: updated.category_id,
+        name: updated.name,
+        nameLocal: updated.name_local || undefined,
+        price: Number(updated.price),
+        isAvailable: Boolean(updated.is_available),
+        sortOrder: updated.sort_order,
+        station: updated.station,
+        createdAt: new Date(updated.created_at).toISOString(),
+        updatedAt: new Date(updated.updated_at).toISOString(),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /api/products/:id - Delete product
 router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next) => {
   try {
@@ -194,9 +234,9 @@ router.post('/categories', async (req: AuthenticatedRequest, res: Response, next
     const now = new Date().toISOString();
 
     await query(
-      `INSERT INTO categories (id, store_id, name, sort_order, is_active, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [id, req.storeId, input.name, input.sortOrder, input.isActive !== false, now]
+      `INSERT INTO categories (id, store_id, name, name_local, sort_order, is_active, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [id, req.storeId, input.name, input.nameLocal || null, input.sortOrder, input.isActive !== false, now]
     );
 
     res.status(201).json({
@@ -204,6 +244,7 @@ router.post('/categories', async (req: AuthenticatedRequest, res: Response, next
         id,
         storeId: req.storeId,
         name: input.name,
+        nameLocal: input.nameLocal,
         sortOrder: input.sortOrder,
         isActive: input.isActive,
         createdAt: now,

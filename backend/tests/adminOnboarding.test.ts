@@ -3,6 +3,9 @@ import request from 'supertest';
 import { createServer } from '../src/server';
 import { runMigrations } from '../src/db/migrate';
 import { seedDatabase } from '../src/db/seed';
+import { config } from '../src/config';
+
+const ADMIN = config.adminKey;
 
 describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreSQL)', () => {
   let app: any;
@@ -30,14 +33,17 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
   });
 
   it('2. Successfully onboards a new merchant, provisions store, user & category, and enables login', async () => {
-    // 1. Onboard Merchant via Admin API
+    // 1. Onboard Merchant via Admin API (mode + language + PIN + UPI + catalogue)
     const onboardRes = await request(app)
-      .post('/api/admin/onboard-merchant?key=floq_admin_seed_secret')
+      .post(`/api/admin/onboard-merchant?key=${ADMIN}`)
       .send({
         merchantName: 'Vikram Singh',
         phone: '9123456789',
+        pin: '4321',
         storeName: 'Singh Refreshment',
         storeType: 'BREAKFAST',
+        mode: 'FOOD',
+        secondaryLanguage: 'hi',
         address: 'MG Road, Pune',
         upiId: 'vikram.singh@icici',
         upiName: 'Vikram Singh Store',
@@ -50,26 +56,18 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
     expect(onboardRes.body.storeId).toContain('store_singh_refreshment');
     expect(onboardRes.body.userId).toBe('user_9123456789');
 
-    // 2. Newly onboarded merchant requests OTP
-    const otpReqRes = await request(app)
-      .post('/api/auth/otp/request')
-      .send({ phone: '9123456789' });
+    // 2. Newly onboarded merchant logs in with phone + PIN
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ phone: '9123456789', pin: '4321' });
 
-    expect(otpReqRes.status).toBe(200);
-    expect(otpReqRes.body.success).toBe(true);
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.name).toBe('Vikram Singh');
+    expect(loginRes.body.merchantId).toBe(onboardRes.body.merchantId);
+    expect(loginRes.body.storeIds).toContain(onboardRes.body.storeId);
+    expect(loginRes.body.token).toBeDefined();
 
-    // 3. Newly onboarded merchant verifies OTP and gets JWT token
-    const otpVerifyRes = await request(app)
-      .post('/api/auth/otp/verify')
-      .send({ phone: '9123456789', otp: '123456' });
-
-    expect(otpVerifyRes.status).toBe(200);
-    expect(otpVerifyRes.body.name).toBe('Vikram Singh');
-    expect(otpVerifyRes.body.merchantId).toBe(onboardRes.body.merchantId);
-    expect(otpVerifyRes.body.storeIds).toContain(onboardRes.body.storeId);
-    expect(otpVerifyRes.body.token).toBeDefined();
-
-    const token = otpVerifyRes.body.token;
+    const token = loginRes.body.token;
 
     // 4. Merchant adds a custom product under their store
     const createProductRes = await request(app)
@@ -102,10 +100,11 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
 
   it('3. Idempotent onboarding for existing phone number returns existing merchant details without errors', async () => {
     const res = await request(app)
-      .post('/api/admin/onboard-merchant?key=floq_admin_seed_secret')
+      .post(`/api/admin/onboard-merchant?key=${ADMIN}`)
       .send({
         merchantName: 'Ramesh Sharma',
         phone: '9876543210',
+        pin: '1234',
         storeName: 'Sharma Corner',
       });
 

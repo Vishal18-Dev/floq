@@ -21,7 +21,9 @@ export interface CreateOrderParams {
   customerPhone?: string;
   source: OrderSource;
   items: {
-    productId: string;
+    productId?: string;
+    name?: string;
+    unitPrice?: number;
     quantity: number;
     modifiers?: { name: string; priceDelta: number }[];
   }[];
@@ -75,15 +77,32 @@ export class OrderEngine {
     }[] = [];
 
     for (const itemInput of params.items) {
-      const product = await queryOne('SELECT * FROM products WHERE id = $1 AND store_id = $2', [
-        itemInput.productId,
-        params.storeId,
-      ]);
-      if (!product) {
-        throw new Error(`Product not found with id: ${itemInput.productId} in store ${params.storeId}`);
+      let productId: string;
+      let productName: string;
+      let basePrice: number;
+
+      if (itemInput.productId) {
+        const product = await queryOne('SELECT * FROM products WHERE id = $1 AND store_id = $2', [
+          itemInput.productId,
+          params.storeId,
+        ]);
+        if (!product) {
+          throw new Error(`Product not found with id: ${itemInput.productId} in store ${params.storeId}`);
+        }
+        productId = product.id;
+        productName = product.name;
+        basePrice = Number(product.price);
+      } else {
+        // Ad-hoc line (quick-charge amount pad): no catalogue product.
+        if (itemInput.unitPrice === undefined || itemInput.unitPrice === null) {
+          throw new Error('Ad-hoc item requires a unitPrice');
+        }
+        productId = 'CUSTOM';
+        productName = itemInput.name || 'Quick sale';
+        basePrice = Number(itemInput.unitPrice);
       }
 
-      let unitPrice = Number(product.price);
+      let unitPrice = basePrice;
       if (itemInput.modifiers && itemInput.modifiers.length > 0) {
         for (const mod of itemInput.modifiers) {
           unitPrice += mod.priceDelta;
@@ -95,9 +114,9 @@ export class OrderEngine {
 
       computedItems.push({
         id: crypto.randomUUID(),
-        productId: product.id,
-        productName: product.name,
-        unitPrice: Number(product.price),
+        productId,
+        productName,
+        unitPrice: basePrice,
         quantity: itemInput.quantity,
         modifiersJson: itemInput.modifiers ? JSON.stringify(itemInput.modifiers) : null,
         itemSubtotal,
@@ -107,21 +126,27 @@ export class OrderEngine {
     const discount = params.discount || 0;
     const total = Math.max(0, subtotal - discount);
 
-    // 4. Determine initial order status & payment status
+    // 4. Determine initial order status & payment status.
+    // RETAIL stores have no kitchen queue: a counter sale is COMPLETED at charge
+    // time. FOOD stores enter the queue as ACCEPTED and advance through prep.
+    const isRetail = (store.mode || 'FOOD') === 'RETAIL';
     let initialStatus: OrderStatus = params.status || 'NEW';
     let paymentStatus: PaymentStatus = 'PENDING';
 
     if (params.source === 'STAFF_POS') {
-      if (params.immediatePayment) {
-        paymentStatus = 'SUCCESS';
-        initialStatus = 'ACCEPTED';
-      } else {
-        initialStatus = 'ACCEPTED';
+      paymentStatus = params.immediatePayment ? 'SUCCESS' : 'PENDING';
+      if (!params.status) {
+        initialStatus = isRetail ? 'COMPLETED' : 'ACCEPTED';
       }
     }
 
-    const acceptedAt = initialStatus === 'ACCEPTED' || initialStatus === 'PREPARING' ? now : null;
-    const preparingAt = initialStatus === 'PREPARING' ? now : null;
+    const acceptedAt =
+      initialStatus === 'ACCEPTED' || initialStatus === 'PREPARING' || initialStatus === 'READY' || initialStatus === 'COMPLETED'
+        ? now
+        : null;
+    const preparingAt = initialStatus === 'PREPARING' || initialStatus === 'READY' || initialStatus === 'COMPLETED' ? now : null;
+    const readyAt = initialStatus === 'READY' || initialStatus === 'COMPLETED' ? now : null;
+    const completedAt = initialStatus === 'COMPLETED' ? now : null;
 
     // Execute order creation in PostgreSQL transaction
     return transaction(async (client) => {
@@ -137,11 +162,11 @@ export class OrderEngine {
         `INSERT INTO orders (
           id, client_order_id, store_id, business_date, customer_id, source,
           status, payment_status, ticket_number, subtotal, discount, total,
-          notes, created_at, accepted_at, preparing_at, actor_id
+          notes, created_at, accepted_at, preparing_at, ready_at, completed_at, actor_id
         ) VALUES (
           $1, $2, $3, $4, $5, $6,
           $7, $8, $9, $10, $11, $12,
-          $13, $14, $15, $16, $17
+          $13, $14, $15, $16, $17, $18, $19
         )`,
         [
           orderId,
@@ -160,6 +185,8 @@ export class OrderEngine {
           now,
           acceptedAt,
           preparingAt,
+          readyAt,
+          completedAt,
           params.actorId || null,
         ]
       );
@@ -228,6 +255,8 @@ export class OrderEngine {
         createdAt: now,
         acceptedAt: acceptedAt || undefined,
         preparingAt: preparingAt || undefined,
+        readyAt: readyAt || undefined,
+        completedAt: completedAt || undefined,
         items: computedItems.map((i) => ({
           id: i.id,
           orderId,

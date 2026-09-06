@@ -87,11 +87,16 @@ npm install
 npm run build
 ```
 
-### 2. Database Setup & Seed
-Populate demo store **Sharma Breakfast Corner** and **Chai Point Express**:
+### 2. Database Setup
+Migrations run automatically on backend boot (no manual seed; production never
+auto-seeds or wipes). For local dev you can load demo merchants with:
 ```bash
-npm run seed
+npm run seed   # DEV ONLY — wipes and repopulates demo data
 ```
+
+Merchants are provisioned white-glove (phone + fixed PIN, no OTP). See
+[`docs/beta-runbook.md`](docs/beta-runbook.md) for onboarding real merchants and
+building the APK.
 
 ### 3. Run Development Servers
 Start both the backend server (port 4000) and the vendor merchant app (port 3000):

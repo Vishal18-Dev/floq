@@ -1,69 +1,49 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Icon, IconName } from '../common/Icon';
-import { colors, radius, spacing } from '../../theme';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { palette, fonts, borders } from '../../theme';
 import { HapticFeedback } from '../../services/haptics';
+import { useT } from '../../i18n';
+import type { StringKey } from '../../i18n/strings';
 
-export type TabType = 'SELL' | 'ORDERS' | 'QUEUE' | 'BUSINESS' | 'SETTINGS';
+export type TabType = 'SELL' | 'QUEUE' | 'DAY' | 'SETTINGS';
 
 interface BottomNavProps {
   activeTab: TabType;
   onChangeTab: (tab: TabType) => void;
-  newOrdersCount: number;
-  activeQueueCount: number;
+  showQueue: boolean; // FOOD mode only
+  queueCount: number;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({
-  activeTab,
-  onChangeTab,
-  newOrdersCount,
-  activeQueueCount,
-}) => {
-  const tabs: { id: TabType; label: string; icon: IconName; badge?: number }[] = [
-    { id: 'SELL', label: 'Sell', icon: 'shopping-bag' },
-    { id: 'ORDERS', label: 'Orders', icon: 'receipt', badge: newOrdersCount },
-    { id: 'QUEUE', label: 'Queue', icon: 'list-ordered', badge: activeQueueCount },
-    { id: 'BUSINESS', label: 'Business', icon: 'bar-chart' },
-    { id: 'SETTINGS', label: 'More', icon: 'settings' },
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, showQueue, queueCount }) => {
+  const { bi } = useT();
+
+  const tabs: { key: TabType; k: StringKey; badge?: number }[] = [
+    { key: 'SELL', k: 'sell' },
+    ...(showQueue ? [{ key: 'QUEUE' as TabType, k: 'queue' as StringKey, badge: queueCount }] : []),
+    { key: 'DAY', k: 'day' },
   ];
 
   return (
-    <View style={styles.navBarContainer}>
+    <View style={styles.container}>
       {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        const iconColor = isActive ? colors.primary : colors.textSecondary;
-
+        const active = activeTab === tab.key;
+        const label = bi(tab.k);
         return (
           <TouchableOpacity
-            key={tab.id}
-            style={styles.tabButton}
+            key={tab.key}
+            style={[styles.tab, active && styles.tabActive]}
             activeOpacity={0.7}
-            onPress={() => {
-              HapticFeedback.light();
-              onChangeTab(tab.id);
-            }}
+            onPress={() => { HapticFeedback.light(); onChangeTab(tab.key); }}
           >
-            <View style={styles.iconContainer}>
-              <Icon name={tab.icon} size={22} color={iconColor} />
-              {tab.badge !== undefined && tab.badge > 0 && (
-                <View style={styles.badgeContainer}>
-                  <Text style={styles.badgeText}>
-                    {tab.badge > 9 ? '9+' : tab.badge}
-                  </Text>
-                </View>
-              )}
+            <View style={styles.tabInner}>
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label.primary}</Text>
+              {tab.badge ? (
+                <View style={styles.badge}><Text style={styles.badgeText}>{tab.badge}</Text></View>
+              ) : null}
             </View>
-
-            <Text
-              style={[
-                styles.tabLabel,
-                isActive ? styles.tabLabelActive : styles.tabLabelInactive,
-              ]}
-            >
-              {tab.label}
-            </Text>
-
-            {isActive && <View style={styles.activeDot} />}
+            {label.secondary ? (
+              <Text style={[styles.tabLabelLocal, active && styles.tabLabelActive]}>{label.secondary}</Text>
+            ) : null}
           </TouchableOpacity>
         );
       })}
@@ -72,65 +52,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 };
 
 const styles = StyleSheet.create({
-  navBarContainer: {
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  container: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    height: Platform.OS === 'android' ? 62 : 72,
-    paddingBottom: Platform.OS === 'android' ? 6 : 18,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    backgroundColor: palette.divider,
+    gap: borders.rule,
+    borderTopWidth: borders.rule,
+    borderTopColor: palette.divider,
   },
-  tabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    paddingTop: 4,
-  },
-  iconContainer: {
-    position: 'relative',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: -4,
-    right: -10,
-    backgroundColor: '#e11d48',
-    borderRadius: radius.full,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: '900',
-  },
-  tabLabel: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  tabLabelActive: {
-    color: colors.primary,
-    fontWeight: '800',
-  },
-  tabLabelInactive: {
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.primary,
-    marginTop: 2,
-  },
+  tab: { flex: 1, backgroundColor: palette.bg, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  tabActive: { backgroundColor: palette.ink },
+  tabInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tabLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.neutral[700] },
+  tabLabelLocal: { fontFamily: fonts.body, fontSize: 11, color: palette.neutral[600], marginTop: 1 },
+  tabLabelActive: { color: palette.onAccent },
+  badge: { minWidth: 20, height: 20, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 11, color: palette.onAccent },
 });

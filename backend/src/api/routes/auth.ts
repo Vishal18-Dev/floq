@@ -1,30 +1,21 @@
 import { Router, Response } from 'express';
 import { authService } from '../../services/authService';
-import { AuthLoginSchema, OTPVerifySchema } from '@floq/validation';
+import { PinLoginSchema } from '@floq/validation';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
 import { queryOne } from '../../db';
 
 const router = Router();
 
-// POST /api/auth/otp/request
-router.post('/otp/request', async (req, res, next) => {
+// POST /api/auth/login — phone + fixed PIN
+router.post('/login', async (req, res, next) => {
   try {
-    const input = AuthLoginSchema.parse(req.body);
-    const result = await authService.requestOTP(input.phone);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /api/auth/otp/verify
-router.post('/otp/verify', async (req, res, next) => {
-  try {
-    const input = OTPVerifySchema.parse(req.body);
-    const session = await authService.verifyOTP(input.phone, input.otp);
+    const input = PinLoginSchema.parse(req.body);
+    const session = await authService.login(input.phone, input.pin);
     res.json(session);
-  } catch (err) {
-    next(err);
+  } catch (err: any) {
+    // Auth failures are 401, not 500, so the client shows a clean message.
+    if (err?.name === 'ZodError') return next(err);
+    res.status(401).json({ error: 'AUTH_FAILED', message: err?.message || 'Login failed' });
   }
 });
 

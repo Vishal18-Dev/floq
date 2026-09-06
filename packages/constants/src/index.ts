@@ -153,4 +153,9 @@ export const VOICE_TEMPLATES = {
     ready: (ticket: string) => `टोकन ${ticket} तयार आहे.`,
     delayed: (ticket: string, minutes: number) => `टोकन ${ticket} ला ${minutes} मिनिटे झाली आहेत.`,
   },
+  'ta-IN': {
+    newOrder: (ticket: string, itemsSummary: string) => `டோக்கன் ${ticket}. ${itemsSummary}.`,
+    ready: (ticket: string) => `டோக்கன் ${ticket} தயார்.`,
+    delayed: (ticket: string, minutes: number) => `டோக்கன் ${ticket} ${minutes} நிமிடங்கள் காத்திருக்கிறது.`,
+  },
 };

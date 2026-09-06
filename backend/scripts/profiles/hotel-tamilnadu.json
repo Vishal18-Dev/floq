@@ -1,0 +1,26 @@
+{
+  "merchantName": "Hotel TamilNadu",
+  "phone": "REPLACE_WITH_10_DIGIT_PHONE",
+  "pin": "REPLACE_WITH_PIN",
+  "storeName": "Hotel TamilNadu",
+  "storeNameLocal": "ஹோட்டல் தமிழ்நாடு",
+  "storeType": "FOOD_STALL",
+  "mode": "FOOD",
+  "secondaryLanguage": "ta",
+  "address": "",
+  "upiId": "REPLACE_WITH_UPI_ID",
+  "upiName": "Hotel TamilNadu",
+  "typicalPrepTimeMinutes": 6,
+  "items": [
+    { "name": "Idly", "nameLocal": "இட்லி", "price": 30, "category": "Tiffin", "station": "HOT_FOOD" },
+    { "name": "Medu Vada", "nameLocal": "மெது வடை", "price": 30, "category": "Tiffin", "station": "HOT_FOOD" },
+    { "name": "Sambar Vada", "nameLocal": "சாம்பார் வடை", "price": 40, "category": "Tiffin", "station": "HOT_FOOD" },
+    { "name": "Pongal", "nameLocal": "பொங்கல்", "price": 45, "category": "Tiffin", "station": "HOT_FOOD" },
+    { "name": "Plain Dosa", "nameLocal": "தோசை", "price": 40, "category": "Dosa", "station": "HOT_FOOD" },
+    { "name": "Masala Dosa", "nameLocal": "மசாலா தோசை", "price": 60, "category": "Dosa", "station": "HOT_FOOD" },
+    { "name": "Rava Dosa", "nameLocal": "ரவா தோசை", "price": 65, "category": "Dosa", "station": "HOT_FOOD" },
+    { "name": "Ghee Roast", "nameLocal": "நெய் ரோஸ்ட்", "price": 90, "category": "Dosa", "station": "HOT_FOOD" },
+    { "name": "Filter Coffee", "nameLocal": "பில்டர் காபி", "price": 25, "category": "Drinks", "station": "BEVERAGE" },
+    { "name": "Tea", "nameLocal": "டீ", "price": 15, "category": "Drinks", "station": "BEVERAGE" }
+  ]
+}

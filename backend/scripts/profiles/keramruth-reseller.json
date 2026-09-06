@@ -1,0 +1,23 @@
+{
+  "merchantName": "REPLACE_WITH_OWNER_NAME",
+  "phone": "REPLACE_WITH_10_DIGIT_PHONE",
+  "pin": "REPLACE_WITH_PIN",
+  "storeName": "REPLACE_WITH_STORE_NAME (Keramruth / Swadeshi Disha)",
+  "storeType": "GROCERY",
+  "mode": "RETAIL",
+  "secondaryLanguage": "hi",
+  "address": "",
+  "upiId": "REPLACE_WITH_UPI_ID",
+  "upiName": "REPLACE_WITH_STORE_NAME",
+  "typicalPrepTimeMinutes": 1,
+  "items": [
+    { "name": "Wood-pressed Groundnut Oil 1L", "nameLocal": "लकड़ी घानी मूंगफली तेल 1L", "price": 320, "category": "Oils", "station": "PACKAGED" },
+    { "name": "Wood-pressed Coconut Oil 1L", "nameLocal": "लकड़ी घानी नारियल तेल 1L", "price": 480, "category": "Oils", "station": "PACKAGED" },
+    { "name": "A2 Cow Ghee 500ml", "nameLocal": "A2 गाय घी 500ml", "price": 750, "category": "Dairy", "station": "PACKAGED" },
+    { "name": "Raw Forest Honey 500g", "nameLocal": "कच्चा शहद 500g", "price": 350, "category": "Grocery", "station": "PACKAGED" },
+    { "name": "Organic Jaggery Powder 1kg", "nameLocal": "जैविक गुड़ पाउडर 1kg", "price": 120, "category": "Grocery", "station": "PACKAGED" },
+    { "name": "Turmeric Powder 250g", "nameLocal": "हल्दी पाउडर 250g", "price": 90, "category": "Grocery", "station": "PACKAGED" },
+    { "name": "Herbal Tea 100g", "nameLocal": "हर्बल चाय 100g", "price": 150, "category": "Grocery", "station": "PACKAGED" },
+    { "name": "Hand-pounded Rice 5kg", "nameLocal": "हाथ कुटा चावल 5kg", "price": 450, "category": "Grocery", "station": "PACKAGED" }
+  ]
+}
