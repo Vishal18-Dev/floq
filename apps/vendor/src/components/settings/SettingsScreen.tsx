@@ -1,382 +1,114 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  StyleSheet,
-} from 'react-native';
-import { Store, StoreSettings, VoiceLanguage } from '@floq/types';
-import { STORE_TEMPLATES } from '@floq/constants';
-import { VoiceConfig } from '../../services/voice';
-import { Icon } from '../common/Icon';
-import { colors, radius, shadow, spacing } from '../../theme';
-import { HapticFeedback } from '../../services/haptics';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { palette, fonts, borders, spacing } from '../../theme';
+import { useStoreStore } from '../../store/useStoreStore';
+import { voiceService } from '../../services/voice';
+import { SECONDARY_LANGUAGE_LABELS } from '../../i18n';
+import type { SecondaryLanguage } from '../../i18n/strings';
+import { Kicker } from '../common/ui';
 
-interface SettingsScreenProps {
-  store: Store | null;
-  settings: StoreSettings | null;
-  voiceConfig: VoiceConfig;
-  staff: any[];
-  devices: any[];
-  onUpdateSettings: (settings: Partial<StoreSettings>) => Promise<void>;
-  onUpdateVoiceConfig: (config: Partial<VoiceConfig>) => void;
-  onApplyTemplate: (templateKey: string) => Promise<void>;
-  onTestVoice: () => void;
-}
+const LANGS: SecondaryLanguage[] = ['none', 'ta', 'hi', 'mr'];
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({
-  store,
-  settings,
-  voiceConfig,
-  staff,
-  devices,
-  onUpdateSettings,
-  onUpdateVoiceConfig,
-  onApplyTemplate,
-  onTestVoice,
-}) => {
-  const languages: { id: VoiceLanguage; label: string }[] = [
-    { id: 'en-IN', label: 'English (India)' },
-    { id: 'hi-IN', label: 'हिंदी (Hindi)' },
-    { id: 'mr-IN', label: 'मराठी (Marathi)' },
-  ];
+export function SettingsScreen({ onManageItems, onLogout, onBack }: { onManageItems: () => void; onLogout: () => void; onBack: () => void }) {
+  const store = useStoreStore((s) => s.store);
+  const settings = useStoreStore((s) => s.settings);
+  const updateSettings = useStoreStore((s) => s.updateSettings);
+
+  const [upiId, setUpiId] = useState(settings?.upiId || '');
+  const [saving, setSaving] = useState(false);
+
+  const setLang = async (lang: SecondaryLanguage) => {
+    try { await updateSettings({ secondaryLanguage: lang }); } catch {}
+  };
+  const toggleVoice = async () => {
+    const next = !(settings?.voiceEnabled ?? true);
+    voiceService.updateConfig({ enabled: next });
+    try { await updateSettings({ voiceEnabled: next }); } catch {}
+  };
+  const saveUpi = async () => {
+    setSaving(true);
+    try { await updateSettings({ upiId: upiId.trim() }); Alert.alert('Saved', 'UPI ID updated.'); }
+    catch (e: any) { Alert.alert('Could not save', e?.message || 'Try again.'); }
+    finally { setSaving(false); }
+  };
 
   return (
-    <ScrollView style={styles.screenContainer} contentContainerStyle={styles.scrollPadding}>
-      {/* 1. Store Profile Card */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>STORE PROFILE</Text>
-        <View style={styles.profileRow}>
-          <View style={styles.storeIconBox}>
-            <Icon name="store" size={24} color="#ffffff" />
+    <ScrollView style={styles.screen}>
+      <View style={styles.head}>
+        <TouchableOpacity onPress={onBack}><Text style={styles.back}>← Back</Text></TouchableOpacity>
+        <Text style={styles.title}>{store?.name || 'Settings'}</Text>
+        <Text style={styles.sub}>{store?.mode === 'RETAIL' ? 'Retail store' : 'Food counter'} · {store?.phone || ''}</Text>
+      </View>
+
+      {/* Language */}
+      <View style={styles.section}><Kicker>SECOND LANGUAGE</Kicker></View>
+      <View style={styles.langRow}>
+        {LANGS.map((l) => (
+          <TouchableOpacity key={l} style={[styles.langChip, settings?.secondaryLanguage === l && styles.langChipActive]} onPress={() => setLang(l)}>
+            <Text style={[styles.langText, settings?.secondaryLanguage === l && styles.langTextActive]}>{SECONDARY_LANGUAGE_LABELS[l]}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Voice (food only) */}
+      {store?.mode !== 'RETAIL' && (
+        <TouchableOpacity style={styles.row} onPress={toggleVoice}>
+          <View><Text style={styles.rowLabel}>Voice call-outs</Text><Text style={styles.rowSub}>Announce “token ready” aloud</Text></View>
+          <View style={[styles.switch, (settings?.voiceEnabled ?? true) && styles.switchOn]}>
+            <Text style={styles.switchText}>{(settings?.voiceEnabled ?? true) ? 'ON' : 'OFF'}</Text>
           </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.storeName}>{store?.name || 'Sharma Breakfast Corner'}</Text>
-            <Text style={styles.storeAddress}>{store?.address || 'Shop 4, MG Road Market'}</Text>
-            <Text style={styles.storeHours}>
-              Hours: {store?.openingTime || '06:30'} – {store?.closingTime || '22:00'}
-            </Text>
-          </View>
-        </View>
+        </TouchableOpacity>
+      )}
+
+      {/* UPI */}
+      <View style={styles.section}><Kicker>UPI ID (FOR QR)</Kicker></View>
+      <View style={styles.upiRow}>
+        <TextInput style={styles.input} value={upiId} onChangeText={setUpiId} placeholder="name@bank" placeholderTextColor={palette.neutral[500]} autoCapitalize="none" />
+        <TouchableOpacity style={styles.saveBtn} onPress={saveUpi} disabled={saving}><Text style={styles.saveText}>{saving ? '…' : 'SAVE'}</Text></TouchableOpacity>
       </View>
+      {!upiId ? <Text style={styles.warn}>No UPI ID set — the UPI QR is hidden until you add one. Cash still works.</Text> : null}
 
-      {/* 2. Voice Announcements Settings */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>VOICE ANNOUNCEMENTS</Text>
-        
-        {/* Toggle */}
-        <View style={styles.settingRow}>
-          <View style={styles.settingTextContainer}>
-            <Text style={styles.settingLabel}>Enable Voice Announcements</Text>
-            <Text style={styles.settingHint}>Speaks incoming orders & ready tokens</Text>
-          </View>
-          <Switch
-            value={voiceConfig.enabled}
-            onValueChange={(val) => {
-              HapticFeedback.light();
-              onUpdateVoiceConfig({ enabled: val });
-              onUpdateSettings({ voiceEnabled: val });
-            }}
-            trackColor={{ false: '#cbd5e1', true: '#86efac' }}
-            thumbColor={voiceConfig.enabled ? '#16a34a' : '#f1f5f9'}
-          />
-        </View>
+      {/* Manage items */}
+      <TouchableOpacity style={styles.bigRow} onPress={onManageItems}>
+        <Text style={styles.bigRowText}>MANAGE ITEMS & PRICES →</Text>
+      </TouchableOpacity>
 
-        {/* Language Selection */}
-        {voiceConfig.enabled && (
-          <View style={styles.langSection}>
-            <Text style={styles.subLabel}>VOICE LANGUAGE</Text>
-            <View style={styles.langGrid}>
-              {languages.map((lang) => {
-                const isSelected = voiceConfig.language === lang.id;
+      {/* Logout */}
+      <TouchableOpacity style={styles.logout} onPress={() => Alert.alert('Log out?', 'You will need your PIN to log back in.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: onLogout }])}>
+        <Text style={styles.logoutText}>LOG OUT</Text>
+      </TouchableOpacity>
 
-                return (
-                  <TouchableOpacity
-                    key={lang.id}
-                    style={[
-                      styles.langBtn,
-                      isSelected && styles.langBtnActive,
-                    ]}
-                    onPress={() => {
-                      HapticFeedback.light();
-                      onUpdateVoiceConfig({ language: lang.id });
-                      onUpdateSettings({ voiceLanguage: lang.id });
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.langBtnText,
-                        isSelected && styles.langBtnTextActive,
-                      ]}
-                    >
-                      {lang.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Test Voice Button */}
-            <TouchableOpacity
-              style={styles.testVoiceBtn}
-              onPress={() => {
-                HapticFeedback.medium();
-                onTestVoice();
-              }}
-              activeOpacity={0.8}
-            >
-              <Icon name="volume-2" size={14} color="#0f172a" />
-              <Text style={styles.testVoiceText}>TEST VOICE ANNOUNCEMENT</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* 3. Operational SLA */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>PREPARATION SLA TARGET</Text>
-        <View style={styles.slaRow}>
-          <Text style={styles.settingLabel}>Target Prep Time</Text>
-          <Text style={styles.slaBadge}>
-            {settings?.typicalPrepTimeMinutes || 6} minutes
-          </Text>
-        </View>
-        <Text style={styles.settingHint}>
-          Orders taking longer will automatically show a ⚠️ Delayed warning badge.
-        </Text>
-      </View>
-
-      {/* 4. Switch Merchant Preset Store Templates */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>MERCHANT DEMO PRESETS</Text>
-        <Text style={styles.settingHint}>
-          Quickly switch menu and settings to demonstrate different physical shop formats:
-        </Text>
-
-        <View style={styles.templatesContainer}>
-          {Object.entries(STORE_TEMPLATES).map(([key, template]) => (
-            <TouchableOpacity
-              key={key}
-              style={styles.templateCard}
-              onPress={() => {
-                HapticFeedback.medium();
-                onApplyTemplate(key);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.templateInfo}>
-                <Text style={styles.templateName}>{template.name}</Text>
-                <Text style={styles.templateType}>{template.storeType.replace('_', ' ')}</Text>
-              </View>
-              <Icon name="arrow-right" size={14} color="#64748b" />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* 5. Connected Devices & Staff */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>REGISTERED DEVICES & STAFF</Text>
-        <View style={styles.deviceRow}>
-          <Icon name="smartphone" size={16} color="#16a34a" />
-          <Text style={styles.deviceText}>
-            This Device (Counter Main POS • Android)
-          </Text>
-        </View>
-        <View style={styles.deviceRow}>
-          <Icon name="users" size={16} color="#0284c7" />
-          <Text style={styles.deviceText}>
-            Logged In: Counter Staff (Full POS Access)
-          </Text>
-        </View>
-      </View>
+      <Text style={styles.version}>FLOQ Merchant · beta</Text>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollPadding: {
-    padding: spacing.md,
-    gap: spacing.md,
-    paddingBottom: 32,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.sm,
-  },
-  sectionTitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#64748b',
-    letterSpacing: 0.8,
-    marginBottom: spacing.sm,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  storeIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: '#0f172a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  storeName: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: colors.textPrimary,
-  },
-  storeAddress: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  storeHours: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  settingTextContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  settingLabel: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  settingHint: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  langSection: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-  },
-  subLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#64748b',
-    marginBottom: 8,
-  },
-  langGrid: {
-    gap: 6,
-  },
-  langBtn: {
-    backgroundColor: '#f8fafc',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  langBtnActive: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
-  },
-  langBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  langBtnTextActive: {
-    color: '#ffffff',
-  },
-  testVoiceBtn: {
-    backgroundColor: '#f1f5f9',
-    height: 40,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 10,
-  },
-  testVoiceText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#0f172a',
-    letterSpacing: 0.5,
-  },
-  slaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  slaBadge: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: colors.primary,
-    backgroundColor: colors.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-  },
-  templatesContainer: {
-    marginTop: 10,
-    gap: 6,
-  },
-  templateCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  templateInfo: {
-    flex: 1,
-  },
-  templateName: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  templateType: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    marginTop: 1,
-  },
-  deviceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
-  },
-  deviceText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
+  screen: { flex: 1, backgroundColor: palette.bg },
+  head: { padding: 16, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
+  back: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], marginBottom: 10 },
+  title: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, letterSpacing: -0.5, color: palette.ink },
+  sub: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[700], marginTop: 2 },
+  section: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 6 },
+  langRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
+  langChip: { borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 10 },
+  langChipActive: { backgroundColor: palette.ink, borderColor: palette.ink },
+  langText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.ink },
+  langTextActive: { color: palette.onAccent },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, marginTop: 12, borderTopWidth: borders.rule, borderBottomWidth: borders.rule, borderColor: palette.divider },
+  rowLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 15, color: palette.ink },
+  rowSub: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[700], marginTop: 2 },
+  switch: { borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 6 },
+  switchOn: { backgroundColor: palette.accent, borderColor: palette.accent },
+  switchText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, color: palette.ink },
+  upiRow: { flexDirection: 'row', gap: borders.rule, paddingHorizontal: 16, alignItems: 'stretch' },
+  input: { flex: 1, borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 12, fontFamily: fonts.semibold, fontSize: 15, color: palette.ink, backgroundColor: palette.surface },
+  saveBtn: { backgroundColor: palette.ink, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
+  saveText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, color: palette.onAccent },
+  warn: { fontFamily: fonts.body, fontSize: 12, color: palette.accentRamp[700], paddingHorizontal: 16, paddingTop: 8 },
+  bigRow: { margin: 16, borderWidth: borders.rule, borderColor: palette.divider, paddingVertical: 16, alignItems: 'center' },
+  bigRowText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.ink },
+  logout: { marginHorizontal: 16, backgroundColor: palette.accent, paddingVertical: 16, alignItems: 'center' },
+  logoutText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 1, color: palette.onAccent },
+  version: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[500], textAlign: 'center', padding: 24 },
 });

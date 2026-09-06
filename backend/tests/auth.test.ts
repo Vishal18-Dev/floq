@@ -47,28 +47,37 @@ describe('P0-1 Authentication & Authorization Security Tests', () => {
     expect(res.body.error).toBe('FORBIDDEN');
   });
 
-  it('5. OTP Request and Verification Flow issues valid JWT session token', async () => {
-    const reqRes = await request(app)
-      .post('/api/auth/otp/request')
-      .send({ phone: '9876543210' });
+  it('5. PIN login issues a valid JWT session token', async () => {
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ phone: '9876543210', pin: '1234' });
 
-    expect(reqRes.status).toBe(200);
-    expect(reqRes.body.success).toBe(true);
-
-    const verifyRes = await request(app)
-      .post('/api/auth/otp/verify')
-      .send({ phone: '9876543210', otp: '123456' });
-
-    expect(verifyRes.status).toBe(200);
-    expect(verifyRes.body.token).toBeDefined();
-    expect(verifyRes.body.merchantId).toBe('merchant_sharma_01');
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.token).toBeDefined();
+    expect(loginRes.body.merchantId).toBe('merchant_sharma_01');
 
     const profileRes = await request(app)
       .get('/api/auth/me')
-      .set('Authorization', `Bearer ${verifyRes.body.token}`)
+      .set('Authorization', `Bearer ${loginRes.body.token}`)
       .set('x-store-id', 'store_sharma_01');
 
     expect(profileRes.status).toBe(200);
     expect(profileRes.body.phone).toBe('9876543210');
+  });
+
+  it('6. Wrong PIN is rejected with 401 and no token', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ phone: '9876543210', pin: '9999' });
+    expect(res.status).toBe(401);
+    expect(res.body.token).toBeUndefined();
+  });
+
+  it('7. Unregistered phone cannot log in (no auto-provisioning)', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ phone: '9000000000', pin: '1234' });
+    expect(res.status).toBe(401);
+    expect(res.body.token).toBeUndefined();
   });
 });

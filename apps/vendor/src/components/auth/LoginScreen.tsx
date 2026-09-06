@@ -1,243 +1,117 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
-import { api } from '../../services/api';
+import { palette, fonts, borders, spacing } from '../../theme';
+import { Numpad, PrimaryBar, Kicker } from '../common/ui';
+
+const PIN_LEN = 4;
 
 export function LoginScreen() {
-  const [phone, setPhone] = useState('9876543210');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
-  const [isSending, setIsSending] = useState(false);
-  const [isMock, setIsMock] = useState(true);
+  const [step, setStep] = useState<'PHONE' | 'PIN'>('PHONE');
+  const [phone, setPhone] = useState('');
+  const [pin, setPin] = useState('');
+  const { loginWithPin, isLoading, error, clearError } = useAuthStore();
 
-  const { loginWithOTP, isLoading, error, clearError } = useAuthStore();
-
-  const handleRequestOTP = async () => {
-    if (phone.trim().length < 10) {
-      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    try {
-      setIsSending(true);
-      clearError();
-      const res = await api.requestOTP(phone);
-      setIsMock(res.isMock);
-      setStep('OTP');
-      if (res.isMock) {
-        setOtp('123456');
-      }
-    } catch (err: any) {
-      Alert.alert('OTP Request Failed', err.message || 'Unable to send OTP.');
-    } finally {
-      setIsSending(false);
-    }
+  const onPhoneKey = (d: string) => {
+    if (phone.length >= 10) return;
+    setPhone(phone + d);
+  };
+  const onPinKey = (d: string) => {
+    if (pin.length >= 6) return;
+    const next = pin + d;
+    setPin(next);
   };
 
-  const handleVerifyOTP = async () => {
-    if (!otp.trim()) {
-      Alert.alert('Enter OTP', 'Please enter the verification code.');
-      return;
-    }
-
+  const handleLogin = async () => {
     try {
       clearError();
-      await loginWithOTP(phone, otp);
-    } catch (err: any) {
-      Alert.alert('Verification Failed', err.message || 'Invalid OTP code.');
+      await loginWithPin(phone, pin);
+    } catch {
+      setPin('');
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View var-card style={styles.card}>
-        <Text style={styles.logoText}>⚡ FLOQ Merchant</Text>
-        <Text style={styles.subtitle}>Counter POS & Order Fulfillment</Text>
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        {step === 'PHONE' ? (
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Mobile Number</Text>
-            <View style={styles.phoneInputRow}>
-              <Text style={styles.countryCode}>+91</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                maxLength={10}
-                placeholder="Enter 10-digit number"
-                placeholderTextColor="#94A3B8"
-              />
-            </View>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleRequestOTP}
-              disabled={isSending}
-            >
-              {isSending ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.buttonText}>Get Verification Code →</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Verification Code (OTP)</Text>
-            <Text style={styles.infoText}>
-              Sent to +91 {phone} {isMock ? '(Development Code: 123456)' : ''}
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={6}
-              placeholder="Enter 6-digit OTP"
-              placeholderTextColor="#94A3B8"
-              autoFocus
-            />
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleVerifyOTP}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.buttonText}>Verify & Launch POS →</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setStep('PHONE')}
-            >
-              <Text style={styles.backButtonText}>← Change Phone Number</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+    <SafeAreaView style={styles.container}>
+      {/* Brand */}
+      <View style={styles.brand}>
+        <Text style={styles.wordmark}>FLOQ</Text>
+        <View style={styles.rule} />
+        <Text style={styles.tagline}>Counter POS</Text>
       </View>
-    </KeyboardAvoidingView>
+
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
+      {step === 'PHONE' ? (
+        <View style={styles.body}>
+          <View style={styles.displayArea}>
+            <Kicker>YOUR PHONE NUMBER</Kicker>
+            <Text style={styles.bigValue}>{phone ? `+91 ${phone}` : '+91'}</Text>
+          </View>
+          <Numpad onKey={onPhoneKey} onBackspace={() => setPhone(phone.slice(0, -1))} />
+          <PrimaryBar
+            label="NEXT →"
+            disabled={phone.length !== 10}
+            onPress={() => {
+              clearError();
+              setStep('PIN');
+            }}
+          />
+        </View>
+      ) : (
+        <View style={styles.body}>
+          <View style={styles.displayArea}>
+            <Kicker>ENTER YOUR PIN</Kicker>
+            <View style={styles.pinDots}>
+              {Array.from({ length: Math.max(PIN_LEN, pin.length) }).map((_, i) => (
+                <View key={i} style={[styles.pinDot, i < pin.length && styles.pinDotFilled]} />
+              ))}
+            </View>
+            <Text style={styles.phoneHint}>+91 {phone}</Text>
+          </View>
+          <Numpad onKey={onPinKey} onBackspace={() => setPin(pin.slice(0, -1))} />
+          {isLoading ? (
+            <View style={styles.loadingBar}>
+              <ActivityIndicator color={palette.onAccent} />
+            </View>
+          ) : (
+            <PrimaryBar label="LOG IN →" disabled={pin.length < PIN_LEN} onPress={handleLogin} />
+          )}
+          <Text
+            style={styles.changeNumber}
+            onPress={() => {
+              setStep('PHONE');
+              setPin('');
+              clearError();
+            }}
+          >
+            ← Change number
+          </Text>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    padding: 28,
-    borderWidth: 1,
-    borderColor: '#334155',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#F8FAFC',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginBottom: 28,
-  },
-  formGroup: {
-    gap: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#CBD5E1',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  phoneInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-    paddingHorizontal: 16,
-  },
-  countryCode: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F59E0B',
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    height: 52,
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: '#3B82F6',
-    height: 52,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#38BDF8',
-    marginBottom: 4,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 13,
-    backgroundColor: '#450A0A',
-    padding: 10,
-    borderRadius: 8,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  backButton: {
-    marginTop: 12,
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  container: { flex: 1, backgroundColor: palette.bg },
+  brand: { paddingHorizontal: spacing.xxl, paddingTop: spacing.xxl, paddingBottom: spacing.lg },
+  wordmark: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 56, letterSpacing: -3, color: palette.ink },
+  rule: { width: 56, height: 6, backgroundColor: palette.accent, marginTop: 10 },
+  tagline: { fontFamily: fonts.body, fontSize: 15, color: palette.neutral[700], marginTop: 12 },
+  body: { flex: 1, justifyContent: 'flex-end' },
+  displayArea: { paddingHorizontal: spacing.xxl, paddingBottom: spacing.lg, flex: 1, justifyContent: 'center' },
+  bigValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 40, letterSpacing: -1, color: palette.ink, marginTop: 10 },
+  pinDots: { flexDirection: 'row', gap: 16, marginTop: 20 },
+  pinDot: { width: 20, height: 20, borderWidth: borders.rule, borderColor: palette.divider },
+  pinDotFilled: { backgroundColor: palette.accent, borderColor: palette.accent },
+  phoneHint: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600], marginTop: 18 },
+  errorBox: { marginHorizontal: spacing.xxl, backgroundColor: palette.accentRamp[100], borderLeftWidth: 4, borderLeftColor: palette.accent, padding: 12 },
+  errorText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.accentRamp[800] },
+  loadingBar: { minHeight: 78, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' },
+  changeNumber: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], textAlign: 'center', paddingVertical: 16 },
 });

@@ -43,10 +43,19 @@ export async function runMigrations(): Promise<void> {
       const sqlContent = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
 
       if (config.isTest && !process.env.DATABASE_URL) {
+        // pg-mem can't run a multi-statement string, so we split on ';'. Strip
+        // line comments FROM EACH chunk (not just chunks that start with '--'),
+        // otherwise a statement preceded by a comment line gets silently dropped.
         const statements = sqlContent
           .split(';')
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0 && !s.startsWith('--'));
+          .map((s) =>
+            s
+              .split('\n')
+              .filter((line) => !line.trimStart().startsWith('--'))
+              .join('\n')
+              .trim()
+          )
+          .filter((s) => s.length > 0);
 
         await transaction(async (client) => {
           for (const stmt of statements) {

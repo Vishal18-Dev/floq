@@ -11,7 +11,10 @@ export function getPool(): any {
   if (config.isTest && !process.env.DATABASE_URL) {
     // Dynamic import so esbuild does NOT bundle pg-mem into production artifacts
     const { newDb } = require('pg-mem');
-    memDbInstance = newDb();
+    // noAstCoverageCheck: don't treat "AST parts not read by planner" (e.g. an
+    // inline PRIMARY KEY on a CREATE TABLE IF NOT EXISTS that already exists) as
+    // a fatal error — real Postgres accepts these fine.
+    memDbInstance = newDb({ noAstCoverageCheck: true });
 
     memDbInstance.public.registerFunction({
       name: 'now',

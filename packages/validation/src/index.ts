@@ -49,25 +49,34 @@ export const PaymentStatusEnum = z.enum([
 
 export const PaymentMethodEnum = z.enum(['UPI', 'CASH', 'OTHER']);
 
-export const VoiceLanguageEnum = z.enum(['en-IN', 'hi-IN', 'mr-IN']);
+export const VoiceLanguageEnum = z.enum(['en-IN', 'hi-IN', 'mr-IN', 'ta-IN']);
 export const VoiceVerbosityEnum = z.enum(['BRIEF', 'DETAILED']);
+export const SecondaryLanguageEnum = z.enum(['ta', 'hi', 'mr', 'none']);
+export const StoreModeEnum = z.enum(['FOOD', 'RETAIL']);
 
 export const StaffRoleEnum = z.enum(['OWNER', 'MANAGER', 'STAFF']);
 export const DeviceRoleEnum = z.enum(['VENDOR', 'KITCHEN', 'DISPLAY']);
 
-// Order Item Input
-export const OrderItemInputSchema = z.object({
-  productId: z.string().min(1, 'Product ID is required'),
-  quantity: z.number().int().positive('Quantity must be at least 1'),
-  modifiers: z
-    .array(
-      z.object({
-        name: z.string(),
-        priceDelta: z.number(),
-      })
-    )
-    .optional(),
-});
+// Order Item Input. Either a catalogue productId, OR an ad-hoc line
+// (name + unitPrice) used by the quick-charge amount pad.
+export const OrderItemInputSchema = z
+  .object({
+    productId: z.string().optional(),
+    name: z.string().optional(),
+    unitPrice: z.number().nonnegative().optional(),
+    quantity: z.number().int().positive('Quantity must be at least 1'),
+    modifiers: z
+      .array(
+        z.object({
+          name: z.string(),
+          priceDelta: z.number(),
+        })
+      )
+      .optional(),
+  })
+  .refine((v) => !!v.productId || (!!v.name && v.unitPrice !== undefined), {
+    message: 'Item needs a productId or a name + unitPrice',
+  });
 
 // Create Order Schema (Unified for STAFF_POS & CUSTOMER_QR)
 export const CreateOrderSchema = z.object({
@@ -118,6 +127,7 @@ export type ConfirmPaymentInput = z.input<typeof ConfirmPaymentSchema>;
 // Product Schemas
 export const CreateProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
+  nameLocal: z.string().optional(),
   categoryId: z.string().min(1, 'Category ID is required'),
   price: z.number().nonnegative('Price cannot be negative'),
   description: z.string().optional(),
@@ -135,6 +145,7 @@ export type UpdateProductInput = z.input<typeof UpdateProductSchema>;
 // Category Schemas
 export const CreateCategorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
+  nameLocal: z.string().optional(),
   sortOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
 });
@@ -155,6 +166,7 @@ export const CreateStoreSchema = z.object({
 export type CreateStoreInput = z.input<typeof CreateStoreSchema>;
 
 export const UpdateStoreSettingsSchema = z.object({
+  secondaryLanguage: SecondaryLanguageEnum.optional(),
   voiceEnabled: z.boolean().optional(),
   voiceLanguage: VoiceLanguageEnum.optional(),
   voiceVerbosity: VoiceVerbosityEnum.optional(),
@@ -167,17 +179,12 @@ export const UpdateStoreSettingsSchema = z.object({
 
 export type UpdateStoreSettingsInput = z.input<typeof UpdateStoreSettingsSchema>;
 
-// Auth Schemas
-export const AuthLoginSchema = z.object({
+// Auth Schemas — phone + fixed PIN (no SMS OTP)
+export const PinLoginSchema = z.object({
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6, 'PIN must be 4 to 6 digits').regex(/^\d+$/, 'PIN must be digits only'),
 });
-export type AuthLoginInput = z.input<typeof AuthLoginSchema>;
-
-export const OTPVerifySchema = z.object({
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  otp: z.string().min(4, 'OTP must be 4 to 6 digits'),
-});
-export type OTPVerifyInput = z.input<typeof OTPVerifySchema>;
+export type PinLoginInput = z.input<typeof PinLoginSchema>;
 
 // Offline Sync Schema
 export const SyncRecordSchema = z.object({
@@ -196,17 +203,33 @@ export const SyncPayloadSchema = z.object({
 
 export type SyncPayloadInput = z.input<typeof SyncPayloadSchema>;
 
+// A single catalogue item supplied at onboarding time (bilingual).
+export const OnboardItemSchema = z.object({
+  name: z.string().min(1, 'Item name is required'),
+  nameLocal: z.string().optional(),
+  price: z.number().nonnegative('Price cannot be negative'),
+  category: z.string().optional(),
+  station: ProductStationEnum.optional(),
+});
+export type OnboardItemInput = z.input<typeof OnboardItemSchema>;
+
 // Admin White-Glove Merchant Onboarding Schema
 export const OnboardMerchantSchema = z.object({
   merchantName: z.string().min(1, 'Merchant/Admin name is required'),
   phone: z.string().min(10, '10-digit mobile number required'),
+  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only'),
   email: z.string().email().optional().nullable(),
   storeName: z.string().min(1, 'Store name is required'),
+  storeNameLocal: z.string().optional(),
   storeType: StoreTypeEnum.default('TEA_STALL'),
+  mode: StoreModeEnum.default('FOOD'),
+  secondaryLanguage: SecondaryLanguageEnum.default('none'),
   address: z.string().optional(),
   upiId: z.string().optional(),
   upiName: z.string().optional(),
+  typicalPrepTimeMinutes: z.number().int().positive().optional(),
   initialCategoryName: z.string().default('General'),
+  items: z.array(OnboardItemSchema).optional(),
 });
 
 export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;

@@ -5,7 +5,7 @@ import { authMiddleware } from './api/middleware/auth';
 import { errorHandler } from './api/middleware/errorHandler';
 import { realtimeService } from './services/realtimeService';
 import { authService } from './services/authService';
-import { seedDatabase } from './db/seed';
+import { runMigrations } from './db/migrate';
 
 import authRouter from './api/routes/auth';
 import storesRouter from './api/routes/stores';
@@ -33,53 +33,9 @@ export function createServer() {
     });
   });
 
-  let lastSeedResult: any = { status: 'none' };
-
-  // Admin Seed Route (guarded by admin key)
-  app.post('/api/seed', async (req, res) => {
-    const key = (req.headers['x-admin-key'] as string) || (req.query.key as string);
-    const expectedKey = process.env.ADMIN_KEY || 'floq_admin_seed_secret';
-
-    if (!key || key !== expectedKey) {
-      res.status(403).json({ error: 'FORBIDDEN', message: 'Invalid or missing admin seed key' });
-      return;
-    }
-
-    try {
-      console.log('🌱 Seeding database...');
-      await seedDatabase(true);
-      console.log('✅ Database seeded successfully!');
-
-      res.json({
-        success: true,
-        message: 'Database seeded successfully on live PostgreSQL!',
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err: any) {
-      console.error('❌ Database seed error:', err);
-      res.status(500).json({
-        error: 'SEED_FAILED',
-        message: err.message,
-        detail: err.detail || null,
-        stack: err.stack || null,
-      });
-    }
-  });
-
-  app.get('/api/seed/status', (req, res) => {
-    res.json(lastSeedResult);
-  });
-
-  app.get('/api/debug/users', async (req, res) => {
-    try {
-      const { query } = require('./db');
-      const users = await query('SELECT id, phone, name, merchant_id FROM users');
-      const merchants = await query('SELECT id, name, phone FROM merchants');
-      res.json({ users, merchants });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  // NOTE: There is deliberately NO auto-seed, /api/seed, or /api/debug route.
+  // Seeding wipes tables and demo data must never touch a production database;
+  // real merchants are provisioned via POST /api/admin/onboard-merchant.
 
   // Public auth routes (Unauthenticated)
   app.use('/api/auth', authRouter);
@@ -138,26 +94,17 @@ export function createServer() {
 }
 
 if (require.main === module) {
-  const app = createServer();
-  app.listen(config.port, '0.0.0.0', async () => {
-    console.log(`🚀 FLOQ Backend Server running on 0.0.0.0:${config.port}`);
-    try {
-      let count = 0;
-      try {
-        const { queryOne } = await import('./db');
-        const merchantCount = await queryOne('SELECT COUNT(*) as count FROM merchants');
-        count = merchantCount ? parseInt(merchantCount.count, 10) : 0;
-      } catch {
-        count = 0;
-      }
-
-      if (count === 0) {
-        console.log('🌱 Merchants table empty or unseeded. Auto-seeding pilot merchants on boot...');
-        await seedDatabase(true);
-        console.log('✅ Auto-seed completed on boot!');
-      }
-    } catch (err) {
-      console.error('⚠️ Auto-seed check warning:', err);
-    }
-  });
+  // Run schema migrations on boot, then start. Never seed automatically —
+  // migrations are additive and safe; seeding is destructive and manual.
+  runMigrations()
+    .then(() => {
+      const app = createServer();
+      app.listen(config.port, '0.0.0.0', () => {
+        console.log(`🚀 FLOQ Backend Server running on 0.0.0.0:${config.port} (${config.nodeEnv})`);
+      });
+    })
+    .catch((err) => {
+      console.error('❌ FATAL: migrations failed on boot, refusing to start:', err);
+      process.exit(1);
+    });
 }

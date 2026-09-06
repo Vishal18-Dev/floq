@@ -19,8 +19,10 @@ CREATE TABLE IF NOT EXISTS stores (
   id TEXT PRIMARY KEY,
   merchant_id TEXT NOT NULL,
   name TEXT NOT NULL,
+  name_local TEXT,
   slug TEXT NOT NULL UNIQUE,
   store_type TEXT NOT NULL DEFAULT 'TEA_STALL',
+  mode TEXT NOT NULL DEFAULT 'FOOD',
   address TEXT,
   phone TEXT,
   opening_time TEXT DEFAULT '07:00',
@@ -40,9 +42,9 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   phone TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  password_hash TEXT,
-  otp_code TEXT,
-  otp_expires_at TEXT,
+  pin_hash TEXT,
+  pin_attempts INTEGER NOT NULL DEFAULT 0,
+  pin_locked_until TEXT,
   role TEXT NOT NULL DEFAULT 'STAFF',
   merchant_id TEXT NOT NULL,
   store_ids_json TEXT NOT NULL,
@@ -87,6 +89,7 @@ CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   store_id TEXT NOT NULL,
   name TEXT NOT NULL,
+  name_local TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (DATETIME('now')),
@@ -101,6 +104,7 @@ CREATE TABLE IF NOT EXISTS products (
   store_id TEXT NOT NULL,
   category_id TEXT NOT NULL,
   name TEXT NOT NULL,
+  name_local TEXT,
   description TEXT,
   price REAL NOT NULL,
   image_url TEXT,
@@ -248,14 +252,30 @@ CREATE TABLE IF NOT EXISTS ticket_sequences (
 CREATE TABLE IF NOT EXISTS store_settings (
   id TEXT PRIMARY KEY,
   store_id TEXT NOT NULL UNIQUE,
+  secondary_language TEXT NOT NULL DEFAULT 'none',
   voice_enabled INTEGER NOT NULL DEFAULT 1,
   voice_language TEXT NOT NULL DEFAULT 'en-IN',
   voice_verbosity TEXT NOT NULL DEFAULT 'BRIEF',
   typical_prep_time_minutes INTEGER NOT NULL DEFAULT 6,
   ticket_prefix TEXT NOT NULL DEFAULT '#',
   auto_accept_qr_orders INTEGER NOT NULL DEFAULT 0,
-  upi_id TEXT DEFAULT 'sharma.stall@okhdfcbank',
-  upi_name TEXT DEFAULT 'Sharma Breakfast Corner',
+  upi_id TEXT,
+  upi_name TEXT,
+  FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE
+);
+
+-- Day-close snapshots (open tokens carry to next business day)
+CREATE TABLE IF NOT EXISTS day_closures (
+  id TEXT PRIMARY KEY,
+  store_id TEXT NOT NULL,
+  business_date TEXT NOT NULL,
+  closed_at TEXT NOT NULL,
+  total_revenue REAL NOT NULL DEFAULT 0,
+  total_orders INTEGER NOT NULL DEFAULT 0,
+  cash_revenue REAL NOT NULL DEFAULT 0,
+  upi_revenue REAL NOT NULL DEFAULT 0,
+  carried_over_tokens INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (store_id, business_date),
   FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE
 );
 
