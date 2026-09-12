@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 5.9.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "//": "Sideloadable APK for the beta — build this one, download the .apk, install on each merchant's phone.",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://floq.onrender.com"
+      }
+    },
+    "production": {
+      "//": "Play Store bundle (.aab) for later. Not needed for the beta sideload.",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://floq.onrender.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
