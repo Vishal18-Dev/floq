@@ -72,11 +72,30 @@ class NativeApiClient {
     return this.authToken;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  /**
+   * Wake a sleeping backend (e.g. a free-tier host that spun down) before the
+   * first real call, so a cold start becomes a short wait rather than a failed
+   * login/sale. Fire-and-forget; swallows errors. Uses a long timeout because
+   * a cold start can take ~50s.
+   */
+  public async warmup(timeoutMs: number = 60000): Promise<void> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      await fetch(`${this.baseUrl}/health`, { signal: controller.signal });
+    } catch {
+      /* ignore — this is best-effort */
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
+    const { timeoutMs, ...fetchOptions } = options;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'x-store-id': this.storeId,
-      ...(options.headers as Record<string, string> || {}),
+      ...(fetchOptions.headers as Record<string, string> || {}),
     };
 
     if (this.authToken) {
@@ -85,11 +104,12 @@ class NativeApiClient {
 
     const controller = new AbortController();
     // Indian counters run on patchy 3G/4G — a short timeout aborts real sales.
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    // Callers that may hit a cold start (login) pass a longer timeoutMs.
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs ?? 15000);
 
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
-        ...options,
+        ...fetchOptions,
         headers,
         signal: controller.signal,
       });
@@ -124,6 +144,7 @@ class NativeApiClient {
     const session: UserSession = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ phone, pin }),
+      timeoutMs: 55000, // tolerate a free-tier cold start on the first login of the day
     });
     this.setAuthToken(session.token);
     if (session.storeIds && session.storeIds[0]) {

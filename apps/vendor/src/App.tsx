@@ -47,7 +47,12 @@ export default function App() {
   const mode = store?.mode || 'FOOD';
   const isFood = mode === 'FOOD';
 
-  useEffect(() => { restoreSession(); }, [restoreSession]);
+  useEffect(() => {
+    // Wake a possibly-sleeping backend (free-tier spin-down) up front, so the
+    // first login/sale isn't the request that eats the ~50s cold start.
+    api.warmup();
+    restoreSession();
+  }, [restoreSession]);
 
   // Cold-start splash (design 3b): show briefly, then the counter.
   useEffect(() => {
