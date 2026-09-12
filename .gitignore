@@ -41,3 +41,6 @@ web-build/
 *.tsbuildinfo
 apps/vendor/.env
 .env.local
+
+# Neon CLI local context
+.neon
