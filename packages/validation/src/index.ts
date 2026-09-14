@@ -223,7 +223,7 @@ export const OnboardMerchantSchema = z.object({
   storeNameLocal: z.string().optional(),
   storeType: StoreTypeEnum.default('TEA_STALL'),
   mode: StoreModeEnum.default('FOOD'),
-  secondaryLanguage: SecondaryLanguageEnum.default('none'),
+  secondaryLanguage: SecondaryLanguageEnum.default('hi'),
   address: z.string().optional(),
   upiId: z.string().optional(),
   upiName: z.string().optional(),

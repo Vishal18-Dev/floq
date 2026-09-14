@@ -50,6 +50,8 @@ export const STRINGS = {
 
   // Ticket
   paid: { en: 'PAID', ta: 'செலுத்தப்பட்டது', hi: 'भुगतान हुआ', mr: 'भरले' },
+  saleComplete: { en: 'SALE COMPLETE', ta: 'விற்பனை முடிந்தது', hi: 'बिक्री पूरी', mr: 'विक्री पूर्ण' },
+  changeToReturn: { en: 'CHANGE TO RETURN', ta: 'மீதம் கொடு', hi: 'वापस देना है', mr: 'परत द्यायचे' },
   token: { en: 'TOKEN', ta: 'டோக்கன்', hi: 'टोकन', mr: 'टोकन' },
   tapToKeepSelling: { en: 'Tap anywhere to keep selling', ta: 'விற்பனையைத் தொடர எங்கும் தட்டவும்', hi: 'बेचना जारी रखने के लिए दबाएँ', mr: 'विक्री सुरू ठेवण्यासाठी दाबा' },
 
@@ -72,6 +74,9 @@ export const STRINGS = {
   closeTheDay: { en: 'CLOSE THE DAY', ta: 'நாளை முடி', hi: 'दिन बंद करें', mr: 'दिवस बंद करा' },
   noSalesYet: { en: 'No sales yet today', ta: 'இன்று இன்னும் விற்பனை இல்லை', hi: 'आज अभी तक कोई बिक्री नहीं', mr: 'आज अजून विक्री नाही' },
   firstOrderHint: { en: 'Your first order will show here', ta: 'உங்கள் முதல் ஆர்டர் இங்கே தெரியும்', hi: 'आपका पहला ऑर्डर यहाँ दिखेगा', mr: 'तुमचा पहिला ऑर्डर इथे दिसेल' },
+  viewHistory: { en: 'PAST DAYS', ta: 'முந்தைய நாட்கள்', hi: 'पिछले दिन', mr: 'मागील दिवस' },
+  noHistoryYet: { en: 'No closed days yet', ta: 'இதுவரை மூடிய நாட்கள் இல்லை', hi: 'अभी तक कोई बंद दिन नहीं', mr: 'अजून बंद केलेले दिवस नाहीत' },
+  historyHint: { en: 'Close a day to record it here', ta: 'இங்கே பதிவு செய்ய ஒரு நாளை முடிக்கவும்', hi: 'यहाँ दर्ज करने के लिए दिन बंद करें', mr: 'इथे नोंदवण्यासाठी दिवस बंद करा' },
 
   // Login
   enterPin: { en: 'ENTER YOUR PIN', ta: 'உங்கள் பின்னை உள்ளிடவும்', hi: 'अपना पिन डालें', mr: 'तुमचा पिन टाका' },

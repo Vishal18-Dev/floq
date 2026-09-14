@@ -41,6 +41,29 @@ router.get('/day-status', async (req: AuthenticatedRequest, res: Response, next)
   }
 });
 
+// GET /api/analytics/history - past closed days (most recent first)
+router.get('/history', async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const rows = await query(
+      `SELECT business_date, closed_at, total_revenue, total_orders, cash_revenue, upi_revenue
+       FROM day_closures WHERE store_id = $1 ORDER BY business_date DESC LIMIT 60`,
+      [req.storeId]
+    );
+    res.json({
+      days: rows.map((r: any) => ({
+        businessDate: r.business_date,
+        closedAt: r.closed_at,
+        revenue: Number(r.total_revenue || 0),
+        orders: Number(r.total_orders || 0),
+        cashRevenue: Number(r.cash_revenue || 0),
+        upiRevenue: Number(r.upi_revenue || 0),
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/analytics/close-day - snapshot today's totals; open tokens carry over
 router.post('/close-day', async (req: AuthenticatedRequest, res: Response, next) => {
   try {

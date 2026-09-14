@@ -14,6 +14,15 @@ import {
 import Constants from 'expo-constants';
 import { CreateOrderInput } from '@floq/validation';
 
+export interface DayHistoryEntry {
+  businessDate: string;
+  closedAt: string;
+  revenue: number;
+  orders: number;
+  cashRevenue: number;
+  upiRevenue: number;
+}
+
 // Resolve host: prefer explicit env var (production APK), then Expo Go LAN host, then emulator fallback
 const getBaseHost = () => {
   // Set EXPO_PUBLIC_API_URL=https://floq.onrender.com in .env for production builds
@@ -242,6 +251,10 @@ class NativeApiClient {
 
   public async closeDay(): Promise<{ success: boolean; summary: DailySalesSummary }> {
     return this.request('/analytics/close-day', { method: 'POST', body: JSON.stringify({}) });
+  }
+
+  public async getHistory(): Promise<{ days: DayHistoryEntry[] }> {
+    return this.request('/analytics/history');
   }
 
   public async syncOfflineRecords(payload: SyncPayload): Promise<SyncResult> {

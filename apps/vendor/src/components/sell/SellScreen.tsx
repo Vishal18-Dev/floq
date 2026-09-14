@@ -20,6 +20,7 @@ interface Props {
   categories: Category[];
   dailySummary: DailySalesSummary | null;
   settings: StoreSettings | null;
+  mode: 'FOOD' | 'RETAIL';
   onCharge: (lines: ChargeLine[], method: PaymentMethod) => Promise<Order>;
   onToggleAvailability: (id: string, isAvailable: boolean) => void;
 }
@@ -27,8 +28,8 @@ interface Props {
 type Phase = 'SELL' | 'PAY' | 'CASH' | 'UPI' | 'TICKET';
 type CartItem = { product: Product; quantity: number };
 
-export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary, settings, onCharge, onToggleAvailability }) => {
-  const { bi, t } = useT();
+export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary, settings, mode, onCharge, onToggleAvailability }) => {
+  const { bi, t, lang } = useT();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [padMode, setPadMode] = useState(false);
   const [padAmount, setPadAmount] = useState('');
@@ -37,6 +38,7 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
   const [pendingTotal, setPendingTotal] = useState(0);
   const [tender, setTender] = useState(0);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [lastChange, setLastChange] = useState(0); // cash change to return, retail receipt
   const [busy, setBusy] = useState(false);
 
   const revenue = dailySummary?.revenue ?? 0;
@@ -89,6 +91,7 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
     try {
       const order = await onCharge(pendingLines, method);
       setLastOrder(order);
+      setLastChange(method === 'CASH' && tender > pendingTotal ? tender - pendingTotal : 0);
       setCart([]);
       setPadAmount('');
       setTender(0);
@@ -104,12 +107,28 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
 
   // ---- Payment overlays ----
   if (phase === 'TICKET' && lastOrder) {
+    const dismiss = () => { setLastOrder(null); setLastChange(0); setPhase('SELL'); };
+    // RETAIL: a receipt (amount paid + change). Token numbers are a food/kitchen
+    // concept — a grocery customer pays and leaves, there is nothing to call out.
+    if (mode === 'RETAIL') {
+      return (
+        <TouchableOpacity activeOpacity={0.9} style={styles.ticket} onPress={dismiss}>
+          <Kicker color={palette.onAccent}>{bi('saleComplete').primary}{bi('saleComplete').secondary ? ` · ${bi('saleComplete').secondary}` : ''}</Kicker>
+          <Text style={styles.receiptAmount}>{formatINR(lastOrder.total)}</Text>
+          <Text style={styles.receiptPaid}>{bi('paid').primary}{bi('paid').secondary ? ` · ${bi('paid').secondary}` : ''}</Text>
+          {lastChange > 0 ? (
+            <View style={styles.changeStrip}>
+              <Text style={styles.changeStripLabel}>{bi('changeToReturn').primary}{bi('changeToReturn').secondary ? ` · ${bi('changeToReturn').secondary}` : ''}</Text>
+              <Text style={styles.changeStripAmt}>{formatINR(lastChange)}</Text>
+            </View>
+          ) : null}
+          <Text style={styles.ticketHint}>{bi('tapToKeepSelling').primary}{bi('tapToKeepSelling').secondary ? ` · ${bi('tapToKeepSelling').secondary}` : ''}</Text>
+        </TouchableOpacity>
+      );
+    }
+    // FOOD: big token number for the kitchen queue call-out.
     return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={styles.ticket}
-        onPress={() => { setLastOrder(null); setPhase('SELL'); }}
-      >
+      <TouchableOpacity activeOpacity={0.9} style={styles.ticket} onPress={dismiss}>
         <Kicker color={palette.onAccent}>{t('paid')} · {lastOrder.paymentStatus === 'SUCCESS' ? 'OK' : lastOrder.status}</Kicker>
         <Text style={styles.ticketTokenLabel}>{bi('token').primary}{bi('token').secondary ? ` · ${bi('token').secondary}` : ''}</Text>
         <Text style={styles.ticketToken}>{lastOrder.ticketNumber}</Text>
@@ -220,7 +239,7 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
                   <Text style={styles.tileName} numberOfLines={2}>{p.name}</Text>
                   {qty > 0 && <View style={styles.qtyBadge}><Text style={styles.qtyBadgeText}>{qty}</Text></View>}
                 </View>
-                {p.nameLocal ? <Text style={styles.tileLocal} numberOfLines={1}>{p.nameLocal}</Text> : null}
+                {p.nameLocal && lang !== 'none' ? <Text style={styles.tileLocal} numberOfLines={1}>{p.nameLocal}</Text> : null}
                 <View style={styles.tileBottom}>
                   <Text style={styles.tilePrice}>{formatINR(p.price)}</Text>
                   {out && <View style={styles.soldOut}><Text style={styles.soldOutText}>{t('soldOut')}</Text></View>}
@@ -371,4 +390,10 @@ const styles = StyleSheet.create({
   ticketToken: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 120, letterSpacing: -5, color: palette.onAccent, lineHeight: 128 },
   ticketItems: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 28, color: palette.onAccent, opacity: 0.9 },
   ticketHint: { fontFamily: fonts.body, fontSize: 14, color: palette.onAccent, opacity: 0.8, marginTop: 30 },
+  // retail receipt
+  receiptAmount: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 96, letterSpacing: -4, color: palette.onAccent, lineHeight: 100, marginTop: 20 },
+  receiptPaid: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, letterSpacing: 1, color: palette.onAccent, opacity: 0.85, marginTop: 4 },
+  changeStrip: { marginTop: 28, borderTopWidth: 2, borderTopColor: palette.onAccent, paddingTop: 14 },
+  changeStripLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 1.5, color: palette.onAccent, opacity: 0.85 },
+  changeStripAmt: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 52, letterSpacing: -2, color: palette.onAccent, lineHeight: 56 },
 });

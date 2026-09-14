@@ -5,6 +5,7 @@ import { formatINR } from '@floq/utils';
 import { palette, fonts, borders } from '../../theme';
 import { useT } from '../../i18n';
 import { Kicker, PrimaryBar, EmptyState } from '../common/ui';
+import { HistoryModal } from './HistoryModal';
 
 interface Props {
   dailySummary: DailySalesSummary | null;
@@ -15,6 +16,7 @@ interface Props {
 export const DayScreen: React.FC<Props> = ({ dailySummary, onCloseDay, onManageItems }) => {
   const { t, bi } = useT();
   const [closing, setClosing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const revenue = dailySummary?.revenue ?? 0;
   const orders = dailySummary?.orders ?? 0;
@@ -87,6 +89,10 @@ export const DayScreen: React.FC<Props> = ({ dailySummary, onCloseDay, onManageI
         <Text style={styles.manageText}>MANAGE ITEMS & PRICES →</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.manage} onPress={() => setHistoryOpen(true)} activeOpacity={0.7}>
+        <Text style={styles.manageText}>{bi('viewHistory').primary}{bi('viewHistory').secondary ? ` · ${bi('viewHistory').secondary}` : ''} →</Text>
+      </TouchableOpacity>
+
       <View style={{ padding: 16 }}>
         <PrimaryBar
           tone="outline"
@@ -97,6 +103,8 @@ export const DayScreen: React.FC<Props> = ({ dailySummary, onCloseDay, onManageI
           onPress={confirmClose}
         />
       </View>
+
+      <HistoryModal visible={historyOpen} onClose={() => setHistoryOpen(false)} />
     </ScrollView>
   );
 };

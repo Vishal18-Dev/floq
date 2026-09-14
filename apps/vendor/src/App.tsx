@@ -204,6 +204,7 @@ export default function App() {
               categories={categories}
               dailySummary={dailySummary}
               settings={settings}
+              mode={mode}
               onCharge={createSale}
               onToggleAvailability={toggleAvailability}
             />
