@@ -21,10 +21,7 @@
         "VIBRATE",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
-      ],
-      "runtimeVersion": {
-        "policy": "appVersion"
-      }
+      ]
     },
     "plugins": [
       "expo-font"
@@ -38,6 +35,9 @@
     "updates": {
       "url": "https://u.expo.dev/ce188eb0-9d67-4f78-9925-268ba75e44a2"
     },
-    "ios": {}
+    "ios": {},
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
