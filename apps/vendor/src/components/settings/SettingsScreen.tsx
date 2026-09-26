@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { palette, fonts, borders, spacing } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
 import { voiceService } from '../../services/voice';
@@ -79,8 +81,22 @@ export function SettingsScreen({ onManageItems, onLogout, onBack }: { onManageIt
       </TouchableOpacity>
 
       <Text style={styles.version}>FLOQ Merchant · beta</Text>
+      <Text style={styles.build}>{buildLine()}</Text>
     </ScrollView>
   );
+}
+
+// Version + live OTA update id — read this out to support to identify the exact
+// build/update a merchant is running. `updateId` is null on the embedded bundle
+// (no over-the-air update applied yet).
+function buildLine(): string {
+  const version = Constants.expoConfig?.version || '1.0.0';
+  let update = 'embedded';
+  try {
+    if (Updates.updateId) update = Updates.updateId.slice(0, 8);
+  } catch {}
+  const channel = (() => { try { return Updates.channel || 'dev'; } catch { return 'dev'; } })();
+  return `v${version} · ${channel} · ${update}`;
 }
 
 const styles = StyleSheet.create({
@@ -110,5 +126,6 @@ const styles = StyleSheet.create({
   bigRowText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.ink },
   logout: { marginHorizontal: 16, backgroundColor: palette.accent, paddingVertical: 16, alignItems: 'center' },
   logoutText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 1, color: palette.onAccent },
-  version: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[500], textAlign: 'center', padding: 24 },
+  version: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[500], textAlign: 'center', paddingTop: 24 },
+  build: { fontFamily: fonts.body, fontSize: 11, color: palette.neutral[500], textAlign: 'center', paddingBottom: 24, paddingTop: 2 },
 });
