@@ -40,7 +40,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\n→ Onboarding "${profile.merchantName}" (${profile.storeName}) in ${profile.mode || 'FOOD'} mode`);
+  console.log(`\n→ Onboarding "${profile.storeName}" in ${profile.mode || 'FOOD'} mode`);
   console.log(`  API: ${apiUrl}`);
 
   const res = await fetch(`${apiUrl}/api/admin/onboard-merchant`, {
