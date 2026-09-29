@@ -37,6 +37,10 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
   try {
     const input = OnboardMerchantSchema.parse(req.body);
     const cleanPhone = input.phone.replace(/\D/g, '').slice(-10);
+    // The app displays only the store/org name, so the owner record and the UPI
+    // payee default to storeName — a person name is never required or shown.
+    const ownerName = input.merchantName || input.storeName;
+    const payeeName = input.upiName || input.storeName;
 
     if (cleanPhone.length < 10) {
       res.status(400).json({ error: 'INVALID_PHONE', message: 'Mobile number must be a valid 10-digit number' });
@@ -77,7 +81,7 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
       await client.query(
         `INSERT INTO merchants (id, name, phone, email, status, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [merchantId, input.merchantName, cleanPhone, input.email || null, 'ACTIVE', now, now]
+        [merchantId, ownerName, cleanPhone, input.email || null, 'ACTIVE', now, now]
       );
 
       // 2. Store (with operating mode + bilingual name)
@@ -115,7 +119,7 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
           input.secondaryLanguage === 'none' ? 'en-IN' : `${input.secondaryLanguage}-IN`,
           input.typicalPrepTimeMinutes || (input.mode === 'FOOD' ? 6 : 1),
           input.upiId || null,
-          input.upiName || input.merchantName,
+          payeeName,
         ]
       );
 
@@ -126,7 +130,7 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
         [
           userId,
           cleanPhone,
-          input.merchantName,
+          ownerName,
           'OWNER',
           merchantId,
           JSON.stringify([storeId]),
@@ -183,7 +187,7 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
     res.status(201).json({
       success: true,
       alreadyExisted: false,
-      message: `Merchant "${input.merchantName}" (${input.storeName}) onboarded in ${input.mode} mode.`,
+      message: `Merchant "${input.storeName}" onboarded in ${input.mode} mode.`,
       merchantId,
       storeId,
       userId,

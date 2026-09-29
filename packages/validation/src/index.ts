@@ -215,7 +215,10 @@ export type OnboardItemInput = z.input<typeof OnboardItemSchema>;
 
 // Admin White-Glove Merchant Onboarding Schema
 export const OnboardMerchantSchema = z.object({
-  merchantName: z.string().min(1, 'Merchant/Admin name is required'),
+  // Optional: the app only ever displays the store/org name. When omitted the
+  // owner record and UPI payee both fall back to storeName, so onboarding never
+  // needs a separate person name.
+  merchantName: z.string().min(1).optional(),
   phone: z.string().min(10, '10-digit mobile number required'),
   pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only'),
   email: z.string().email().optional().nullable(),
