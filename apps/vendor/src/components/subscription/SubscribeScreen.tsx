@@ -109,7 +109,7 @@ export function SubscribeScreen({
         <PrimaryBar label={busy ? '…' : bi('iHavePaid').primary} sub={bi('iHavePaid').secondary || undefined} disabled={busy} onPress={submit} />
       </View>
       <Text style={styles.note}>
-        Pay the exact amount, then tap “{bi('iHavePaid').primary}”. We verify manually and activate your account — usually within a few hours.
+        Pay the exact amount, then tap “{bi('iHavePaid').primary}”. We verify manually and activate your account, usually within a few hours.
       </Text>
     </ScrollView>
   );

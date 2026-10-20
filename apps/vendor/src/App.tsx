@@ -263,7 +263,7 @@ function SubscriptionBanner({ subscription, onPress }: { subscription: Subscript
       activeOpacity={0.85}
     >
       <Text style={[bannerStyles.text, expired && bannerStyles.textExpired]} numberOfLines={1}>
-        {expired ? t('subscriptionEnded') : `${subscription.daysLeft} ${t('trialDaysLeft')}`}
+        {expired ? t('subEndedShort') : `${subscription.daysLeft} ${t('trialDaysLeft')}`}
       </Text>
       <Text style={[bannerStyles.cta, expired && bannerStyles.textExpired]}>{t('subscribe')} →</Text>
     </TouchableOpacity>

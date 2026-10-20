@@ -88,7 +88,8 @@ export const STRINGS = {
   iHavePaid: { en: 'I HAVE PAID', ta: 'நான் செலுத்திவிட்டேன்', hi: 'मैंने भुगतान कर दिया', mr: 'मी पैसे दिले' },
   paymentPending: { en: 'Payment received — activating soon', ta: 'பணம் பெறப்பட்டது — விரைவில் செயல்படுத்தப்படும்', hi: 'भुगतान मिला — जल्द चालू होगा', mr: 'पैसे मिळाले — लवकरच सुरू होईल' },
   trialDaysLeft: { en: 'days left in free trial', ta: 'நாட்கள் இலவச சோதனையில் மீதம்', hi: 'दिन मुफ़्त ट्रायल बाकी', mr: 'दिवस मोफत ट्रायल बाकी' },
-  subscriptionEnded: { en: 'Subscription ended — subscribe to keep selling', ta: 'சந்தா முடிந்தது — விற்க சந்தா சேரவும்', hi: 'सब्सक्रिप्शन ख़त्म — बेचने के लिए सब्सक्राइब करें', mr: 'सदस्यता संपली — विकण्यासाठी सदस्यता घ्या' },
+  subscriptionEnded: { en: 'Subscription ended. Subscribe to keep selling', ta: 'சந்தா முடிந்தது. விற்க சந்தா சேரவும்', hi: 'सब्सक्रिप्शन ख़त्म. बेचने के लिए सब्सक्राइब करें', mr: 'सदस्यता संपली. विकण्यासाठी सदस्यता घ्या' },
+  subEndedShort: { en: 'Subscription ended', ta: 'சந்தா முடிந்தது', hi: 'सब्सक्रिप्शन ख़त्म', mr: 'सदस्यता संपली' },
   enterUpiRef: { en: 'UPI reference / UTR (optional)', ta: 'UPI குறிப்பு / UTR (விருப்பம்)', hi: 'UPI रेफरेंस / UTR (वैकल्पिक)', mr: 'UPI संदर्भ / UTR (ऐच्छिक)' },
 
   // Login
