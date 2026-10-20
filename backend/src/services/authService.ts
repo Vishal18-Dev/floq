@@ -93,7 +93,30 @@ export class AuthService {
 
     // Success — reset counters
     await query('UPDATE users SET pin_attempts = 0, pin_locked_until = NULL WHERE id = $1', [user.id]);
+    return this.buildSession(user);
+  }
 
+  /** Log in a user whose phone was already verified out-of-band (Firebase OTP).
+   *  No PIN is checked; returns null when no account exists for the number so
+   *  the caller can route a new user into onboarding. */
+  public async loginWithVerifiedPhone(rawPhone: string): Promise<UserSession | null> {
+    const phone = normalizePhone(rawPhone);
+    if (phone.length < 10) throw new Error('Enter a valid 10-digit mobile number');
+    const user = await queryOne('SELECT * FROM users WHERE phone = $1 OR phone = $2 OR phone LIKE $3', [
+      phone,
+      `+91${phone}`,
+      `%${phone}`,
+    ]);
+    if (!user) return null;
+    if (user.status && user.status !== 'ACTIVE') {
+      throw new Error('This account is not active. Please contact FLOQ support.');
+    }
+    await query('UPDATE users SET pin_attempts = 0, pin_locked_until = NULL WHERE id = $1', [user.id]);
+    return this.buildSession(user);
+  }
+
+  /** Build a signed 180-day session for a user row. */
+  private buildSession(user: any): UserSession {
     const storeIds: string[] =
       typeof user.store_ids_json === 'string' ? JSON.parse(user.store_ids_json) : user.store_ids_json || [];
 

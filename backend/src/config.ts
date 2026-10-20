@@ -55,6 +55,11 @@ export const config = {
   pinMaxAttempts: parseInt(process.env.PIN_MAX_ATTEMPTS || '5', 10),
   pinLockoutMinutes: parseInt(process.env.PIN_LOCKOUT_MINUTES || '15', 10),
   sentryDsn: process.env.SENTRY_DSN || null,
+  // Firebase Phone Auth: we verify the client's ID token against Google's public
+  // certs (no service-account secret needed) — only the project id is required.
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID || 'floq-cd6b5',
+  },
   // Subscription: manual UPI, paywall-gated. Prices in rupees. 7-day free trial
   // from signup; on expiry new sales are blocked but data stays readable.
   subscription: {

@@ -44,3 +44,6 @@ apps/vendor/.env
 
 # Neon CLI local context
 .neon
+
+# Firebase Android config (injected into EAS builds as a file secret)
+apps/vendor/google-services.json
