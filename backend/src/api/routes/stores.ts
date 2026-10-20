@@ -30,6 +30,8 @@ router.get('/current', async (req: AuthenticatedRequest, res: Response, next) =>
         storeType: store.store_type,
         mode: store.mode || 'FOOD',
         address: store.address,
+        city: store.city || undefined,
+        imageUrl: store.image_url || undefined,
         phone: store.phone,
         openingTime: store.opening_time,
         closingTime: store.closing_time,

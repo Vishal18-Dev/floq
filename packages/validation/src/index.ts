@@ -236,3 +236,20 @@ export const OnboardMerchantSchema = z.object({
 });
 
 export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
+
+// Self-serve signup (public). Phone comes from the verified Firebase OTP token,
+// not the body. Catalogue always starts empty — the merchant adds items in-app.
+export const SelfSignupSchema = z.object({
+  idToken: z.string().min(1, 'OTP token is required'),
+  storeName: z.string().min(1, 'Store name is required'),
+  ownerName: z.string().min(1).optional(),
+  storeType: StoreTypeEnum.default('GROCERY'),
+  mode: StoreModeEnum.default('RETAIL'),
+  secondaryLanguage: SecondaryLanguageEnum.default('hi'),
+  city: z.string().optional(),
+  upiId: z.string().optional(),
+  imageUrl: z.string().url().optional(),
+  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only'),
+});
+
+export type SelfSignupInput = z.input<typeof SelfSignupSchema>;

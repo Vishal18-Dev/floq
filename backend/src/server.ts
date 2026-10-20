@@ -17,6 +17,7 @@ import analyticsRouter from './api/routes/analytics';
 import syncRouter from './api/routes/sync';
 import publicRouter from './api/routes/public';
 import adminRouter from './api/routes/admin';
+import signupRouter from './api/routes/signup';
 import subscriptionRouter from './api/routes/subscription';
 
 export function createServer() {
@@ -78,6 +79,7 @@ export function createServer() {
   // Public customer & admin routes
   app.use('/api/public', publicRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/signup', signupRouter);
 
   // Authenticated Merchant API Routes (with Data Isolation Middleware)
   app.use('/api/stores', authMiddleware, storesRouter);

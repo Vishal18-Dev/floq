@@ -48,6 +48,8 @@ export interface Store {
   storeType: StoreType;
   mode: StoreMode;
   address?: string;
+  city?: string;
+  imageUrl?: string;
   phone?: string;
   openingTime?: string;
   closingTime?: string;
