@@ -8,11 +8,13 @@ import { SellScreen, ChargeLine } from './components/sell/SellScreen';
 import { LiveQueueScreen } from './components/queue/LiveQueueScreen';
 import { DayScreen } from './components/day/DayScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
+import { SubscribeScreen } from './components/subscription/SubscribeScreen';
 import { ItemsManager } from './components/business/ItemsManager';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
-import { api } from './services/api';
+import { api, SubscriptionStatus } from './services/api';
+import { useT } from './i18n';
 import { syncEngine } from './services/sync';
 import { NativeStorageService } from './services/storage';
 import { voiceService } from './services/voice';
@@ -30,7 +32,9 @@ export default function App() {
   const { isAuthenticated, isLoading: authLoading, restoreSession, logout } = useAuthStore();
   const store = useStoreStore((s) => s.store);
   const settings = useStoreStore((s) => s.settings);
+  const subscription = useStoreStore((s) => s.subscription);
   const loadStore = useStoreStore((s) => s.loadStore);
+  const loadSubscription = useStoreStore((s) => s.loadSubscription);
   const orders = useOrdersStore((s) => s.orders);
   const loadOrders = useOrdersStore((s) => s.loadOrders);
   const upsertOrder = useOrdersStore((s) => s.upsertOrder);
@@ -72,9 +76,9 @@ export default function App() {
   const loadAll = useCallback(async () => {
     if (!isAuthenticated) return;
     setDataLoading(true);
-    await Promise.all([loadStore(), loadCatalog(), loadOrders(), loadAnalytics(), loadDayStatus()]);
+    await Promise.all([loadStore(), loadCatalog(), loadOrders(), loadAnalytics(), loadDayStatus(), loadSubscription()]);
     setDataLoading(false);
-  }, [isAuthenticated, loadStore, loadCatalog, loadOrders, loadAnalytics, loadDayStatus]);
+  }, [isAuthenticated, loadStore, loadCatalog, loadOrders, loadAnalytics, loadDayStatus, loadSubscription]);
 
   useEffect(() => { if (isAuthenticated) loadAll(); }, [isAuthenticated, loadAll]);
 
@@ -103,13 +107,21 @@ export default function App() {
     async (lines: ChargeLine[], method: PaymentMethod): Promise<Order> => {
       const storeId = api.getStoreId();
       if (syncEngine.isOnline()) {
-        const res = await api.createOrder({
-          storeId,
-          source: 'STAFF_POS',
-          items: lines,
-          paymentMethod: method,
-          immediatePayment: true,
-        });
+        let res;
+        try {
+          res = await api.createOrder({
+            storeId,
+            source: 'STAFF_POS',
+            items: lines,
+            paymentMethod: method,
+            immediatePayment: true,
+          });
+        } catch (e: any) {
+          // Subscription lapsed mid-session: refresh status so the Sell tab
+          // flips to the paywall, and surface a clear message.
+          if (e?.status === 402) loadSubscription();
+          throw e;
+        }
         upsertOrder(res.order);
         refreshAnalytics();
         return res.order;
@@ -153,7 +165,7 @@ export default function App() {
       // pendingSync updates via the syncEngine subscription above.
       return offlineOrder;
     },
-    [products, isFood, upsertOrder, refreshAnalytics]
+    [products, isFood, upsertOrder, refreshAnalytics, loadSubscription]
   );
 
   const advanceStatus = useCallback(
@@ -197,17 +209,23 @@ export default function App() {
           onOpenSettings={() => setActiveTab('SETTINGS')}
         />
 
+        <SubscriptionBanner subscription={subscription} onPress={() => setActiveTab('SELL')} />
+
         <View style={styles.main}>
           {activeTab === 'SELL' && (
-            <SellScreen
-              products={products}
-              categories={categories}
-              dailySummary={dailySummary}
-              settings={settings}
-              mode={mode}
-              onCharge={createSale}
-              onToggleAvailability={toggleAvailability}
-            />
+            subscription && !subscription.canSell ? (
+              <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} />
+            ) : (
+              <SellScreen
+                products={products}
+                categories={categories}
+                dailySummary={dailySummary}
+                settings={settings}
+                mode={mode}
+                onCharge={createSale}
+                onToggleAvailability={toggleAvailability}
+              />
+            )
           )}
           {activeTab === 'QUEUE' && isFood && (
             <LiveQueueScreen orders={orders} typicalPrepMinutes={settings?.typicalPrepTimeMinutes || 6} onAdvance={advanceStatus} />
@@ -229,6 +247,37 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
+/** Slim bar shown when the trial is nearly up or the subscription has lapsed.
+ *  Tapping it jumps to the Sell tab, which shows the Subscribe paywall. */
+function SubscriptionBanner({ subscription, onPress }: { subscription: SubscriptionStatus | null; onPress: () => void }) {
+  const { t } = useT();
+  if (!subscription) return null;
+  const expired = subscription.status === 'expired';
+  const trialEnding = subscription.status === 'trial' && subscription.daysLeft <= 3;
+  if (!expired && !trialEnding) return null;
+  return (
+    <TouchableOpacity
+      style={[bannerStyles.bar, expired ? bannerStyles.barExpired : bannerStyles.barTrial]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <Text style={[bannerStyles.text, expired && bannerStyles.textExpired]} numberOfLines={1}>
+        {expired ? t('subscriptionEnded') : `${subscription.daysLeft} ${t('trialDaysLeft')}`}
+      </Text>
+      <Text style={[bannerStyles.cta, expired && bannerStyles.textExpired]}>{t('subscribe')} →</Text>
+    </TouchableOpacity>
+  );
+}
+
+const bannerStyles = StyleSheet.create({
+  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 8 },
+  barTrial: { backgroundColor: palette.ink },
+  barExpired: { backgroundColor: palette.accent },
+  text: { fontFamily: fonts.semibold, fontSize: 13, color: palette.onAccent, flex: 1 },
+  textExpired: { color: palette.onAccent },
+  cta: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, letterSpacing: 0.5, color: palette.onAccent },
+});
 
 function Splash({ storeName, carryOver }: { storeName?: string; carryOver?: number }) {
   return (

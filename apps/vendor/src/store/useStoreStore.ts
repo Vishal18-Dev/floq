@@ -1,19 +1,22 @@
 import { create } from 'zustand';
 import { Store, StoreSettings } from '@floq/types';
-import { api } from '../services/api';
+import { api, SubscriptionStatus } from '../services/api';
 
 interface StoreState {
   store: Store | null;
   settings: StoreSettings | null;
+  subscription: SubscriptionStatus | null;
   isLoading: boolean;
   error: string | null;
   loadStore: () => Promise<void>;
+  loadSubscription: () => Promise<void>;
   updateSettings: (updates: Partial<StoreSettings>) => Promise<void>;
 }
 
 export const useStoreStore = create<StoreState>((set) => ({
   store: null,
   settings: null,
+  subscription: null,
   isLoading: false,
   error: null,
 
@@ -24,6 +27,15 @@ export const useStoreStore = create<StoreState>((set) => ({
       set({ store: data.store, settings: data.settings, isLoading: false });
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Failed to load store' });
+    }
+  },
+
+  loadSubscription: async () => {
+    try {
+      set({ subscription: await api.getSubscription() });
+    } catch {
+      // Non-fatal: if status can't load, don't lock the merchant out — the
+      // backend still enforces the paywall on the sale itself.
     }
   },
 

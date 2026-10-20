@@ -14,6 +14,18 @@ import {
 import Constants from 'expo-constants';
 import { CreateOrderInput } from '@floq/validation';
 
+export interface SubscriptionStatus {
+  status: 'trial' | 'active' | 'expired';
+  plan: string | null;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  daysLeft: number;
+  canSell: boolean;
+  prices: { monthly: number; annual: number };
+  collectionUpiId: string;
+  collectionUpiName: string;
+}
+
 export interface DayHistoryEntry {
   businessDate: string;
   closedAt: string;
@@ -139,7 +151,10 @@ class NativeApiClient {
         } catch {
           errBody = { message: res.statusText };
         }
-        throw new Error(errBody.message || `API error (${res.status})`);
+        const error: any = new Error(errBody.message || `API error (${res.status})`);
+        error.status = res.status;
+        error.code = errBody.error;
+        throw error;
       }
 
       return res.json();
@@ -255,6 +270,20 @@ class NativeApiClient {
 
   public async getHistory(): Promise<{ days: DayHistoryEntry[] }> {
     return this.request('/analytics/history');
+  }
+
+  public async getSubscription(): Promise<SubscriptionStatus> {
+    return this.request('/subscription');
+  }
+
+  public async submitSubscriptionPayment(
+    plan: 'monthly' | 'annual',
+    upiReference?: string
+  ): Promise<{ payment: { id: string; plan: string; amount: number; status: string }; message: string }> {
+    return this.request('/subscription/submit', {
+      method: 'POST',
+      body: JSON.stringify({ plan, upiReference }),
+    });
   }
 
   public async syncOfflineRecords(payload: SyncPayload): Promise<SyncResult> {

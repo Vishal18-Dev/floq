@@ -78,6 +78,19 @@ export const STRINGS = {
   noHistoryYet: { en: 'No closed days yet', ta: 'இதுவரை மூடிய நாட்கள் இல்லை', hi: 'अभी तक कोई बंद दिन नहीं', mr: 'अजून बंद केलेले दिवस नाहीत' },
   historyHint: { en: 'Close a day to record it here', ta: 'இங்கே பதிவு செய்ய ஒரு நாளை முடிக்கவும்', hi: 'यहाँ दर्ज करने के लिए दिन बंद करें', mr: 'इथे नोंदवण्यासाठी दिवस बंद करा' },
 
+  // Subscription
+  subscribe: { en: 'SUBSCRIBE', ta: 'சந்தா சேர்', hi: 'सब्सक्राइब करें', mr: 'सदस्यता घ्या' },
+  monthlyPlan: { en: 'MONTHLY', ta: 'மாதம்', hi: 'मासिक', mr: 'मासिक' },
+  annualPlan: { en: 'YEARLY', ta: 'ஆண்டு', hi: 'सालाना', mr: 'वार्षिक' },
+  perMonth: { en: '/month', ta: '/மாதம்', hi: '/माह', mr: '/महिना' },
+  perYear: { en: '/year', ta: '/ஆண்டு', hi: '/साल', mr: '/वर्ष' },
+  scanToPay: { en: 'SCAN & PAY TO FLOQ', ta: 'FLOQ-க்கு ஸ்கேன் செய்து செலுத்து', hi: 'FLOQ को स्कैन करके भुगतान करें', mr: 'FLOQ ला स्कॅन करून पैसे द्या' },
+  iHavePaid: { en: 'I HAVE PAID', ta: 'நான் செலுத்திவிட்டேன்', hi: 'मैंने भुगतान कर दिया', mr: 'मी पैसे दिले' },
+  paymentPending: { en: 'Payment received — activating soon', ta: 'பணம் பெறப்பட்டது — விரைவில் செயல்படுத்தப்படும்', hi: 'भुगतान मिला — जल्द चालू होगा', mr: 'पैसे मिळाले — लवकरच सुरू होईल' },
+  trialDaysLeft: { en: 'days left in free trial', ta: 'நாட்கள் இலவச சோதனையில் மீதம்', hi: 'दिन मुफ़्त ट्रायल बाकी', mr: 'दिवस मोफत ट्रायल बाकी' },
+  subscriptionEnded: { en: 'Subscription ended — subscribe to keep selling', ta: 'சந்தா முடிந்தது — விற்க சந்தா சேரவும்', hi: 'सब्सक्रिप्शन ख़त्म — बेचने के लिए सब्सक्राइब करें', mr: 'सदस्यता संपली — विकण्यासाठी सदस्यता घ्या' },
+  enterUpiRef: { en: 'UPI reference / UTR (optional)', ta: 'UPI குறிப்பு / UTR (விருப்பம்)', hi: 'UPI रेफरेंस / UTR (वैकल्पिक)', mr: 'UPI संदर्भ / UTR (ऐच्छिक)' },
+
   // Login
   enterPin: { en: 'ENTER YOUR PIN', ta: 'உங்கள் பின்னை உள்ளிடவும்', hi: 'अपना पिन डालें', mr: 'तुमचा पिन टाका' },
   wrongPin: { en: 'Wrong PIN — try again', ta: 'தவறான பின் — மீண்டும் முயற்சிக்கவும்', hi: 'ग़लत पिन — फिर कोशिश करें', mr: 'चुकीचा पिन — पुन्हा प्रयत्न करा' },
