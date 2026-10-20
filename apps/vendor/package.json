@@ -23,6 +23,7 @@
     "@react-native-firebase/app": "^27.0.0",
     "@react-native-firebase/auth": "^27.0.0",
     "expo": "~54.0.0",
+    "expo-build-properties": "^58.0.11",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.12",
     "expo-haptics": "~15.0.8",

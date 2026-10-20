@@ -12,6 +12,13 @@ module.exports = () => {
       ...expo.android,
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './google-services.json',
     },
-    plugins: [...(expo.plugins || []), '@react-native-firebase/app', 'expo-image-picker'],
+    plugins: [
+      ...(expo.plugins || []),
+      '@react-native-firebase/app',
+      'expo-image-picker',
+      // Firebase's firebase-auth 25 is compiled with Kotlin 2.4; bump the
+      // project Kotlin so it can consume that metadata (Expo 54 defaults to 2.1).
+      ['expo-build-properties', { android: { kotlinVersion: '2.4.0' } }],
+    ],
   };
 };
