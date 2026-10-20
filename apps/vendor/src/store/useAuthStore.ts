@@ -15,11 +15,16 @@ export class NeedsOnboardingError extends Error {
 interface AuthState {
   session: UserSession | null;
   isAuthenticated: boolean;
+  isLocked: boolean; // session valid but app needs PIN/biometric to open
+  needsPinSetup: boolean; // authenticated but no local unlock PIN yet
   isLoading: boolean;
   error: string | null;
   loginWithPin: (phone: string, pin: string) => Promise<UserSession>;
   loginWithOtp: (idToken: string, phone: string) => Promise<UserSession>;
   signup: (payload: SignupPayload) => Promise<UserSession>;
+  unlock: (pin: string) => Promise<boolean>;
+  unlockBiometric: () => void;
+  setUnlockPin: (pin: string) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
   clearError: () => void;
@@ -29,13 +34,16 @@ interface AuthState {
 async function applySession(set: any, get: any, session: UserSession) {
   await authStorage.saveSession(session);
   api.setUnauthorizedCallback(() => get().logout());
-  set({ session, isAuthenticated: true, isLoading: false, error: null });
+  // Just authenticated → unlocked for this run.
+  set({ session, isAuthenticated: true, isLocked: false, isLoading: false, error: null });
   realtimeClient.connect();
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   isAuthenticated: false,
+  isLocked: false,
+  needsPinSetup: false,
   isLoading: true,
   error: null,
 
@@ -49,19 +57,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (session.storeIds && session.storeIds[0]) {
           api.setStoreContext(session.merchantId, session.storeIds[0]);
         }
+        api.setUnauthorizedCallback(() => get().logout());
 
-        api.setUnauthorizedCallback(() => {
-          get().logout();
-        });
-
-        set({ session, isAuthenticated: true, isLoading: false });
+        // Every app open requires a quick unlock when a PIN is set; if none
+        // exists yet (first run after OTP), route to PIN setup instead.
+        const hasPin = await authStorage.hasUnlockPin();
+        set({ session, isAuthenticated: true, isLocked: hasPin, needsPinSetup: !hasPin, isLoading: false });
         realtimeClient.connect();
       } else {
-        set({ session: null, isAuthenticated: false, isLoading: false });
+        set({ session: null, isAuthenticated: false, isLocked: false, needsPinSetup: false, isLoading: false });
       }
     } catch (err: any) {
-      set({ session: null, isAuthenticated: false, isLoading: false });
+      set({ session: null, isAuthenticated: false, isLocked: false, needsPinSetup: false, isLoading: false });
     }
+  },
+
+  unlock: async (pin: string) => {
+    const stored = await authStorage.getUnlockPin();
+    if (stored && pin === stored) {
+      set({ isLocked: false });
+      return true;
+    }
+    return false;
+  },
+
+  unlockBiometric: () => set({ isLocked: false }),
+
+  setUnlockPin: async (pin: string) => {
+    await authStorage.setUnlockPin(pin);
+    set({ needsPinSetup: false, isLocked: false });
   },
 
   loginWithPin: async (phone: string, pin: string) => {
@@ -88,6 +112,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
       const session = await api.loginWithFirebase(idToken);
       await applySession(set, get, session);
+      // Returning user with no local PIN yet → have them set one.
+      if (!(await authStorage.hasUnlockPin())) set({ needsPinSetup: true });
       return session;
     } catch (err: any) {
       set({ isLoading: false });
@@ -105,6 +131,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
       const session = await api.signup(payload);
       await applySession(set, get, session);
+      // Reuse the PIN set in the wizard as the device unlock PIN.
+      await authStorage.setUnlockPin(payload.pin);
+      set({ needsPinSetup: false });
       return session;
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Could not create account' });
@@ -116,7 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     realtimeClient.disconnect();
     await authStorage.clearSession();
     api.setAuthToken(null);
-    set({ session: null, isAuthenticated: false, isLoading: false, error: null });
+    set({ session: null, isAuthenticated: false, isLocked: false, needsPinSetup: false, isLoading: false, error: null });
   },
 
   clearError: () => set({ error: null }),

@@ -5,6 +5,7 @@ import { UserSession } from '@floq/types';
 
 const TOKEN_KEY = 'floq_merchant_jwt_token';
 const SESSION_KEY = 'floq_merchant_user_session';
+const PIN_KEY = 'floq_merchant_unlock_pin';
 
 export class AuthStorage {
   public async saveSession(session: UserSession): Promise<void> {
@@ -56,10 +57,28 @@ export class AuthStorage {
     if (Platform.OS === 'web') {
       await AsyncStorage.removeItem(TOKEN_KEY);
       await AsyncStorage.removeItem(SESSION_KEY);
+      await AsyncStorage.removeItem(PIN_KEY);
     } else {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       await SecureStore.deleteItemAsync(SESSION_KEY);
+      await SecureStore.deleteItemAsync(PIN_KEY);
     }
+  }
+
+  // Local quick-unlock PIN (device-only). Stored in the OS keystore; the server
+  // JWT remains the real credential — this is a convenience lock.
+  private pinStore = Platform.OS === 'web'
+    ? { get: (k: string) => AsyncStorage.getItem(k), set: (k: string, v: string) => AsyncStorage.setItem(k, v) }
+    : { get: (k: string) => SecureStore.getItemAsync(k), set: (k: string, v: string) => SecureStore.setItemAsync(k, v) };
+
+  public async setUnlockPin(pin: string): Promise<void> {
+    await this.pinStore.set(PIN_KEY, pin);
+  }
+  public async getUnlockPin(): Promise<string | null> {
+    try { return await this.pinStore.get(PIN_KEY); } catch { return null; }
+  }
+  public async hasUnlockPin(): Promise<boolean> {
+    return !!(await this.getUnlockPin());
   }
 }
 

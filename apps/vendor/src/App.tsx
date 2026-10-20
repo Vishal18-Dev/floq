@@ -12,6 +12,8 @@ import { SubscribeScreen } from './components/subscription/SubscribeScreen';
 import { ItemsManager } from './components/business/ItemsManager';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { OnboardingWizard } from './components/auth/OnboardingWizard';
+import { LockScreen } from './components/auth/LockScreen';
+import { SetUnlockPinScreen } from './components/auth/SetUnlockPinScreen';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 import { api, SubscriptionStatus } from './services/api';
@@ -30,7 +32,7 @@ import { useCatalogStore } from './store/useCatalogStore';
 
 export default function App() {
   const fontsReady = useAppFonts();
-  const { isAuthenticated, isLoading: authLoading, restoreSession, logout } = useAuthStore();
+  const { isAuthenticated, isLocked, needsPinSetup, isLoading: authLoading, restoreSession, logout } = useAuthStore();
   const store = useStoreStore((s) => s.store);
   const settings = useStoreStore((s) => s.settings);
   const subscription = useStoreStore((s) => s.subscription);
@@ -196,6 +198,13 @@ export default function App() {
       return <OnboardingWizard idToken={onboarding.idToken} phone={onboarding.phone} onBack={() => setOnboarding(null)} />;
     }
     return <LoginScreen onNeedsOnboarding={(idToken, phone) => setOnboarding({ idToken, phone })} />;
+  }
+  // Authenticated but needs a quick-unlock PIN set, or must unlock this open.
+  if (needsPinSetup) {
+    return <SetUnlockPinScreen />;
+  }
+  if (isLocked) {
+    return <LockScreen storeName={store?.name} />;
   }
   if (showSplash || dataLoading) {
     return <Splash storeName={store?.name} carryOver={useCatalogStore.getState().carriedOverTokens} />;
