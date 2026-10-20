@@ -16,12 +16,13 @@
     "build:all": "npm run build --workspaces --if-present",
     "test": "npm run test --workspace=backend",
     "seed": "npm run seed --workspace=backend",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package || true"
   },
   "dependencies": {
     "@types/node": "20.14.9",
     "esbuild": "0.23.0",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "patch-package": "^8.0.1"
   },
   "keywords": [
     "floq",
@@ -33,8 +34,5 @@
     "queue"
   ],
   "author": "FLOQ Technologies",
-  "license": "MIT",
-  "devDependencies": {
-    "patch-package": "^8.0.1"
-  }
+  "license": "MIT"
 }
