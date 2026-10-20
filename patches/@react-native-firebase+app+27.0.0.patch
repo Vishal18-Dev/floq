@@ -29,3 +29,16 @@ index 2134290..346a41c 100644
      }
    }
  }
+diff --git a/node_modules/@react-native-firebase/app/package.json b/node_modules/@react-native-firebase/app/package.json
+index c1495e3..5964ab0 100644
+--- a/node_modules/@react-native-firebase/app/package.json
++++ b/node_modules/@react-native-firebase/app/package.json
+@@ -141,7 +141,7 @@
+       "minSdk": 24,
+       "targetSdk": 34,
+       "compileSdk": 34,
+-      "firebase": "35.0.0",
++      "firebase": "33.16.0",
+       "firebaseCrashlyticsGradle": "3.0.8",
+       "firebasePerfGradle": "2.0.2",
+       "gmsGoogleServicesGradle": "4.5.0",
