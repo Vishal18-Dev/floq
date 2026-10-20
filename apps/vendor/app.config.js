@@ -16,11 +16,11 @@ module.exports = () => {
       ...(expo.plugins || []),
       '@react-native-firebase/app',
       'expo-image-picker',
-      // Expo 54's toolchain supports Kotlin up to 2.2.20; pin to it (RNFirebase
-      // 27 would otherwise default to 2.4.0, which KSP here can't resolve). The
-      // Firebase BoM is patched down to 33.x so firebase-auth is built with a
-      // Kotlin this toolchain can consume (see patches/).
-      ['expo-build-properties', { android: { kotlinVersion: '2.2.20' } }],
+      // Pin Kotlin to the 2.1.x family Expo 54 is built for: RNFirebase 27 would
+      // default to 2.4.0 (KSP can't resolve it) and 2.2.x breaks Expo's gradle
+      // plugins (KotlinJvmCompilerOptions.getJvmDefault). The Firebase BoM is
+      // patched down to 33.x so firebase-auth's metadata is 2.1-readable (patches/).
+      ['expo-build-properties', { android: { kotlinVersion: '2.1.21' } }],
     ],
   };
 };
