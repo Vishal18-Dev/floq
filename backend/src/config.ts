@@ -61,8 +61,9 @@ export const config = {
     monthlyPrice: parseInt(process.env.SUB_MONTHLY_PRICE || '49', 10),
     annualPrice: parseInt(process.env.SUB_ANNUAL_PRICE || '499', 10),
     trialDays: parseInt(process.env.SUB_TRIAL_DAYS || '7', 10),
-    // The UPI ID merchants pay their subscription INTO (FLOQ's own VPA).
-    collectionUpiId: process.env.SUB_COLLECTION_UPI_ID || '',
+    // The UPI ID merchants pay their subscription INTO (FLOQ's own VPA). Not a
+    // secret (merchants see it on the QR); default here, override via env.
+    collectionUpiId: process.env.SUB_COLLECTION_UPI_ID || 'vishalraov.1995@okaxis',
     collectionUpiName: process.env.SUB_COLLECTION_UPI_NAME || 'FLOQ',
   },
 };
