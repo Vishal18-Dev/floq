@@ -232,4 +232,34 @@ router.post('/reset-pin', async (req: Request, res: Response, next: NextFunction
   }
 });
 
+// GET /api/admin/pending-subscriptions — manual-UPI payments awaiting verification.
+router.get('/pending-subscriptions', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { subscriptionService } = await import('../../services/subscriptionService');
+    res.json({ pending: await subscriptionService.listPending() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/verify-subscription — confirm a UPI payment, activate + extend.
+router.post('/verify-subscription', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const paymentId = String(req.body?.paymentId || '');
+    if (!paymentId) {
+      res.status(400).json({ error: 'INVALID_INPUT', message: 'paymentId is required' });
+      return;
+    }
+    const { subscriptionService } = await import('../../services/subscriptionService');
+    const result = await subscriptionService.verifyPayment(paymentId);
+    if (!result.ok) {
+      res.status(404).json({ error: result.error });
+      return;
+    }
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

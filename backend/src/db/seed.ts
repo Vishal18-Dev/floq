@@ -20,6 +20,8 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     // Reset existing tables in dependency order
     const tables = [
       'audit_logs',
+      'subscription_payments',
+      'subscriptions',
       'day_closures',
       'ticket_sequences',
       'queue_tickets',

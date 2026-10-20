@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { orderEngine } from '../../services/orderEngine';
+import { subscriptionService } from '../../services/subscriptionService';
 import { CreateOrderSchema, UpdateOrderStatusSchema } from '@floq/validation';
 
 const router = Router();
@@ -34,6 +35,16 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response, next) => {
 // POST /api/orders - Create staff or digital order
 router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
   try {
+    // Paywall: when the trial/subscription has lapsed, block NEW sales. Reads
+    // (catalog, past orders, analytics) stay open so data is never held hostage.
+    if (!(await subscriptionService.canSell(req.storeId!))) {
+      res.status(402).json({
+        error: 'SUBSCRIPTION_REQUIRED',
+        message: 'Your FLOQ subscription has ended. Subscribe to keep making sales.',
+      });
+      return;
+    }
+
     const input = CreateOrderSchema.parse({
       ...req.body,
       storeId: req.storeId,

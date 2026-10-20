@@ -17,6 +17,7 @@ import analyticsRouter from './api/routes/analytics';
 import syncRouter from './api/routes/sync';
 import publicRouter from './api/routes/public';
 import adminRouter from './api/routes/admin';
+import subscriptionRouter from './api/routes/subscription';
 
 export function createServer() {
   const app = express();
@@ -85,6 +86,7 @@ export function createServer() {
   app.use('/api/payments', authMiddleware, paymentsRouter);
   app.use('/api/queue', authMiddleware, queueRouter);
   app.use('/api/analytics', authMiddleware, analyticsRouter);
+  app.use('/api/subscription', authMiddleware, subscriptionRouter);
   app.use('/api/sync', authMiddleware, syncRouter);
 
   // Central Error Handler
