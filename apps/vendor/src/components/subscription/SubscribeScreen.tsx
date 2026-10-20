@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Linking, Alert } from 'react-native';
 import { formatINR } from '@floq/utils';
 import { palette, fonts, borders, spacing } from '../../theme';
 import { api, SubscriptionStatus } from '../../services/api';
 import { useT } from '../../i18n';
 import { Kicker, PrimaryBar } from '../common/ui';
-import { UpiQr } from '../sell/UpiQr';
+import { UpiQr, buildUpiUri } from '../sell/UpiQr';
 
 type Plan = 'monthly' | 'annual';
 
@@ -33,6 +33,18 @@ export function SubscribeScreen({
       ? 'Your subscription is active'
       : `${subscription.daysLeft} ${t('trialDaysLeft')}`;
 
+  // Open the amount in the user's own UPI app (GPay/PhonePe/Paytm chooser) —
+  // you can't scan a QR on the same phone that's showing it.
+  const openUpiApp = async () => {
+    if (!subscription.collectionUpiId) return;
+    const uri = buildUpiUri({ upiId: subscription.collectionUpiId, name: subscription.collectionUpiName || 'FLOQ', amount, note: `FLOQ ${plan}` });
+    try {
+      await Linking.openURL(uri);
+    } catch {
+      Alert.alert('No UPI app found', 'Install GPay, PhonePe or Paytm — or scan the QR from another phone.');
+    }
+  };
+
   const submit = async () => {
     if (busy) return;
     setBusy(true);
@@ -41,22 +53,38 @@ export function SubscribeScreen({
       setPending(true);
       onSubmitted();
     } catch (e: any) {
-      alert(e?.message || 'Could not submit. Try again.');
+      Alert.alert('Could not submit', e?.message || 'Try again.');
     } finally {
       setBusy(false);
     }
   };
 
+  // While awaiting manual activation, quietly poll so the screen flips to
+  // "active" on its own — no restart, no manual refresh.
+  useEffect(() => {
+    if (!pending || subscription.status === 'active') return;
+    const id = setInterval(() => onSubmitted(), 15000);
+    return () => clearInterval(id);
+  }, [pending, subscription.status, onSubmitted]);
+
   if (pending) {
+    const activated = subscription.status === 'active';
     return (
       <View style={styles.pendingWrap}>
         <Text style={styles.pendingTick}>✓</Text>
-        <Text style={styles.pendingTitle}>{t('paymentPending')}</Text>
+        <Text style={styles.pendingTitle}>{activated ? "You're all set" : t('paymentPending')}</Text>
         <Text style={styles.pendingSub}>
-          FLOQ will verify your payment and activate your account shortly. You can close and reopen the app to check.
+          {activated
+            ? 'Your subscription is now active. Thank you!'
+            : "We'll confirm your payment and activate your account, usually within a few hours. Keep using FLOQ in the meantime — this updates on its own, no need to restart."}
         </Text>
-        <TouchableOpacity style={styles.refreshBtn} onPress={onSubmitted}>
-          <Text style={styles.refreshText}>REFRESH</Text>
+        <TouchableOpacity
+          style={[styles.refreshBtn, activated && styles.refreshBtnActive]}
+          onPress={() => (activated ? (onClose ? onClose() : setPending(false)) : onSubmitted())}
+        >
+          <Text style={[styles.refreshText, activated && styles.refreshTextActive]}>
+            {activated ? 'CONTINUE' : onClose ? 'DONE' : 'CHECK AGAIN'}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -89,14 +117,19 @@ export function SubscribeScreen({
         })}
       </View>
 
-      {/* Pay-to QR */}
+      {/* Pay via a UPI app on this phone */}
+      <TouchableOpacity style={styles.payBtn} onPress={openUpiApp} activeOpacity={0.85} disabled={!subscription.collectionUpiId}>
+        <Text style={styles.payBtnText}>PAY {formatINR(amount)} VIA UPI APP</Text>
+        <Text style={styles.payBtnSub}>GPay · PhonePe · Paytm · any UPI app</Text>
+      </TouchableOpacity>
+
+      {/* Or scan from another phone */}
       <View style={styles.qrBlock}>
-        <Text style={styles.scanLabel}>{bi('scanToPay').primary}{bi('scanToPay').secondary ? ` · ${bi('scanToPay').secondary}` : ''}</Text>
+        <Text style={styles.scanLabel}>OR SCAN FROM ANOTHER PHONE</Text>
         <View style={{ marginVertical: spacing.md }}>
           <UpiQr upiId={subscription.collectionUpiId} name={subscription.collectionUpiName} amount={amount} note={`FLOQ ${plan}`} />
         </View>
         <Text style={styles.payee}>{subscription.collectionUpiId || '—'}</Text>
-        <Text style={styles.amountLine}>{formatINR(amount)}</Text>
       </View>
 
       {/* Reference + confirm */}
@@ -132,7 +165,10 @@ const styles = StyleSheet.create({
   planPrice: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 34, letterSpacing: -1, color: palette.ink, marginTop: 6 },
   planUnit: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[600] },
   planTextActive: { color: palette.onAccent },
-  qrBlock: { alignItems: 'center', paddingVertical: 22 },
+  payBtn: { margin: 16, backgroundColor: palette.accent, paddingVertical: 18, alignItems: 'center' },
+  payBtnText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 18, letterSpacing: 0.3, color: palette.onAccent },
+  payBtnSub: { fontFamily: fonts.body, fontSize: 12, color: palette.onAccent, opacity: 0.85, marginTop: 3 },
+  qrBlock: { alignItems: 'center', paddingVertical: 14 },
   scanLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, letterSpacing: 1, color: palette.neutral[700] },
   payee: { fontFamily: fonts.semibold, fontSize: 14, color: palette.ink, marginTop: 4 },
   amountLine: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 28, letterSpacing: -0.8, color: palette.accent, marginTop: 2 },
@@ -146,4 +182,6 @@ const styles = StyleSheet.create({
   pendingSub: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[700], textAlign: 'center', marginTop: 10, lineHeight: 20 },
   refreshBtn: { marginTop: 24, borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 28, paddingVertical: 14 },
   refreshText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 1, color: palette.ink },
+  refreshBtnActive: { backgroundColor: palette.accent, borderColor: palette.accent },
+  refreshTextActive: { color: palette.onAccent },
 });
