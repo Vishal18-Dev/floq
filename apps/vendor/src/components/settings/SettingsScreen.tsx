@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { palette, fonts, borders, spacing } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
+import { SubscriptionStatus } from '../../services/api';
 import { voiceService } from '../../services/voice';
 import { SECONDARY_LANGUAGE_LABELS } from '../../i18n';
 import type { SecondaryLanguage } from '../../i18n/strings';
@@ -11,9 +12,26 @@ import { Kicker } from '../common/ui';
 
 const LANGS: SecondaryLanguage[] = ['none', 'ta', 'hi', 'mr'];
 
-export function SettingsScreen({ onManageItems, onLogout, onBack }: { onManageItems: () => void; onLogout: () => void; onBack: () => void }) {
+function subLabel(s: SubscriptionStatus): string {
+  if (s.status === 'active') return s.plan === 'exempt' ? 'Active · Complimentary' : 'Active';
+  if (s.status === 'trial') return 'Free trial';
+  return 'Subscription ended';
+}
+function subDetail(s: SubscriptionStatus): string {
+  if (s.status === 'trial') return `${s.daysLeft} day${s.daysLeft === 1 ? '' : 's'} left`;
+  if (s.status === 'active') {
+    if (s.plan === 'exempt' || !s.currentPeriodEnd) return 'Thanks for being an early FLOQ merchant';
+    const d = new Date(s.currentPeriodEnd);
+    const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${s.plan === 'annual' ? 'Yearly' : 'Monthly'} · renews ${date}`;
+  }
+  return 'Subscribe to keep making sales';
+}
+
+export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, onBack }: { onManageItems: () => void; onManageSubscription: () => void; onLogout: () => void; onBack: () => void }) {
   const store = useStoreStore((s) => s.store);
   const settings = useStoreStore((s) => s.settings);
+  const subscription = useStoreStore((s) => s.subscription);
   const updateSettings = useStoreStore((s) => s.updateSettings);
 
   const [upiId, setUpiId] = useState(settings?.upiId || '');
@@ -41,6 +59,20 @@ export function SettingsScreen({ onManageItems, onLogout, onBack }: { onManageIt
         <Text style={styles.title}>{store?.name || 'Settings'}</Text>
         <Text style={styles.sub}>{store?.mode === 'RETAIL' ? 'Retail store' : 'Food counter'} · {store?.phone || ''}</Text>
       </View>
+
+      {/* Subscription */}
+      {subscription ? (
+        <>
+          <View style={styles.section}><Kicker>SUBSCRIPTION</Kicker></View>
+          <TouchableOpacity style={styles.subRow} onPress={onManageSubscription} activeOpacity={0.7}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.subStatus}>{subLabel(subscription)}</Text>
+              <Text style={styles.subDetail}>{subDetail(subscription)}</Text>
+            </View>
+            <Text style={styles.subCta}>{subscription.status === 'expired' ? 'SUBSCRIBE →' : 'VIEW PLANS →'}</Text>
+          </TouchableOpacity>
+        </>
+      ) : null}
 
       {/* Language */}
       <View style={styles.section}><Kicker>SECOND LANGUAGE</Kicker></View>
@@ -111,6 +143,10 @@ const styles = StyleSheet.create({
   langChipActive: { backgroundColor: palette.ink, borderColor: palette.ink },
   langText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.ink },
   langTextActive: { color: palette.onAccent },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, borderWidth: borders.rule, borderColor: palette.divider, padding: 14 },
+  subStatus: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
+  subDetail: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[700], marginTop: 2 },
+  subCta: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, letterSpacing: 0.5, color: palette.accent },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, marginTop: 12, borderTopWidth: borders.rule, borderBottomWidth: borders.rule, borderColor: palette.divider },
   rowLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 15, color: palette.ink },
   rowSub: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[700], marginTop: 2 },

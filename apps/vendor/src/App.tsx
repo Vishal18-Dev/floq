@@ -49,6 +49,7 @@ export default function App() {
   const [pendingSync, setPendingSync] = useState(0);
   const [itemsOpen, setItemsOpen] = useState(false);
   const [onboarding, setOnboarding] = useState<{ idToken: string; phone: string } | null>(null);
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   const mode = store?.mode || 'FOOD';
   const isFood = mode === 'FOOD';
@@ -217,6 +218,10 @@ export default function App() {
         <SubscriptionBanner subscription={subscription} onPress={() => setActiveTab('SELL')} />
 
         <View style={styles.main}>
+          {showSubscribe && subscription ? (
+            <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} onClose={() => setShowSubscribe(false)} />
+          ) : (
+          <>
           {activeTab === 'SELL' && (
             subscription && !subscription.canSell ? (
               <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} />
@@ -239,7 +244,14 @@ export default function App() {
             <DayScreen dailySummary={dailySummary} onCloseDay={() => api.closeDay().then(() => { refreshAnalytics(); })} onManageItems={() => setItemsOpen(true)} />
           )}
           {activeTab === 'SETTINGS' && (
-            <SettingsScreen onManageItems={() => setItemsOpen(true)} onLogout={logout} onBack={() => setActiveTab('SELL')} />
+            <SettingsScreen
+              onManageItems={() => setItemsOpen(true)}
+              onManageSubscription={() => setShowSubscribe(true)}
+              onLogout={logout}
+              onBack={() => setActiveTab('SELL')}
+            />
+          )}
+          </>
           )}
         </View>
 

@@ -12,9 +12,11 @@ type Plan = 'monthly' | 'annual';
 export function SubscribeScreen({
   subscription,
   onSubmitted,
+  onClose,
 }: {
   subscription: SubscriptionStatus;
   onSubmitted: () => void;
+  onClose?: () => void;
 }) {
   const { t, bi } = useT();
   const [plan, setPlan] = useState<Plan>('monthly');
@@ -27,6 +29,8 @@ export function SubscribeScreen({
   const headline =
     subscription.status === 'expired'
       ? t('subscriptionEnded')
+      : subscription.status === 'active'
+      ? 'Your subscription is active'
       : `${subscription.daysLeft} ${t('trialDaysLeft')}`;
 
   const submit = async () => {
@@ -61,6 +65,7 @@ export function SubscribeScreen({
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.head}>
+        {onClose ? <TouchableOpacity onPress={onClose}><Text style={styles.back}>← Back</Text></TouchableOpacity> : null}
         <Kicker>FLOQ {bi('subscribe').primary}</Kicker>
         <Text style={styles.headline}>{headline}</Text>
       </View>
@@ -118,6 +123,7 @@ export function SubscribeScreen({
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.bg },
   head: { padding: 16, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
+  back: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], marginBottom: 10 },
   headline: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 24, letterSpacing: -0.6, color: palette.ink, marginTop: 6 },
   plans: { flexDirection: 'row', gap: borders.rule, backgroundColor: palette.divider, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
   plan: { flex: 1, backgroundColor: palette.bg, paddingVertical: 20, alignItems: 'center' },
