@@ -14,6 +14,19 @@ import {
 import Constants from 'expo-constants';
 import { CreateOrderInput } from '@floq/validation';
 
+export interface SignupPayload {
+  idToken: string;
+  storeName: string;
+  ownerName?: string;
+  storeType: string;
+  mode: 'FOOD' | 'RETAIL';
+  secondaryLanguage: string;
+  city?: string;
+  upiId?: string;
+  imageUrl?: string;
+  pin: string;
+}
+
 export interface SubscriptionStatus {
   status: 'trial' | 'active' | 'expired';
   plan: string | null;
@@ -170,11 +183,37 @@ class NativeApiClient {
       body: JSON.stringify({ phone, pin }),
       timeoutMs: 55000, // tolerate a free-tier cold start on the first login of the day
     });
+    this.applySessionContext(session);
+    return session;
+  }
+
+  /** Log in with a verified Firebase OTP token. Throws with code
+   *  'NEEDS_ONBOARDING' (status 404) when the number has no account yet. */
+  public async loginWithFirebase(idToken: string): Promise<UserSession> {
+    const session: UserSession = await this.request('/auth/firebase', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+      timeoutMs: 55000,
+    });
+    this.applySessionContext(session);
+    return session;
+  }
+
+  public async signup(payload: SignupPayload): Promise<UserSession> {
+    const session: UserSession = await this.request('/signup', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      timeoutMs: 55000,
+    });
+    this.applySessionContext(session);
+    return session;
+  }
+
+  private applySessionContext(session: UserSession) {
     this.setAuthToken(session.token);
     if (session.storeIds && session.storeIds[0]) {
       this.setStoreContext(session.merchantId, session.storeIds[0]);
     }
-    return session;
   }
 
   public async getProfile(): Promise<any> {

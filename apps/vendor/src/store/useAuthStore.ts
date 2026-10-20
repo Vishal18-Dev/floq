@@ -1,8 +1,16 @@
 import { create } from 'zustand';
 import { UserSession } from '@floq/types';
-import { api } from '../services/api';
+import { api, SignupPayload } from '../services/api';
 import { authStorage } from '../services/authStorage';
 import { realtimeClient } from '../services/realtimeClient';
+
+/** Thrown by loginWithOtp when the verified number has no account yet, so the
+ *  UI can route into the onboarding wizard carrying the idToken + phone. */
+export class NeedsOnboardingError extends Error {
+  constructor(public idToken: string, public phone: string) {
+    super('NEEDS_ONBOARDING');
+  }
+}
 
 interface AuthState {
   session: UserSession | null;
@@ -10,9 +18,19 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   loginWithPin: (phone: string, pin: string) => Promise<UserSession>;
+  loginWithOtp: (idToken: string, phone: string) => Promise<UserSession>;
+  signup: (payload: SignupPayload) => Promise<UserSession>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
   clearError: () => void;
+}
+
+/** Persist a fresh session and flip the store to authenticated. */
+async function applySession(set: any, get: any, session: UserSession) {
+  await authStorage.saveSession(session);
+  api.setUnauthorizedCallback(() => get().logout());
+  set({ session, isAuthenticated: true, isLoading: false, error: null });
+  realtimeClient.connect();
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -61,6 +79,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return session;
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Login failed' });
+      throw err;
+    }
+  },
+
+  loginWithOtp: async (idToken: string, phone: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      const session = await api.loginWithFirebase(idToken);
+      await applySession(set, get, session);
+      return session;
+    } catch (err: any) {
+      set({ isLoading: false });
+      // New number → route to onboarding instead of surfacing an error.
+      if (err?.code === 'NEEDS_ONBOARDING' || err?.status === 404) {
+        throw new NeedsOnboardingError(idToken, phone);
+      }
+      set({ error: err.message || 'Login failed' });
+      throw err;
+    }
+  },
+
+  signup: async (payload: SignupPayload) => {
+    try {
+      set({ isLoading: true, error: null });
+      const session = await api.signup(payload);
+      await applySession(set, get, session);
+      return session;
+    } catch (err: any) {
+      set({ isLoading: false, error: err.message || 'Could not create account' });
       throw err;
     }
   },

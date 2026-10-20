@@ -2,7 +2,7 @@
   "expo": {
     "name": "FLOQ Merchant",
     "slug": "floq-merchant",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -16,7 +16,7 @@
         "backgroundColor": "#ec3013"
       },
       "package": "in.floq.merchant",
-      "versionCode": 1,
+      "versionCode": 2,
       "permissions": [
         "VIBRATE",
         "INTERNET",

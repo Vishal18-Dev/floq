@@ -11,6 +11,7 @@ import { SettingsScreen } from './components/settings/SettingsScreen';
 import { SubscribeScreen } from './components/subscription/SubscribeScreen';
 import { ItemsManager } from './components/business/ItemsManager';
 import { LoginScreen } from './components/auth/LoginScreen';
+import { OnboardingWizard } from './components/auth/OnboardingWizard';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 import { api, SubscriptionStatus } from './services/api';
@@ -47,6 +48,7 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [itemsOpen, setItemsOpen] = useState(false);
+  const [onboarding, setOnboarding] = useState<{ idToken: string; phone: string } | null>(null);
 
   const mode = store?.mode || 'FOOD';
   const isFood = mode === 'FOOD';
@@ -189,7 +191,10 @@ export default function App() {
     return <Splash />;
   }
   if (!isAuthenticated) {
-    return <LoginScreen />;
+    if (onboarding) {
+      return <OnboardingWizard idToken={onboarding.idToken} phone={onboarding.phone} onBack={() => setOnboarding(null)} />;
+    }
+    return <LoginScreen onNeedsOnboarding={(idToken, phone) => setOnboarding({ idToken, phone })} />;
   }
   if (showSplash || dataLoading) {
     return <Splash storeName={store?.name} carryOver={useCatalogStore.getState().carriedOverTokens} />;

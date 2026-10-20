@@ -1,39 +1,59 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAuthStore, NeedsOnboardingError } from '../../store/useAuthStore';
+import { sendOtp, confirmOtp, OtpConfirmation } from '../../services/firebaseOtp';
 import { palette, fonts, borders, spacing } from '../../theme';
 import { Numpad, PrimaryBar, Kicker } from '../common/ui';
 
-const PIN_LEN = 4;
+const OTP_LEN = 6;
 
-export function LoginScreen() {
-  const [step, setStep] = useState<'PHONE' | 'PIN'>('PHONE');
+/** Phone-OTP login. Existing numbers land straight in; a new number calls
+ *  onNeedsOnboarding with the verified token + phone to start the wizard. */
+export function LoginScreen({ onNeedsOnboarding }: { onNeedsOnboarding: (idToken: string, phone: string) => void }) {
+  const [step, setStep] = useState<'PHONE' | 'CODE'>('PHONE');
   const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('');
-  const { loginWithPin, isLoading, error, clearError } = useAuthStore();
+  const [code, setCode] = useState('');
+  const [confirmation, setConfirmation] = useState<OtpConfirmation | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { loginWithOtp } = useAuthStore();
 
-  const onPhoneKey = (d: string) => {
-    if (phone.length >= 10) return;
-    setPhone(phone + d);
-  };
-  const onPinKey = (d: string) => {
-    if (pin.length >= 6) return;
-    const next = pin + d;
-    setPin(next);
-  };
-
-  const handleLogin = async () => {
+  const doSend = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      clearError();
-      await loginWithPin(phone, pin);
-    } catch {
-      setPin('');
+      const conf = await sendOtp(phone);
+      setConfirmation(conf);
+      setStep('CODE');
+    } catch (e: any) {
+      setError(e?.message || 'Could not send the code. Check the number and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doVerify = async () => {
+    if (!confirmation) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const idToken = await confirmOtp(confirmation, code);
+      await loginWithOtp(idToken, phone);
+      // success → App re-renders authenticated
+    } catch (e: any) {
+      if (e instanceof NeedsOnboardingError) {
+        onNeedsOnboarding(e.idToken, e.phone);
+        return;
+      }
+      setCode('');
+      setError(e?.message || 'Wrong code — try again.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Brand */}
       <View style={styles.brand}>
         <Text style={styles.wordmark}>FLOQ</Text>
         <View style={styles.rule} />
@@ -51,44 +71,29 @@ export function LoginScreen() {
           <View style={styles.displayArea}>
             <Kicker>YOUR PHONE NUMBER</Kicker>
             <Text style={styles.bigValue}>{phone ? `+91 ${phone}` : '+91'}</Text>
+            <Text style={styles.sub}>We'll text you a one-time code</Text>
           </View>
-          <Numpad onKey={onPhoneKey} onBackspace={() => setPhone(phone.slice(0, -1))} />
-          <PrimaryBar
-            label="NEXT →"
-            disabled={phone.length !== 10}
-            onPress={() => {
-              clearError();
-              setStep('PIN');
-            }}
-          />
+          <Numpad onKey={(d) => phone.length < 10 && setPhone(phone + d)} onBackspace={() => setPhone(phone.slice(0, -1))} />
+          {busy ? (
+            <View style={styles.loadingBar}><ActivityIndicator color={palette.onAccent} /></View>
+          ) : (
+            <PrimaryBar label="SEND CODE →" disabled={phone.length !== 10} onPress={doSend} />
+          )}
         </View>
       ) : (
         <View style={styles.body}>
           <View style={styles.displayArea}>
-            <Kicker>ENTER YOUR PIN</Kicker>
-            <View style={styles.pinDots}>
-              {Array.from({ length: Math.max(PIN_LEN, pin.length) }).map((_, i) => (
-                <View key={i} style={[styles.pinDot, i < pin.length && styles.pinDotFilled]} />
-              ))}
-            </View>
-            <Text style={styles.phoneHint}>+91 {phone}</Text>
+            <Kicker>ENTER THE CODE</Kicker>
+            <Text style={styles.bigValue}>{code || '••••••'}</Text>
+            <Text style={styles.sub}>Sent to +91 {phone}</Text>
           </View>
-          <Numpad onKey={onPinKey} onBackspace={() => setPin(pin.slice(0, -1))} />
-          {isLoading ? (
-            <View style={styles.loadingBar}>
-              <ActivityIndicator color={palette.onAccent} />
-            </View>
+          <Numpad onKey={(d) => code.length < OTP_LEN && setCode(code + d)} onBackspace={() => setCode(code.slice(0, -1))} />
+          {busy ? (
+            <View style={styles.loadingBar}><ActivityIndicator color={palette.onAccent} /></View>
           ) : (
-            <PrimaryBar label="LOG IN →" disabled={pin.length < PIN_LEN} onPress={handleLogin} />
+            <PrimaryBar label="VERIFY →" disabled={code.length < OTP_LEN} onPress={doVerify} />
           )}
-          <Text
-            style={styles.changeNumber}
-            onPress={() => {
-              setStep('PHONE');
-              setPin('');
-              clearError();
-            }}
-          >
+          <Text style={styles.changeNumber} onPress={() => { setStep('PHONE'); setCode(''); setError(null); setConfirmation(null); }}>
             ← Change number
           </Text>
         </View>
@@ -106,10 +111,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, justifyContent: 'flex-end' },
   displayArea: { paddingHorizontal: spacing.xxl, paddingBottom: spacing.lg, flex: 1, justifyContent: 'center' },
   bigValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 40, letterSpacing: -1, color: palette.ink, marginTop: 10 },
-  pinDots: { flexDirection: 'row', gap: 16, marginTop: 20 },
-  pinDot: { width: 20, height: 20, borderWidth: borders.rule, borderColor: palette.divider },
-  pinDotFilled: { backgroundColor: palette.accent, borderColor: palette.accent },
-  phoneHint: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600], marginTop: 18 },
+  sub: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600], marginTop: 14 },
   errorBox: { marginHorizontal: spacing.xxl, backgroundColor: palette.accentRamp[100], borderLeftWidth: 4, borderLeftColor: palette.accent, padding: 12 },
   errorText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.accentRamp[800] },
   loadingBar: { minHeight: 78, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' },
