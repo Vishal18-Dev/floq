@@ -6,33 +6,16 @@ import { Numpad, Kicker, PrimaryBar } from '../common/ui';
 
 const PIN_LEN = 4;
 
-/** First run after OTP login (existing merchant): set a quick-unlock PIN. */
+/** First run after OTP login (existing merchant): set a quick-unlock PIN.
+ *  Single entry — it's a convenience lock, and fingerprint/Face is the fast path. */
 export function SetUnlockPinScreen() {
   const { setUnlockPin } = useAuthStore();
-  const [step, setStep] = useState<'SET' | 'CONFIRM'>('SET');
-  const [first, setFirst] = useState('');
   const [pin, setPin] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const onKey = (d: string) => {
-    setError(null);
-    setPin((p) => (p + d).slice(0, 6));
-  };
-
-  const next = async () => {
-    if (step === 'SET') {
-      setFirst(pin);
-      setPin('');
-      setStep('CONFIRM');
-      return;
-    }
-    if (pin !== first) {
-      setError('PINs did not match — start again');
-      setPin('');
-      setFirst('');
-      setStep('SET');
-      return;
-    }
+  const save = async () => {
+    if (pin.length < PIN_LEN || saving) return;
+    setSaving(true);
     await setUnlockPin(pin); // unlocks + clears needsPinSetup
   };
 
@@ -45,16 +28,16 @@ export function SetUnlockPinScreen() {
       </View>
       <View style={styles.body}>
         <View style={styles.displayArea}>
-          <Kicker>{step === 'SET' ? 'CHOOSE A 4-DIGIT PIN' : 'CONFIRM YOUR PIN'}</Kicker>
+          <Kicker>CHOOSE A 4-DIGIT PIN</Kicker>
           <View style={styles.pinDots}>
             {Array.from({ length: Math.max(PIN_LEN, pin.length) }).map((_, i) => (
               <View key={i} style={[styles.pinDot, i < pin.length && styles.pinDotFilled]} />
             ))}
           </View>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <Text style={styles.hint}>You'll use this (or your fingerprint) each time you open FLOQ.</Text>
         </View>
-        <Numpad onKey={onKey} onBackspace={() => setPin(pin.slice(0, -1))} />
-        <PrimaryBar label={step === 'SET' ? 'NEXT →' : 'SAVE PIN →'} disabled={pin.length < PIN_LEN} onPress={next} />
+        <Numpad onKey={(d) => setPin((pin + d).slice(0, 6))} onBackspace={() => setPin(pin.slice(0, -1))} />
+        <PrimaryBar label={saving ? '…' : 'SAVE PIN →'} disabled={pin.length < PIN_LEN || saving} onPress={save} />
       </View>
     </SafeAreaView>
   );
@@ -71,5 +54,5 @@ const styles = StyleSheet.create({
   pinDots: { flexDirection: 'row', gap: 16, marginTop: 20 },
   pinDot: { width: 20, height: 20, borderWidth: borders.rule, borderColor: palette.divider },
   pinDotFilled: { backgroundColor: palette.accent, borderColor: palette.accent },
-  error: { fontFamily: fonts.semibold, fontSize: 13, color: palette.accent, marginTop: 16 },
+  hint: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[600], marginTop: 18, maxWidth: 300 },
 });

@@ -9,13 +9,14 @@ export async function biometricAvailable(): Promise<boolean> {
   }
 }
 
-/** Prompt fingerprint/Face. Returns true on success. */
+/** Prompt fingerprint/Face. Returns true on success. Device-credential fallback
+ *  is disabled so cancelling returns to our own app PIN, not the phone lock. */
 export async function authenticateBiometric(): Promise<boolean> {
   try {
     const res = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Unlock FLOQ',
-      fallbackLabel: 'Use PIN',
       cancelLabel: 'Use PIN',
+      disableDeviceFallback: true,
     });
     return res.success;
   } catch {
