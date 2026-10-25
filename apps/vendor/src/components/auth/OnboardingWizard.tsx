@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   back: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], marginBottom: 10 },
   title: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 28, letterSpacing: -0.6, color: palette.ink },
   sub: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[700], marginTop: 2 },
-  errorBox: { marginHorizontal: 16, marginTop: 14, backgroundColor: palette.accentRamp[100], borderLeftWidth: 4, borderLeftColor: palette.accent, padding: 12 },
+  errorBox: { marginHorizontal: 16, marginTop: 14, backgroundColor: palette.accentRamp[100], borderLeftWidth: 4, borderLeftColor: palette.accentRamp[600], padding: 12 },
   errorText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.accentRamp[800] },
   section: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 6 },
   photo: { marginHorizontal: 16, height: 120, borderWidth: borders.rule, borderColor: palette.divider, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.surface },

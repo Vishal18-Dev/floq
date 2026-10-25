@@ -2,17 +2,17 @@
  * FLOQ "Modernist" design tokens — ported from the Claude Design system
  * (_ds/modernist styles.css). Single source of truth for the app's look.
  *
- * Character: warm off-white ground, near-black ink, ONE vermillion accent
- * reserved for the primary action / splash / "ready" state. Zero border
- * radius (sharp corners), 2px ink dividers, Archivo 800 for almost all text.
+ * Character: warm off-white ground, near-black ink, a navy brand accent for the
+ * primary action / splash / "ready" state, with a green secondary for positive
+ * highlights. Zero border radius (sharp corners), 2px ink dividers, Archivo 800.
  */
 
 export const palette = {
   bg: '#f3f2f2',
   surface: '#eae9e9',
   ink: '#201e1d',
-  accent: '#ec3013',
-  accent2: '#e15b47',
+  accent: '#103B78', // FLOQ navy (brand primary)
+  accent2: '#32C48D', // FLOQ green (positive / secondary)
 
   // divider = ink at 40% alpha (rgba of #201e1d)
   divider: 'rgba(32,30,29,0.4)',
@@ -30,6 +30,8 @@ export const palette = {
     900: '#2d2b2b',
   },
 
+  // Alert/danger ramp (red). Decoupled from the navy brand accent — errors,
+  // "running late", delete and warnings stay red regardless of branding.
   accentRamp: {
     100: '#fff2ef',
     200: '#ffe0d9',

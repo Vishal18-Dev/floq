@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
   token: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 34, letterSpacing: -1.5, color: palette.ink, lineHeight: 34 },
   elapsed: { fontFamily: fonts.semibold, fontSize: 13, color: palette.neutral[700] },
-  elapsedLate: { color: palette.accent },
+  elapsedLate: { color: palette.accentRamp[700] },
   amount: { marginLeft: 'auto', fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, color: palette.neutral[700] },
   items: { fontFamily: fonts.body, fontSize: 14, color: palette.ink },
   late: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 11, letterSpacing: 0.5, color: palette.accentRamp[700] },

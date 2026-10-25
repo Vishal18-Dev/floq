@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   displayArea: { paddingHorizontal: spacing.xxl, paddingBottom: spacing.lg, flex: 1, justifyContent: 'center' },
   bigValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 40, letterSpacing: -1, color: palette.ink, marginTop: 10 },
   sub: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600], marginTop: 14 },
-  errorBox: { marginHorizontal: spacing.xxl, backgroundColor: palette.accentRamp[100], borderLeftWidth: 4, borderLeftColor: palette.accent, padding: 12 },
+  errorBox: { marginHorizontal: spacing.xxl, backgroundColor: palette.accentRamp[100], borderLeftWidth: 4, borderLeftColor: palette.accentRamp[600], padding: 12 },
   errorText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.accentRamp[800] },
   loadingBar: { minHeight: 78, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' },
   changeNumber: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], textAlign: 'center', paddingVertical: 16 },

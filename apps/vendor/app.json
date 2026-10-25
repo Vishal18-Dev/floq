@@ -8,15 +8,15 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ec3013"
+      "backgroundColor": "#103B78"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ec3013"
+        "backgroundColor": "#ffffff"
       },
       "package": "in.floq.merchant",
-      "versionCode": 3,
+      "versionCode": 4,
       "permissions": [
         "VIBRATE",
         "INTERNET",
