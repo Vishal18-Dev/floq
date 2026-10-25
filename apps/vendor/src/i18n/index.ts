@@ -24,6 +24,15 @@ export function tl(key: StringKey, lang: SecondaryLanguage): string {
  * Hook bound to the current store's configured secondary language. Returns
  * both helpers plus the active language so components can decide layout.
  */
+/** Anek font family for a script, so Hindi/Marathi/Tamil text renders in the
+ *  brand typeface instead of falling back to the system script font. */
+export function localFontFamily(lang: SecondaryLanguage, weight: 'Regular' | 'SemiBold' | 'Bold' = 'Regular'): string {
+  const w = weight === 'Regular' ? '400Regular' : weight === 'SemiBold' ? '600SemiBold' : '700Bold';
+  if (lang === 'ta') return `AnekTamil_${w}`;
+  if (lang === 'hi' || lang === 'mr') return `AnekDevanagari_${w}`;
+  return weight === 'Bold' ? 'AnekLatin_800ExtraBold' : `AnekLatin_${w}`;
+}
+
 export function useT() {
   const lang = (useStoreStore((s) => s.settings?.secondaryLanguage) as SecondaryLanguage) || 'none';
   return {
@@ -32,5 +41,7 @@ export function useT() {
     tl: (key: StringKey) => tl(key, lang),
     /** Primary + secondary as one object, convenient for <BiLabel>. */
     bi: (key: StringKey) => ({ primary: t(key), secondary: tl(key, lang) }),
+    /** Anek family for the current secondary script. */
+    localFont: (weight?: 'Regular' | 'SemiBold' | 'Bold') => localFontFamily(lang, weight),
   };
 }

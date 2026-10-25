@@ -20,7 +20,7 @@ function subLabel(s: SubscriptionStatus): string {
 function subDetail(s: SubscriptionStatus): string {
   if (s.status === 'trial') return `${s.daysLeft} day${s.daysLeft === 1 ? '' : 's'} left`;
   if (s.status === 'active') {
-    if (s.plan === 'exempt' || !s.currentPeriodEnd) return 'Thanks for being an early FLOQ merchant';
+    if (s.plan === 'exempt' || !s.currentPeriodEnd) return 'Thanks for being an early floq merchant';
     const d = new Date(s.currentPeriodEnd);
     const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     return `${s.plan === 'annual' ? 'Yearly' : 'Monthly'} · renews ${date}`;

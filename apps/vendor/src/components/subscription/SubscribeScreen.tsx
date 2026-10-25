@@ -37,7 +37,7 @@ export function SubscribeScreen({
   // you can't scan a QR on the same phone that's showing it.
   const openUpiApp = async () => {
     if (!subscription.collectionUpiId) return;
-    const uri = buildUpiUri({ upiId: subscription.collectionUpiId, name: subscription.collectionUpiName || 'FLOQ', amount, note: `FLOQ ${plan}` });
+    const uri = buildUpiUri({ upiId: subscription.collectionUpiId, name: subscription.collectionUpiName || "floq", amount, note: `floq ${plan}` });
     try {
       await Linking.openURL(uri);
     } catch {
@@ -76,7 +76,7 @@ export function SubscribeScreen({
         <Text style={styles.pendingSub}>
           {activated
             ? 'Your subscription is now active. Thank you!'
-            : "We'll confirm your payment and activate your account, usually within a few hours. Keep using FLOQ in the meantime — this updates on its own, no need to restart."}
+            : "We'll confirm your payment and activate your account, usually within a few hours. Keep using floq in the meantime — this updates on its own, no need to restart."}
         </Text>
         <TouchableOpacity
           style={[styles.refreshBtn, activated && styles.refreshBtnActive]}
@@ -94,7 +94,7 @@ export function SubscribeScreen({
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.head}>
         {onClose ? <TouchableOpacity onPress={onClose}><Text style={styles.back}>← Back</Text></TouchableOpacity> : null}
-        <Kicker>FLOQ {bi('subscribe').primary}</Kicker>
+        <Kicker>floq {bi('subscribe').primary}</Kicker>
         <Text style={styles.headline}>{headline}</Text>
       </View>
 
@@ -127,7 +127,7 @@ export function SubscribeScreen({
       <View style={styles.qrBlock}>
         <Text style={styles.scanLabel}>OR SCAN FROM ANOTHER PHONE</Text>
         <View style={{ marginVertical: spacing.md }}>
-          <UpiQr upiId={subscription.collectionUpiId} name={subscription.collectionUpiName} amount={amount} note={`FLOQ ${plan}`} />
+          <UpiQr upiId={subscription.collectionUpiId} name={subscription.collectionUpiName} amount={amount} note={`floq ${plan}`} />
         </View>
         <Text style={styles.payee}>{subscription.collectionUpiId || '—'}</Text>
       </View>

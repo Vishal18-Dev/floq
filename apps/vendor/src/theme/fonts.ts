@@ -4,21 +4,33 @@ import {
   AnekLatin_600SemiBold,
   AnekLatin_800ExtraBold,
 } from '@expo-google-fonts/anek-latin';
+import {
+  AnekDevanagari_400Regular,
+  AnekDevanagari_600SemiBold,
+  AnekDevanagari_700Bold,
+} from '@expo-google-fonts/anek-devanagari';
+import {
+  AnekTamil_400Regular,
+  AnekTamil_600SemiBold,
+  AnekTamil_700Bold,
+} from '@expo-google-fonts/anek-tamil';
 
 /**
- * Loads the Anek Latin faces the FLOQ brand uses (per Brand Guidelines v1.0 —
- * Anek by Ek Type). If loading fails (e.g. offline first launch before the face
- * is cached), the app still renders with the platform sans.
- *
- * ponytail: Latin only for now. Devanagari/Tamil local text falls back to the
- * system script font; add @expo-google-fonts/anek-devanagari + anek-tamil and
- * select per-script when the bilingual type polish is scheduled.
+ * Loads the Anek faces the FLOQ brand uses (Anek by Ek Type) — Latin for the
+ * UI, plus Devanagari (Hindi/Marathi) and Tamil for the merchant's local-
+ * language text. Falls back to the platform sans if a face hasn't cached yet.
  */
 export function useAppFonts(): boolean {
   const [loaded, error] = useFonts({
     AnekLatin_400Regular,
     AnekLatin_600SemiBold,
     AnekLatin_800ExtraBold,
+    AnekDevanagari_400Regular,
+    AnekDevanagari_600SemiBold,
+    AnekDevanagari_700Bold,
+    AnekTamil_400Regular,
+    AnekTamil_600SemiBold,
+    AnekTamil_700Bold,
   });
   return loaded || Boolean(error);
 }

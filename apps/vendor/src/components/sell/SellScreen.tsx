@@ -29,7 +29,7 @@ type Phase = 'SELL' | 'PAY' | 'CASH' | 'UPI' | 'TICKET';
 type CartItem = { product: Product; quantity: number };
 
 export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary, settings, mode, onCharge, onToggleAvailability }) => {
-  const { bi, t, lang } = useT();
+  const { bi, t, lang, localFont } = useT();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [padMode, setPadMode] = useState(false);
   const [padAmount, setPadAmount] = useState('');
@@ -187,7 +187,7 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={styles.showToCustomer}>{bi('showToCustomer').primary}{bi('showToCustomer').secondary ? ` · ${bi('showToCustomer').secondary}` : ''}</Text>
             <View style={{ marginVertical: spacing.lg }}>
-              <UpiQr upiId={settings?.upiId} name={settings?.upiName} amount={pendingTotal} note={`FLOQ sale`} />
+              <UpiQr upiId={settings?.upiId} name={settings?.upiName} amount={pendingTotal} note={`floq sale`} />
             </View>
             <Text style={styles.upiVpa}>{settings?.upiId || '—'}</Text>
             <View style={{ flex: 1 }} />
@@ -221,7 +221,7 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
       <TodayStrip revenue={revenue} orders={orders} rightLabel={t('amount')} onToggle={() => setPadMode(true)} />
 
       {products.length === 0 ? (
-        <EmptyState title="No items yet" subtitle="Add products in Business, or ask FLOQ to set up your menu." />
+        <EmptyState title="No items yet" subtitle="Add products in Business, or ask floq to set up your menu." />
       ) : (
         <ScrollView contentContainerStyle={styles.grid}>
           {products.map((p) => {
@@ -239,7 +239,7 @@ export const SellScreen: React.FC<Props> = ({ products, categories, dailySummary
                   <Text style={styles.tileName} numberOfLines={2}>{p.name}</Text>
                   {qty > 0 && <View style={styles.qtyBadge}><Text style={styles.qtyBadgeText}>{qty}</Text></View>}
                 </View>
-                {p.nameLocal && lang !== 'none' ? <Text style={styles.tileLocal} numberOfLines={1}>{p.nameLocal}</Text> : null}
+                {p.nameLocal && lang !== 'none' ? <Text style={[styles.tileLocal, { fontFamily: localFont() }]} numberOfLines={1}>{p.nameLocal}</Text> : null}
                 <View style={styles.tileBottom}>
                   <Text style={styles.tilePrice}>{formatINR(p.price)}</Text>
                   {out && <View style={styles.soldOut}><Text style={styles.soldOutText}>{t('soldOut')}</Text></View>}

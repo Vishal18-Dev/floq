@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>FLOQ Merchant POS</Text>
+          <Text style={styles.title}>floq merchant</Text>
           <Text style={styles.subtitle}>Application runtime error encountered</Text>
           <Text style={styles.errorText}>{this.state.error?.message || 'Unknown error'}</Text>
           <TouchableOpacity

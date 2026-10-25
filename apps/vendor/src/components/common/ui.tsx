@@ -25,7 +25,7 @@ export function BiText({
   localStyle?: StyleProp<TextStyle>;
   numberOfLines?: number;
 }) {
-  const { bi } = useT();
+  const { bi, localFont } = useT();
   const primary = k ? bi(k).primary : en || '';
   const secondary = k ? bi(k).secondary : local || '';
   return (
@@ -34,7 +34,7 @@ export function BiText({
         {primary}
       </Text>
       {secondary ? (
-        <Text style={[styles.biSecondary, localStyle]} numberOfLines={numberOfLines}>
+        <Text style={[styles.biSecondary, { fontFamily: localFont() }, localStyle]} numberOfLines={numberOfLines}>
           {secondary}
         </Text>
       ) : null}
