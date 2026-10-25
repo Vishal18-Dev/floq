@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ storeName, storeNameLocal, isOnl
       <StatusBar barStyle="dark-content" backgroundColor={palette.bg} />
       <TouchableOpacity style={styles.brandRow} activeOpacity={0.7} onPress={() => { HapticFeedback.light(); onOpenSettings(); }}>
         <View style={styles.logoBox}>
-          <Text style={styles.logoText}>F</Text>
+          <Text style={styles.logoText}>q</Text>
         </View>
         <View style={styles.names}>
           <Text style={styles.storeName} numberOfLines={1}>{storeName}</Text>
@@ -48,8 +48,8 @@ const styles = StyleSheet.create({
     borderBottomColor: palette.divider,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 },
-  logoBox: { width: 34, height: 34, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onAccent },
+  logoBox: { width: 34, height: 34, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  logoText: { fontFamily: fonts.heading, fontWeight: "800", fontSize: 22, color: palette.ink },
   names: { marginLeft: 10, flex: 1 },
   storeName: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink, letterSpacing: -0.2 },
   storeNameLocal: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[700] },

@@ -310,13 +310,13 @@ function Splash({ storeName, carryOver }: { storeName?: string; carryOver?: numb
     <View style={styles.splash}>
       <Text style={styles.splashStore}>{(storeName || 'FLOQ MERCHANT').toUpperCase()}</Text>
       <View>
-        <Text style={styles.splashWord}>FLOQ</Text>
+        <Text style={styles.splashWord}>floq</Text>
         <View style={styles.splashRule} />
         <Text style={styles.splashSub}>
-          {carryOver && carryOver > 0 ? `Counter loading — ${carryOver} tokens carried over` : 'Counter loading…'}
+          {carryOver && carryOver > 0 ? `Counter loading, ${carryOver} tokens carried over` : 'Counter loading…'}
         </Text>
       </View>
-      <ActivityIndicator color={palette.onAccent} />
+      <ActivityIndicator color={palette.ink} />
     </View>
   );
 }
@@ -324,9 +324,9 @@ function Splash({ storeName, carryOver }: { storeName?: string; carryOver?: numb
 const styles = StyleSheet.create({
   app: { flex: 1, backgroundColor: palette.bg },
   main: { flex: 1, backgroundColor: palette.bg },
-  splash: { flex: 1, backgroundColor: palette.accent, justifyContent: 'space-between', padding: 30, paddingTop: 60, paddingBottom: 50 },
-  splashStore: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 2, color: palette.onAccent, opacity: 0.85 },
-  splashWord: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 92, letterSpacing: -5, color: palette.onAccent, lineHeight: 92 },
-  splashRule: { width: 84, height: 6, backgroundColor: palette.onAccent, marginTop: 16 },
-  splashSub: { fontFamily: fonts.body, fontSize: 18, color: palette.onAccent, opacity: 0.9, marginTop: 16 },
+  splash: { flex: 1, backgroundColor: palette.highlight, justifyContent: 'space-between', padding: 30, paddingTop: 60, paddingBottom: 50 },
+  splashStore: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 2, color: palette.ink, opacity: 0.8 },
+  splashWord: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 92, letterSpacing: -5, color: palette.ink, lineHeight: 92 },
+  splashRule: { width: 84, height: 6, backgroundColor: palette.ink, marginTop: 16 },
+  splashSub: { fontFamily: fonts.body, fontSize: 18, color: palette.ink, opacity: 0.85, marginTop: 16 },
 });

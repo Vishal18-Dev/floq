@@ -12,6 +12,7 @@
     "build": "echo 'Vendor app built via Expo'"
   },
   "dependencies": {
+    "@expo-google-fonts/anek-latin": "^0.4.2",
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo/metro-runtime": "~6.1.2",
     "@floq/constants": "*",

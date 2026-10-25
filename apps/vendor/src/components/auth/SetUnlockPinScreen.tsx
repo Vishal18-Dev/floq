@@ -22,7 +22,7 @@ export function SetUnlockPinScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.brand}>
-        <Text style={styles.wordmark}>FLOQ</Text>
+        <Text style={styles.wordmark}>floq</Text>
         <View style={styles.rule} />
         <Text style={styles.tagline}>Set a PIN to open the app quickly</Text>
       </View>

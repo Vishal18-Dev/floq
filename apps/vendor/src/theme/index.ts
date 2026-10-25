@@ -1,51 +1,55 @@
 /**
- * FLOQ "Modernist" design tokens — ported from the Claude Design system
- * (_ds/modernist styles.css). Single source of truth for the app's look.
+ * FLOQ brand design tokens — per the official Brand Guidelines v1.0.
  *
- * Character: warm off-white ground, near-black ink, a navy brand accent for the
- * primary action / splash / "ready" state, with a green secondary for positive
- * highlights. Zero border radius (sharp corners), 2px ink dividers, Archivo 800.
+ * Character: warm "paper" ground (#FFF6E3), ink text (#1C1B1A), navy as the
+ * primary/structural colour (#103B78, white text on it), amber as the signature
+ * highlight (#FFB42E, ink text on it), green for positive/success (#32C48D),
+ * red reserved for errors (#B42318). Warm "stone" neutral scale. Sharp corners,
+ * 2px dividers, Anek typeface.
  */
 
 export const palette = {
-  bg: '#f3f2f2',
-  surface: '#eae9e9',
-  ink: '#201e1d',
-  accent: '#103B78', // FLOQ navy (brand primary)
-  accent2: '#32C48D', // FLOQ green (positive / secondary)
+  bg: '#FFF6E3', // paper
+  surface: '#F2E6CC', // cream card/surface
+  ink: '#1C1B1A',
+  accent: '#103B78', // FLOQ navy — primary action / structure (takes white text)
+  accent2: '#32C48D', // FLOQ green — positive / success
+  highlight: '#FFB42E', // FLOQ amber — signature highlight (takes ink text)
+  onHighlight: '#1C1B1A',
 
-  // divider = ink at 40% alpha (rgba of #201e1d)
-  divider: 'rgba(32,30,29,0.4)',
-  dividerFaint: 'rgba(32,30,29,0.14)',
+  // divider = ink at alpha (warm)
+  divider: 'rgba(28,27,26,0.34)',
+  dividerFaint: 'rgba(28,27,26,0.12)',
 
+  // Warm "stone" neutral scale
   neutral: {
-    100: '#f8f4f4',
-    200: '#eae7e7',
-    300: '#d7d3d3',
-    400: '#bab6b6',
-    500: '#9b9797',
-    600: '#7d7979',
-    700: '#605d5d',
-    800: '#444141',
-    900: '#2d2b2b',
+    100: '#FBF6EA',
+    200: '#EFE6D2',
+    300: '#D9CCB0',
+    400: '#BDB4A4',
+    500: '#8E887E',
+    600: '#6B665E', // stone
+    700: '#4A463F',
+    800: '#322F2A',
+    900: '#1C1B1A',
   },
 
-  // Alert/danger ramp (red). Decoupled from the navy brand accent — errors,
-  // "running late", delete and warnings stay red regardless of branding.
+  // Alert/danger ramp (brand red #B42318). Errors, "running late", delete and
+  // warnings stay red regardless of branding.
   accentRamp: {
-    100: '#fff2ef',
-    200: '#ffe0d9',
-    300: '#ffc4b8',
-    400: '#ff9783',
-    500: '#ff563c',
-    600: '#dd2b0f',
-    700: '#ae1800',
-    800: '#7c1405',
-    900: '#4d170e',
+    100: '#FDECEA',
+    200: '#F8D2CD',
+    300: '#F0ADA4',
+    400: '#E07A6E',
+    500: '#CF4436',
+    600: '#B42318', // brand error
+    700: '#8E1C13',
+    800: '#6A160F',
+    900: '#45130E',
   },
 
   white: '#ffffff',
-  onAccent: '#ffffff',
+  onAccent: '#ffffff', // text on navy
 } as const;
 
 /**
@@ -127,12 +131,12 @@ export const borders = {
   hairColor: palette.dividerFaint,
 } as const;
 
-// Archivo is loaded via expo-font (see theme/fonts.ts). Falls back to the
+// Anek Latin is loaded via expo-font (see theme/fonts.ts). Falls back to the
 // platform sans if the face hasn't loaded yet.
 export const fonts = {
-  heading: 'Archivo_800ExtraBold',
-  body: 'Archivo_400Regular',
-  semibold: 'Archivo_600SemiBold',
+  heading: 'AnekLatin_800ExtraBold',
+  body: 'AnekLatin_400Regular',
+  semibold: 'AnekLatin_600SemiBold',
 } as const;
 
 export const typography = {

@@ -46,7 +46,7 @@ export function LockScreen({ storeName }: { storeName?: string }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.brand}>
-        <Text style={styles.wordmark}>FLOQ</Text>
+        <Text style={styles.wordmark}>floq</Text>
         <View style={styles.rule} />
         <Text style={styles.tagline}>{storeName || 'Counter POS'}</Text>
       </View>

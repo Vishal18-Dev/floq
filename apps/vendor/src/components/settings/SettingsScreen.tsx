@@ -112,7 +112,7 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
         <Text style={styles.logoutText}>LOG OUT</Text>
       </TouchableOpacity>
 
-      <Text style={styles.version}>FLOQ Merchant · beta</Text>
+      <Text style={styles.version}>floq · beta</Text>
       <Text style={styles.build}>{buildLine()}</Text>
     </ScrollView>
   );
