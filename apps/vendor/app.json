@@ -8,12 +8,12 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#103B78"
+      "backgroundColor": "#FFB42E"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFB42E"
       },
       "package": "in.floq.merchant",
       "versionCode": 4,
