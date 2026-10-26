@@ -62,9 +62,13 @@ export const DeviceRoleEnum = z.enum(['VENDOR', 'KITCHEN', 'DISPLAY']);
 export const OrderItemInputSchema = z
   .object({
     productId: z.string().optional(),
+    // Retail: a specific pack SKU, and the unit it was sold in. GRAM lines
+    // (loose goods) carry quantity in grams; UNIT lines carry a count.
+    packId: z.string().optional(),
+    sellUnit: z.enum(['UNIT', 'GRAM']).optional(),
     name: z.string().optional(),
     unitPrice: z.number().nonnegative().optional(),
-    quantity: z.number().int().positive('Quantity must be at least 1'),
+    quantity: z.number().positive('Quantity must be at least 1'),
     modifiers: z
       .array(
         z.object({
@@ -74,8 +78,8 @@ export const OrderItemInputSchema = z
       )
       .optional(),
   })
-  .refine((v) => !!v.productId || (!!v.name && v.unitPrice !== undefined), {
-    message: 'Item needs a productId or a name + unitPrice',
+  .refine((v) => !!v.productId || !!v.packId || (!!v.name && v.unitPrice !== undefined), {
+    message: 'Item needs a productId/packId or a name + unitPrice',
   });
 
 // Create Order Schema (Unified for STAFF_POS & CUSTOMER_QR)
@@ -93,6 +97,10 @@ export const CreateOrderSchema = z.object({
   paymentMethod: PaymentMethodEnum.optional(),
   immediatePayment: z.boolean().default(false),
   status: OrderStatusEnum.optional(),
+  // Retail counter bill / shop order extras.
+  isWholesale: z.boolean().optional(),
+  creditCustomerId: z.string().optional().nullable(),
+  cashTendered: z.number().nonnegative().optional(),
 });
 
 export type CreateOrderInput = z.input<typeof CreateOrderSchema>;
