@@ -19,6 +19,7 @@ import publicRouter from './api/routes/public';
 import adminRouter from './api/routes/admin';
 import signupRouter from './api/routes/signup';
 import subscriptionRouter from './api/routes/subscription';
+import retailRouter from './api/routes/retail';
 
 export function createServer() {
   const app = express();
@@ -90,6 +91,7 @@ export function createServer() {
   app.use('/api/analytics', authMiddleware, analyticsRouter);
   app.use('/api/subscription', authMiddleware, subscriptionRouter);
   app.use('/api/sync', authMiddleware, syncRouter);
+  app.use('/api/retail', authMiddleware, retailRouter);
 
   // Central Error Handler
   app.use(errorHandler);
