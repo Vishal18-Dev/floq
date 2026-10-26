@@ -4,7 +4,7 @@
  * loose goods) and the credit book, shared by the Sell, Dues, Stock, Shop-order
  * and Day screens. No React, no stores — just numbers in, numbers out.
  */
-import { Product, ProductPack, CreditCustomer } from '@floq/types';
+import { Product, ProductPack, CreditCustomer, SellUnit } from '@floq/types';
 import { formatINR } from '@floq/utils';
 
 /** Money, rounded to whole rupees like the design (₹1,234). */
@@ -115,3 +115,34 @@ export function customerDays(c: CreditCustomer): number {
 }
 
 export const isOverdue = (c: CreditCustomer): boolean => c.owes > 0 && customerDays(c) > 30;
+
+// ---- Charging a bill ----
+
+export interface RetailChargeItem {
+  key: string;
+  productId?: string;
+  packId?: string;
+  sellUnit: SellUnit;
+  quantity: number;
+  loose: boolean;
+}
+
+export interface RetailCharge {
+  items: RetailChargeItem[];
+  method: 'CASH' | 'UPI' | 'CREDIT';
+  creditCustomerId?: string;
+  isWholesale?: boolean;
+  cashTendered?: number;
+}
+
+/** Turn a cart into order-line inputs the API/order engine understands. */
+export function chargeItemsFromCart(products: Product[], cart: Cart): RetailChargeItem[] {
+  const all = entries(products);
+  return Object.keys(cart)
+    .filter((k) => cart[k] > 0)
+    .map((key) => {
+      const e = all.find((x) => x.key === key)!;
+      if (e.loose) return { key, productId: e.product.id, sellUnit: 'GRAM' as SellUnit, quantity: cart[key], loose: true };
+      return { key, packId: key, productId: e.product.id, sellUnit: 'UNIT' as SellUnit, quantity: cart[key], loose: false };
+    });
+}

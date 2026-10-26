@@ -5,6 +5,7 @@ import { Order, OrderStatus, PaymentMethod } from '@floq/types';
 import { Header } from './components/layout/Header';
 import { BottomNav, TabType } from './components/layout/BottomNav';
 import { SellScreen, ChargeLine } from './components/sell/SellScreen';
+import { RetailSellScreen } from './components/retail/RetailSellScreen';
 import { LiveQueueScreen } from './components/queue/LiveQueueScreen';
 import { DayScreen } from './components/day/DayScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
@@ -29,6 +30,9 @@ import { useAuthStore } from './store/useAuthStore';
 import { useStoreStore } from './store/useStoreStore';
 import { useOrdersStore } from './store/useOrdersStore';
 import { useCatalogStore } from './store/useCatalogStore';
+import { useCustomersStore } from './store/useCustomersStore';
+import { RetailCharge } from './services/retail';
+import { formatINR } from '@floq/utils';
 
 export default function App() {
   const fontsReady = useAppFonts();
@@ -41,8 +45,11 @@ export default function App() {
   const orders = useOrdersStore((s) => s.orders);
   const loadOrders = useOrdersStore((s) => s.loadOrders);
   const upsertOrder = useOrdersStore((s) => s.upsertOrder);
-  const { products, categories, dailySummary, loadCatalog, loadAnalytics, loadDayStatus, refreshAnalytics, toggleAvailability } =
+  const { products, categories, dailySummary, loadCatalog, loadAnalytics, loadDayStatus, refreshAnalytics, toggleAvailability, applyStockReduction } =
     useCatalogStore();
+  const customers = useCustomersStore((s) => s.customers);
+  const loadCustomers = useCustomersStore((s) => s.loadCustomers);
+  const applyCharge = useCustomersStore((s) => s.applyCharge);
 
   const [activeTab, setActiveTab] = useState<TabType>('SELL');
   const [dataLoading, setDataLoading] = useState(true);
@@ -81,9 +88,9 @@ export default function App() {
   const loadAll = useCallback(async () => {
     if (!isAuthenticated) return;
     setDataLoading(true);
-    await Promise.all([loadStore(), loadCatalog(), loadOrders(), loadAnalytics(), loadDayStatus(), loadSubscription()]);
+    await Promise.all([loadStore(), loadCatalog(), loadOrders(), loadAnalytics(), loadDayStatus(), loadSubscription(), loadCustomers()]);
     setDataLoading(false);
-  }, [isAuthenticated, loadStore, loadCatalog, loadOrders, loadAnalytics, loadDayStatus, loadSubscription]);
+  }, [isAuthenticated, loadStore, loadCatalog, loadOrders, loadAnalytics, loadDayStatus, loadSubscription, loadCustomers]);
 
   useEffect(() => { if (isAuthenticated) loadAll(); }, [isAuthenticated, loadAll]);
 
@@ -173,6 +180,44 @@ export default function App() {
     [products, isFood, upsertOrder, refreshAnalytics, loadSubscription]
   );
 
+  // Retail counter bill / shop order. Online path: the backend reduces stock,
+  // posts dues for credit, and stamps invoices. We mirror stock + dues locally
+  // so the shelf and Dues update instantly.
+  // ponytail: online-only for now; offline retail sync (stock/dues replay) is a
+  // follow-up — the common case is a connected counter.
+  const createRetailSale = useCallback(
+    async (charge: RetailCharge): Promise<Order> => {
+      const storeId = api.getStoreId();
+      const items = charge.items.map((i) =>
+        i.loose
+          ? { productId: i.productId, sellUnit: i.sellUnit, quantity: i.quantity }
+          : { packId: i.packId, sellUnit: i.sellUnit, quantity: i.quantity }
+      );
+      let res;
+      try {
+        res = await api.createOrder({
+          storeId,
+          source: 'STAFF_POS',
+          items,
+          paymentMethod: charge.method,
+          immediatePayment: charge.method !== 'CREDIT',
+          creditCustomerId: charge.creditCustomerId,
+          isWholesale: charge.isWholesale,
+          cashTendered: charge.cashTendered,
+        });
+      } catch (e: any) {
+        if (e?.status === 402) loadSubscription();
+        throw e;
+      }
+      upsertOrder(res.order);
+      refreshAnalytics();
+      applyStockReduction(charge.items.map((i) => ({ key: i.key, qty: i.quantity, loose: i.loose })));
+      if (charge.method === 'CREDIT' && charge.creditCustomerId) applyCharge(charge.creditCustomerId, res.order.total);
+      return res.order;
+    },
+    [upsertOrder, refreshAnalytics, applyStockReduction, applyCharge, loadSubscription]
+  );
+
   const advanceStatus = useCallback(
     async (orderId: string, current: OrderStatus) => {
       const map: Record<string, OrderStatus> = { NEW: 'ACCEPTED', ACCEPTED: 'PREPARING', PREPARING: 'READY', READY: 'COMPLETED' };
@@ -234,6 +279,15 @@ export default function App() {
           {activeTab === 'SELL' && (
             subscription && !subscription.canSell ? (
               <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} />
+            ) : mode === 'RETAIL' ? (
+              <RetailSellScreen
+                products={products}
+                categories={categories}
+                settings={settings}
+                customers={customers}
+                todayRevenue={formatINR(dailySummary?.revenue || 0)}
+                onCharge={createRetailSale}
+              />
             ) : (
               <SellScreen
                 products={products}
