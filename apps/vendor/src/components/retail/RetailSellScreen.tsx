@@ -4,6 +4,7 @@ import { Product, Category, StoreSettings, CreditCustomer, Order } from '@floq/t
 import { palette, fonts } from '../../theme';
 import { RetailCharge } from '../../services/retail';
 import { CounterBill } from './CounterBill';
+import { ShopOrder } from './ShopOrder';
 
 type Mode = 'walkin' | 'shop';
 
@@ -45,10 +46,7 @@ export function RetailSellScreen(props: {
           onCharge={props.onCharge}
         />
       ) : (
-        <View style={styles.soon}>
-          <Text style={styles.soonTitle}>Shop orders</Text>
-          <Text style={styles.soonSub}>Sell by the case at wholesale price, on credit terms. Coming in the next update.</Text>
-        </View>
+        <ShopOrder products={props.products} customers={props.customers} onCharge={props.onCharge} />
       )}
     </View>
   );
@@ -61,7 +59,4 @@ const styles = StyleSheet.create({
   segOn: { backgroundColor: palette.card },
   segText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   segTextOn: { fontFamily: fonts.heading, fontWeight: '800', color: palette.ink },
-  soon: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 8 },
-  soonTitle: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, color: palette.ink },
-  soonSub: { fontFamily: fonts.body, fontSize: 15, color: palette.neutral[600], textAlign: 'center', lineHeight: 22 },
 });
