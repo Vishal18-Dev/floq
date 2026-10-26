@@ -2,12 +2,46 @@
   "phone": "REPLACE_WITH_10_DIGIT_PHONE",
   "pin": "REPLACE_WITH_PIN",
   "storeName": "REPLACE_WITH_STORE_NAME",
+  "storeNameLocal": "",
   "storeType": "GROCERY",
   "mode": "RETAIL",
   "secondaryLanguage": "hi",
   "address": "",
   "upiId": "REPLACE_WITH_UPI_ID",
   "typicalPrepTimeMinutes": 1,
-  "initialCategoryName": "Products",
-  "items": []
+  "initialCategoryName": "Oils",
+  "_comment": "RETAIL template. Replace phone/pin/storeName/upiId and the catalogue below with the merchant's real products. Packed items carry prices on each pack (leave the item price at 0); loose goods set isLoose + perKg + stockKg. suppliers maps a category to its default reorder contact. customers is the opening credit book (khata) — leave [] if none.",
+  "suppliers": {
+    "Oils": "REPLACE_WITH_SUPPLIER",
+    "Powders": "REPLACE_WITH_SUPPLIER",
+    "Loose": "REPLACE_WITH_SUPPLIER"
+  },
+  "items": [
+    {
+      "name": "Cold-pressed groundnut oil",
+      "nameLocal": "",
+      "category": "Oils",
+      "packs": [
+        { "size": "1 L", "price": 380, "wholesalePrice": 340, "costPrice": 300, "stock": 0, "caseQty": 12, "dailyRate": 0 }
+      ]
+    },
+    {
+      "name": "Moringa powder",
+      "nameLocal": "",
+      "category": "Powders",
+      "packs": [
+        { "size": "100 g", "price": 150, "wholesalePrice": 120, "costPrice": 90, "stock": 0, "caseQty": 24, "dailyRate": 0 }
+      ]
+    },
+    {
+      "name": "Millet mix (loose)",
+      "nameLocal": "",
+      "category": "Loose",
+      "isLoose": true,
+      "perKg": 160,
+      "stockKg": 0,
+      "dailyKg": 0
+    }
+  ],
+  "customers": []
 }

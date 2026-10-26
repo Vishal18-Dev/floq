@@ -212,14 +212,48 @@ export const SyncPayloadSchema = z.object({
 export type SyncPayloadInput = z.input<typeof SyncPayloadSchema>;
 
 // A single catalogue item supplied at onboarding time (bilingual).
+// A pack size within a retail item (prices in rupees, stock in units).
+export const OnboardPackSchema = z.object({
+  size: z.string().min(1, 'Pack size is required'),
+  price: z.number().nonnegative(),
+  wholesalePrice: z.number().nonnegative().optional(),
+  costPrice: z.number().nonnegative().optional(),
+  stock: z.number().int().nonnegative().default(0),
+  caseQty: z.number().int().positive().optional(),
+  dailyRate: z.number().nonnegative().optional(),
+  expiryNote: z.string().optional(),
+});
+export type OnboardPackInput = z.input<typeof OnboardPackSchema>;
+
 export const OnboardItemSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
   nameLocal: z.string().optional(),
-  price: z.number().nonnegative('Price cannot be negative'),
+  // Flat price for a simple/FOOD item. Packed retail items leave this 0 and
+  // carry their prices on each pack instead.
+  price: z.number().nonnegative('Price cannot be negative').default(0),
   category: z.string().optional(),
   station: ProductStationEnum.optional(),
+  // Retail pack sizes. Omit for a flat item or a loose good.
+  packs: z.array(OnboardPackSchema).optional(),
+  // Retail loose good (sold by weight). stockKg/dailyKg convert to grams.
+  isLoose: z.boolean().optional(),
+  perKg: z.number().nonnegative().optional(),
+  stockKg: z.number().nonnegative().optional(),
+  dailyKg: z.number().nonnegative().optional(),
 });
 export type OnboardItemInput = z.input<typeof OnboardItemSchema>;
+
+// A credit account to seed at onboarding (an existing khata), with an optional
+// opening balance aged by oldestDueDays.
+export const OnboardCustomerSchema = z.object({
+  name: z.string().min(1, 'Customer name is required'),
+  kind: z.enum(['SHOP', 'REGULAR']).default('REGULAR'),
+  phone: z.string().optional(),
+  creditLimit: z.number().nonnegative().default(0),
+  owes: z.number().nonnegative().default(0),
+  oldestDueDays: z.number().int().nonnegative().optional(),
+});
+export type OnboardCustomerInput = z.input<typeof OnboardCustomerSchema>;
 
 // Admin White-Glove Merchant Onboarding Schema
 export const OnboardMerchantSchema = z.object({
@@ -241,6 +275,9 @@ export const OnboardMerchantSchema = z.object({
   typicalPrepTimeMinutes: z.number().int().positive().optional(),
   initialCategoryName: z.string().default('General'),
   items: z.array(OnboardItemSchema).optional(),
+  // Retail: default reorder supplier per category name, and the opening credit book.
+  suppliers: z.record(z.string()).optional(),
+  customers: z.array(OnboardCustomerSchema).optional(),
 });
 
 export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
