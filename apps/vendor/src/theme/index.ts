@@ -50,6 +50,14 @@ export const palette = {
 
   white: '#ffffff',
   onAccent: '#ffffff', // text on navy
+
+  // Retail surfaces. The shop screens sit white cards on the paper ground (per
+  // the floq Retail design), and use a softer green pair for positive states
+  // (stock received, paid, UPI confirmed) than the signature accent2.
+  card: '#FFFFFF',
+  success: '#1E7A46',
+  successBg: '#E7F4EC',
+  link: '#A15C00', // the amber-brown link/affordance colour from the guidelines
 } as const;
 
 /**
