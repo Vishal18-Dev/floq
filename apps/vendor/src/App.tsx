@@ -6,6 +6,8 @@ import { Header } from './components/layout/Header';
 import { BottomNav, TabType } from './components/layout/BottomNav';
 import { SellScreen, ChargeLine } from './components/sell/SellScreen';
 import { RetailSellScreen } from './components/retail/RetailSellScreen';
+import { DuesScreen } from './components/retail/DuesScreen';
+import { StockScreen } from './components/retail/StockScreen';
 import { LiveQueueScreen } from './components/queue/LiveQueueScreen';
 import { DayScreen } from './components/day/DayScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
@@ -31,7 +33,7 @@ import { useStoreStore } from './store/useStoreStore';
 import { useOrdersStore } from './store/useOrdersStore';
 import { useCatalogStore } from './store/useCatalogStore';
 import { useCustomersStore } from './store/useCustomersStore';
-import { RetailCharge } from './services/retail';
+import { RetailCharge, isOverdue } from './services/retail';
 import { formatINR } from '@floq/utils';
 
 export default function App() {
@@ -303,6 +305,15 @@ export default function App() {
           {activeTab === 'QUEUE' && isFood && (
             <LiveQueueScreen orders={orders} typicalPrepMinutes={settings?.typicalPrepTimeMinutes || 6} onAdvance={advanceStatus} />
           )}
+          {activeTab === 'DUES' && !isFood && <DuesScreen customers={customers} storeName={store?.name || 'floq'} />}
+          {activeTab === 'STOCK' && !isFood && (
+            <StockScreen
+              products={products}
+              categories={categories}
+              onReceive={() => alert('Stock-arrived (photograph the supplier bill) is coming in the next update.')}
+              onNewProduct={() => alert('Add-new-product is coming in the next update.')}
+            />
+          )}
           {activeTab === 'DAY' && (
             <DayScreen dailySummary={dailySummary} onCloseDay={() => api.closeDay().then(() => { refreshAnalytics(); })} onManageItems={() => setItemsOpen(true)} />
           )}
@@ -319,7 +330,13 @@ export default function App() {
         </View>
 
         {activeTab !== 'SETTINGS' && (
-          <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} showQueue={isFood} queueCount={queueCount} />
+          <BottomNav
+            activeTab={activeTab}
+            onChangeTab={setActiveTab}
+            mode={mode}
+            queueCount={queueCount}
+            overdueCount={customers.filter(isOverdue).length}
+          />
         )}
 
         <ItemsManager visible={itemsOpen} onClose={() => setItemsOpen(false)} />
