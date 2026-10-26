@@ -351,6 +351,12 @@ export interface DailySalesSummary {
   upiRevenue: number;
   cashRevenue: number;
   otherRevenue: number;
+  /** Retail: revenue booked on credit today (sales + shop invoices on account). */
+  creditRevenue?: number;
+  /** Retail: gross profit today from snapshotted line costs. */
+  grossProfit?: number;
+  /** Retail: money collected against the dues ledger today. */
+  duesCollected?: number;
   topProducts: TopProductMetric[];
   peakHour: number | null;
   hourlyDistribution: HourlyMetric[];

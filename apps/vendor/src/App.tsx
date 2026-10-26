@@ -8,6 +8,7 @@ import { SellScreen, ChargeLine } from './components/sell/SellScreen';
 import { RetailSellScreen } from './components/retail/RetailSellScreen';
 import { DuesScreen } from './components/retail/DuesScreen';
 import { StockScreen } from './components/retail/StockScreen';
+import { DayScreenRetail } from './components/retail/DayScreenRetail';
 import { LiveQueueScreen } from './components/queue/LiveQueueScreen';
 import { DayScreen } from './components/day/DayScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
@@ -315,7 +316,16 @@ export default function App() {
             />
           )}
           {activeTab === 'DAY' && (
-            <DayScreen dailySummary={dailySummary} onCloseDay={() => api.closeDay().then(() => { refreshAnalytics(); })} onManageItems={() => setItemsOpen(true)} />
+            mode === 'RETAIL' ? (
+              <DayScreenRetail
+                summary={dailySummary}
+                products={products}
+                customers={customers}
+                onCloseDay={() => api.closeDay().then(() => { refreshAnalytics(); })}
+              />
+            ) : (
+              <DayScreen dailySummary={dailySummary} onCloseDay={() => api.closeDay().then(() => { refreshAnalytics(); })} onManageItems={() => setItemsOpen(true)} />
+            )
           )}
           {activeTab === 'SETTINGS' && (
             <SettingsScreen
