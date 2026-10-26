@@ -97,4 +97,71 @@ router.post('/customers/:id/paid', async (req: AuthenticatedRequest, res: Respon
   }
 });
 
+// POST /api/retail/products — add a product with one pack, or a loose good.
+router.post('/products', async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const b = req.body || {};
+    if (!b.name || !b.categoryId) {
+      res.status(400).json({ error: 'name and categoryId are required' });
+      return;
+    }
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const isLoose = !!b.isLoose;
+    await query(
+      `INSERT INTO products (id, store_id, category_id, name, name_local, price, is_available, sort_order, station, is_loose, per_kg, stock_grams, daily_grams, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, true, 0, 'PACKAGED', $7, $8, $9, $10, $11, $11)`,
+      [
+        id, req.storeId, b.categoryId, b.name, b.nameLocal || null,
+        isLoose ? Number(b.perKg) || 0 : 0,
+        isLoose,
+        isLoose ? Number(b.perKg) || 0 : null,
+        isLoose ? Number(b.stockGrams) || 0 : null,
+        isLoose ? Number(b.dailyGrams) || 0 : null,
+        now,
+      ]
+    );
+    if (!isLoose && b.pack) {
+      const k = b.pack;
+      await query(
+        `INSERT INTO product_packs (id, product_id, store_id, size, price, wholesale_price, cost_price, stock, case_qty, daily_rate, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0)`,
+        [`${id}_0`, id, req.storeId, k.size || '1 unit', Number(k.price) || 0, Number(k.wholesalePrice) || null, Number(k.costPrice) || null, Number(k.stock) || 0, Number(k.caseQty) || null, Number(k.dailyRate) || 0]
+      );
+    }
+    res.status(201).json({ id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/retail/stock/receive — add received stock to packs / loose goods,
+// updating the cost price when the supplier bill gives a new one.
+router.post('/stock/receive', async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const lines: { packId?: string; productId?: string; qty: number; cost?: number }[] = req.body?.lines || [];
+    for (const l of lines) {
+      if (!l.qty || l.qty <= 0) continue;
+      if (l.packId) {
+        const cur = await queryOne('SELECT stock FROM product_packs WHERE id = $1 AND store_id = $2', [l.packId, req.storeId]);
+        if (!cur) continue;
+        const next = Number(cur.stock) + Number(l.qty);
+        if (l.cost != null) {
+          await execute('UPDATE product_packs SET stock = $1, cost_price = $2 WHERE id = $3', [next, Number(l.cost), l.packId]);
+        } else {
+          await execute('UPDATE product_packs SET stock = $1 WHERE id = $2', [next, l.packId]);
+        }
+      } else if (l.productId) {
+        const cur = await queryOne('SELECT stock_grams FROM products WHERE id = $1 AND store_id = $2', [l.productId, req.storeId]);
+        if (!cur) continue;
+        const next = Number(cur.stock_grams || 0) + Number(l.qty);
+        await execute('UPDATE products SET stock_grams = $1 WHERE id = $2', [next, l.productId]);
+      }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

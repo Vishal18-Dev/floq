@@ -317,6 +317,25 @@ class NativeApiClient {
     });
   }
 
+  /** Add a product with one pack (or a loose good). */
+  public async createRetailProduct(data: {
+    name: string;
+    nameLocal?: string;
+    categoryId: string;
+    isLoose?: boolean;
+    perKg?: number;
+    stockGrams?: number;
+    dailyGrams?: number;
+    pack?: { size: string; price: number; wholesalePrice?: number; costPrice?: number; stock: number; caseQty?: number; dailyRate?: number };
+  }): Promise<{ id: string }> {
+    return this.request('/retail/products', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  /** Add received stock (and optionally update cost) to packs / loose goods. */
+  public async receiveStock(lines: { packId?: string; productId?: string; qty: number; cost?: number }[]): Promise<{ success: boolean }> {
+    return this.request('/retail/stock/receive', { method: 'POST', body: JSON.stringify({ lines }) });
+  }
+
   public async getDailyAnalytics(date?: string): Promise<DailySalesSummary> {
     const query = date ? `?date=${date}` : '';
     return this.request(`/analytics/daily${query}`);

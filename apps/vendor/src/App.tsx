@@ -308,12 +308,7 @@ export default function App() {
           )}
           {activeTab === 'DUES' && !isFood && <DuesScreen customers={customers} storeName={store?.name || 'floq'} />}
           {activeTab === 'STOCK' && !isFood && (
-            <StockScreen
-              products={products}
-              categories={categories}
-              onReceive={() => alert('Stock-arrived (photograph the supplier bill) is coming in the next update.')}
-              onNewProduct={() => alert('Add-new-product is coming in the next update.')}
-            />
+            <StockScreen products={products} categories={categories} onReload={loadCatalog} />
           )}
           {activeTab === 'DAY' && (
             mode === 'RETAIL' ? (

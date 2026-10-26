@@ -3,22 +3,33 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } 
 import { Product, Category } from '@floq/types';
 import { palette, fonts } from '../../theme';
 import { entries, daysLeft, reorderSuggest, fmtG, Entry } from '../../services/retail';
+import { NewProductScreen } from './NewProductScreen';
+import { StockReceiveScreen } from './StockReceiveScreen';
 
 const LOW_DAYS = 5;
+
+type View_ = 'list' | 'receive' | 'newproduct';
 
 export function StockScreen({
   products,
   categories,
-  onReceive,
-  onNewProduct,
+  onReload,
 }: {
   products: Product[];
   categories: Category[];
-  onReceive: () => void;
-  onNewProduct: () => void;
+  /** Refresh the catalogue after a product add / stock receipt. */
+  onReload: () => void;
 }) {
+  const [view, setView] = useState<View_>('list');
   const all = useMemo(() => entries(products), [products]);
   const [off, setOff] = useState<Record<string, boolean>>({}); // unticked low items
+
+  if (view === 'receive') {
+    return <StockReceiveScreen products={products} onBack={() => setView('list')} onDone={() => { onReload(); setView('list'); }} />;
+  }
+  if (view === 'newproduct') {
+    return <NewProductScreen categories={categories} onBack={() => setView('list')} onSaved={() => { onReload(); setView('list'); }} />;
+  }
 
   const supplierFor = (e: Entry) => categories.find((c) => c.id === e.product.categoryId)?.supplier || 'your supplier';
 
@@ -51,10 +62,10 @@ export function StockScreen({
           {low.length ? `${low.length} running low` : 'Nothing running low'} · {all.length} products
         </Text>
         <View style={styles.headBtns}>
-          <TouchableOpacity style={styles.headBtn} onPress={onReceive}>
+          <TouchableOpacity style={styles.headBtn} onPress={() => setView('receive')}>
             <Text style={styles.headBtnText}>Stock arrived</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headBtn} onPress={onNewProduct}>
+          <TouchableOpacity style={styles.headBtn} onPress={() => setView('newproduct')}>
             <Text style={styles.headBtnText}>+ New product</Text>
           </TouchableOpacity>
         </View>
