@@ -90,6 +90,8 @@ export interface Category {
   nameLocal?: string;
   sortOrder: number;
   isActive: boolean;
+  /** Default supplier for one-tap reorder (retail stores). */
+  supplier?: string;
   createdAt: string;
 }
 
@@ -109,6 +111,29 @@ export interface ProductInventorySummary {
   unit: string;
 }
 
+/**
+ * A sellable pack size of a packed product (e.g. "500 ml", "1 L"). Each pack is
+ * its own SKU with its own counter price, wholesale price, cost, live stock and
+ * daily sales rate (used for days-left estimates).
+ */
+export interface ProductPack {
+  id: string;
+  productId: string;
+  storeId: string;
+  size: string;
+  price: number;
+  wholesalePrice?: number;
+  costPrice?: number;
+  stock: number;
+  /** Units per case, for wholesale shop orders. */
+  caseQty?: number;
+  /** Average units sold per day, for days-left. */
+  dailyRate: number;
+  /** Free-text expiry warning, e.g. "6 expire in 12 days". */
+  expiryNote?: string;
+  sortOrder: number;
+}
+
 export interface Product {
   id: string;
   storeId: string;
@@ -116,6 +141,7 @@ export interface Product {
   name: string;
   nameLocal?: string;
   description?: string;
+  /** Base price; for packed products this is 0 and packs carry the prices. */
   price: number;
   imageUrl?: string;
   isAvailable: boolean;
@@ -123,8 +149,51 @@ export interface Product {
   station: ProductStation;
   modifiers?: ProductModifier[];
   inventory?: ProductInventorySummary;
+  /** Pack sizes for a packed product (empty for loose goods). */
+  packs?: ProductPack[];
+  /** Sold loose by weight rather than in packs. */
+  isLoose?: boolean;
+  /** Loose price per kg. */
+  perKg?: number;
+  /** Loose stock in grams. */
+  stockGrams?: number;
+  /** Loose average sold per day, in grams. */
+  dailyGrams?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export type CreditCustomerKind = 'SHOP' | 'REGULAR';
+
+/** A shop or regular who buys on credit against a limit. */
+export interface CreditCustomer {
+  id: string;
+  storeId: string;
+  name: string;
+  kind: CreditCustomerKind;
+  phone?: string;
+  creditLimit: number;
+  /** Denormalised balance (sum of the dues ledger). */
+  owes: number;
+  /** Timestamp of the oldest unpaid charge, for ageing. */
+  oldestDueAt?: string;
+  createdAt: string;
+}
+
+export type DueEntryKind = 'CHARGE' | 'PAYMENT';
+
+/** One line of the credit ledger: a credit sale (CHARGE) or a repayment (PAYMENT). */
+export interface DueEntry {
+  id: string;
+  storeId: string;
+  customerId: string;
+  orderId?: string;
+  kind: DueEntryKind;
+  /** Positive = charged to the account, negative = paid off. */
+  amount: number;
+  note?: string;
+  businessDate?: string;
+  createdAt: string;
 }
 
 export interface InventoryItem {
@@ -156,7 +225,10 @@ export type OrderStatus =
   | 'CANCELLED';
 
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
-export type PaymentMethod = 'UPI' | 'CASH' | 'OTHER';
+export type PaymentMethod = 'UPI' | 'CASH' | 'CREDIT' | 'OTHER';
+
+/** How a counter bill was settled. */
+export type SellUnit = 'UNIT' | 'GRAM';
 
 export interface OrderItemModifierSnapshot {
   name: string;
@@ -167,8 +239,14 @@ export interface OrderItem {
   id: string;
   orderId: string;
   productId: string;
+  /** Pack sold, when the line is a packed SKU. */
+  packId?: string;
+  /** UNIT for packs/food, GRAM for loose goods sold by weight. */
+  sellUnit?: SellUnit;
   productNameSnapshot: string;
   unitPriceSnapshot: number;
+  /** Cost at sale time, snapshotted for profit reporting. */
+  costSnapshot?: number;
   quantity: number;
   modifiers?: OrderItemModifierSnapshot[];
   subtotal: number;
@@ -185,6 +263,16 @@ export interface Order {
   source: OrderSource;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  /** How the bill was settled (retail). */
+  payMethod?: PaymentMethod;
+  /** Wholesale shop order rather than a walk-in counter bill. */
+  isWholesale?: boolean;
+  /** Account the bill went on, for credit sales / shop invoices. */
+  creditCustomerId?: string | null;
+  /** Shop-order invoice number (FL-0231 ...). */
+  invoiceNumber?: string;
+  /** Cash handed over, for change calculation. */
+  cashTendered?: number;
   ticketNumber: string;
   subtotal: number;
   discount: number;

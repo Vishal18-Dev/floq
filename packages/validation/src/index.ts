@@ -47,7 +47,7 @@ export const PaymentStatusEnum = z.enum([
   'REFUNDED',
 ]);
 
-export const PaymentMethodEnum = z.enum(['UPI', 'CASH', 'OTHER']);
+export const PaymentMethodEnum = z.enum(['UPI', 'CASH', 'CREDIT', 'OTHER']);
 
 export const VoiceLanguageEnum = z.enum(['en-IN', 'hi-IN', 'mr-IN', 'ta-IN']);
 export const VoiceVerbosityEnum = z.enum(['BRIEF', 'DETAILED']);
