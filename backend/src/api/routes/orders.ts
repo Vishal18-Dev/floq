@@ -63,6 +63,9 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
       paymentMethod: input.paymentMethod,
       immediatePayment: input.immediatePayment,
       status: input.status,
+      isWholesale: input.isWholesale,
+      creditCustomerId: input.creditCustomerId,
+      cashTendered: input.cashTendered,
       actorId: req.userId,
     });
 

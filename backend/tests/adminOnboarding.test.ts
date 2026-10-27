@@ -113,4 +113,59 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
     expect(res.body.alreadyExisted).toBe(true);
     expect(res.body.phone).toBe('9876543210');
   });
+
+  it('4. Onboards a RETAIL merchant with packs, a loose good, a supplier and an opening khata', async () => {
+    const onboardRes = await request(app)
+      .post(`/api/admin/onboard-merchant?key=${ADMIN}`)
+      .send({
+        phone: '9000011122',
+        pin: '2468',
+        storeName: 'Anbu Naturals',
+        mode: 'RETAIL',
+        storeType: 'GROCERY',
+        secondaryLanguage: 'ta',
+        upiId: 'anbu@okaxis',
+        initialCategoryName: 'Oils',
+        suppliers: { Oils: 'Kerala Coco Farms', Loose: 'Erode Traders' },
+        items: [
+          {
+            name: 'Coconut oil',
+            category: 'Oils',
+            packs: [{ size: '1 L', price: 590, wholesalePrice: 520, costPrice: 450, stock: 20, caseQty: 12 }],
+          },
+          { name: 'Turmeric (loose)', category: 'Loose', isLoose: true, perKg: 280, stockKg: 7.5 },
+        ],
+        customers: [{ name: 'Selvi Provisions', kind: 'SHOP', creditLimit: 15000, owes: 12400, oldestDueDays: 41 }],
+      });
+
+    expect(onboardRes.status).toBe(201);
+    expect(onboardRes.body.itemsCreated).toBe(2);
+    expect(onboardRes.body.packsCreated).toBe(1);
+    expect(onboardRes.body.customersCreated).toBe(1);
+
+    const login = await request(app).post('/api/auth/login').send({ phone: '9000011122', pin: '2468' });
+    expect(login.status).toBe(200);
+    const token = login.body.token;
+    const storeId = login.body.storeIds[0];
+    const headers = { Authorization: `Bearer ${token}`, 'x-store-id': storeId };
+
+    // Catalogue carries the pack, the loose good and the category supplier.
+    const cat = await request(app).get('/api/products').set(headers);
+    expect(cat.status).toBe(200);
+    const oil = cat.body.products.find((p: any) => p.name === 'Coconut oil');
+    expect(oil.packs).toHaveLength(1);
+    expect(oil.packs[0].wholesalePrice).toBe(520);
+    const turmeric = cat.body.products.find((p: any) => p.name === 'Turmeric (loose)');
+    expect(turmeric.isLoose).toBe(true);
+    expect(turmeric.stockGrams).toBe(7500);
+    const oilsCat = cat.body.categories.find((c: any) => c.name === 'Oils');
+    expect(oilsCat.supplier).toBe('Kerala Coco Farms');
+
+    // Opening khata shows up, aged.
+    const dues = await request(app).get('/api/retail/customers').set(headers);
+    expect(dues.status).toBe(200);
+    const selvi = dues.body.customers.find((c: any) => c.name === 'Selvi Provisions');
+    expect(selvi.owes).toBe(12400);
+    expect(selvi.days).toBeGreaterThanOrEqual(40);
+  });
 });

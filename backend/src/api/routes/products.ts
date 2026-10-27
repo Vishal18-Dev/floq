@@ -18,6 +18,29 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
       req.storeId,
     ]);
 
+    // Pack sizes for packed products, grouped by product.
+    const packs = await query(
+      'SELECT * FROM product_packs WHERE store_id = $1 ORDER BY sort_order ASC',
+      [req.storeId]
+    );
+    const packsByProduct: Record<string, any[]> = {};
+    for (const k of packs) {
+      (packsByProduct[k.product_id] ||= []).push({
+        id: k.id,
+        productId: k.product_id,
+        storeId: k.store_id,
+        size: k.size,
+        price: Number(k.price),
+        wholesalePrice: k.wholesale_price != null ? Number(k.wholesale_price) : undefined,
+        costPrice: k.cost_price != null ? Number(k.cost_price) : undefined,
+        stock: Number(k.stock),
+        caseQty: k.case_qty != null ? Number(k.case_qty) : undefined,
+        dailyRate: Number(k.daily_rate),
+        expiryNote: k.expiry_note || undefined,
+        sortOrder: k.sort_order,
+      });
+    }
+
     const mappedProducts = products.map((p) => ({
       id: p.id,
       storeId: p.store_id,
@@ -31,6 +54,11 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
       sortOrder: p.sort_order,
       station: p.station,
       modifiers: [],
+      packs: packsByProduct[p.id] || [],
+      isLoose: Boolean(p.is_loose),
+      perKg: p.per_kg != null ? Number(p.per_kg) : undefined,
+      stockGrams: p.stock_grams != null ? Number(p.stock_grams) : undefined,
+      dailyGrams: p.daily_grams != null ? Number(p.daily_grams) : undefined,
       createdAt: new Date(p.created_at).toISOString(),
       updatedAt: new Date(p.updated_at).toISOString(),
     }));
@@ -43,6 +71,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
         nameLocal: c.name_local || undefined,
         sortOrder: c.sort_order,
         isActive: Boolean(c.is_active),
+        supplier: c.supplier || undefined,
         createdAt: new Date(c.created_at).toISOString(),
       })),
       products: mappedProducts,

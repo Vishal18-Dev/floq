@@ -63,7 +63,8 @@ async function main() {
     console.log(`  storeId    : ${body.storeId}`);
     console.log(`  mode       : ${body.mode}`);
     console.log(`  language   : ${body.secondaryLanguage}`);
-    console.log(`  items      : ${body.itemsCreated}`);
+    console.log(`  items      : ${body.itemsCreated}${body.packsCreated ? ` (${body.packsCreated} packs)` : ''}`);
+    if (body.customersCreated) console.log(`  customers  : ${body.customersCreated} credit accounts`);
     console.log(`\n  Merchant logs in with:`);
     console.log(`    phone : ${body.phone}`);
     console.log(`    PIN   : ${profile.pin}  (give this to the merchant; it is not stored in plain text)`);

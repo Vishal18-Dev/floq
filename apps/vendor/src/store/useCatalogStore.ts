@@ -16,6 +16,32 @@ interface CatalogState {
   saveProduct: (data: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   toggleAvailability: (id: string, isAvailable: boolean) => Promise<void>;
+  /** Decrement live stock after a sale/shop order — pack units or loose grams
+   *  by SKU key — so the shelf reflects it instantly (the server already did). */
+  applyStockReduction: (items: { key: string; qty: number; loose: boolean }[]) => void;
+  /** Add received stock back (Stock-arrived flow). */
+  applyStockReceipt: (items: { key: string; qty: number; loose: boolean }[]) => void;
+}
+
+// Shared stock mutator: `sign` is -1 to sell, +1 to receive.
+function mutateStock(products: Product[], items: { key: string; qty: number; loose: boolean }[], sign: number): Product[] {
+  if (!items.length) return products;
+  return products.map((p) => {
+    const looseHit = items.find((i) => i.loose && i.key === p.id);
+    if (looseHit) {
+      return { ...p, stockGrams: Math.max(0, (p.stockGrams ?? 0) + sign * looseHit.qty) };
+    }
+    if (p.packs?.some((k) => items.some((i) => !i.loose && i.key === k.id))) {
+      return {
+        ...p,
+        packs: p.packs.map((k) => {
+          const hit = items.find((i) => !i.loose && i.key === k.id);
+          return hit ? { ...k, stock: Math.max(0, k.stock + sign * hit.qty) } : k;
+        }),
+      };
+    }
+    return p;
+  });
 }
 
 export const useCatalogStore = create<CatalogState>((set, get) => ({
@@ -89,4 +115,7 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       set((s) => ({ products: s.products.map((p) => (p.id === id ? { ...p, isAvailable: !isAvailable } : p)) }));
     }
   },
+
+  applyStockReduction: (items) => set((s) => ({ products: mutateStock(s.products, items, -1) })),
+  applyStockReceipt: (items) => set((s) => ({ products: mutateStock(s.products, items, +1) })),
 }));

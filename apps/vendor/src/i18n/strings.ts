@@ -26,6 +26,8 @@ export const STRINGS = {
   // Global / nav
   sell: { en: 'SELL', ta: 'விற்பனை', hi: 'बेचें', mr: 'विक्री' },
   queue: { en: 'QUEUE', ta: 'வரிசை', hi: 'कतार', mr: 'रांग' },
+  dues: { en: 'DUES', ta: 'நிலுவை', hi: 'उधार', mr: 'उधारी' },
+  stock: { en: 'STOCK', ta: 'சரக்கு', hi: 'स्टॉक', mr: 'साठा' },
   day: { en: 'DAY', ta: 'நாள்', hi: 'दिन', mr: 'दिवस' },
   today: { en: 'TODAY', ta: 'இன்று', hi: 'आज', mr: 'आज' },
   orders: { en: 'orders', ta: 'ஆர்டர்கள்', hi: 'ऑर्डर', mr: 'ऑर्डर' },

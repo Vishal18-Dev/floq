@@ -5,23 +5,34 @@ import { HapticFeedback } from '../../services/haptics';
 import { useT } from '../../i18n';
 import type { StringKey } from '../../i18n/strings';
 
-export type TabType = 'SELL' | 'QUEUE' | 'DAY' | 'SETTINGS';
+export type TabType = 'SELL' | 'QUEUE' | 'DUES' | 'STOCK' | 'DAY' | 'SETTINGS';
 
 interface BottomNavProps {
   activeTab: TabType;
   onChangeTab: (tab: TabType) => void;
-  showQueue: boolean; // FOOD mode only
+  /** FOOD shows Sell/Queue/Day; RETAIL shows Sell/Dues/Stock/Day. */
+  mode: 'FOOD' | 'RETAIL';
   queueCount: number;
+  /** Overdue credit accounts, badged on Dues (retail). */
+  overdueCount?: number;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, showQueue, queueCount }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mode, queueCount, overdueCount = 0 }) => {
   const { bi } = useT();
 
-  const tabs: { key: TabType; k: StringKey; badge?: number }[] = [
-    { key: 'SELL', k: 'sell' },
-    ...(showQueue ? [{ key: 'QUEUE' as TabType, k: 'queue' as StringKey, badge: queueCount }] : []),
-    { key: 'DAY', k: 'day' },
-  ];
+  const tabs: { key: TabType; k: StringKey; badge?: number }[] =
+    mode === 'RETAIL'
+      ? [
+          { key: 'SELL', k: 'sell' },
+          { key: 'DUES', k: 'dues', badge: overdueCount },
+          { key: 'STOCK', k: 'stock' },
+          { key: 'DAY', k: 'day' },
+        ]
+      : [
+          { key: 'SELL', k: 'sell' },
+          { key: 'QUEUE', k: 'queue', badge: queueCount },
+          { key: 'DAY', k: 'day' },
+        ];
 
   return (
     <View style={styles.container}>

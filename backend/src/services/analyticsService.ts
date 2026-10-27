@@ -52,6 +52,36 @@ export class AnalyticsService {
       else otherRevenue += amt;
     }
 
+    // 2b. Retail: credit booked today, gross profit, and dues collected today.
+    const creditRow = await queryOne(
+      `SELECT COALESCE(SUM(total), 0) as credit_total
+       FROM orders
+       WHERE store_id = $1 AND created_at >= $2 AND created_at <= $3
+         AND status != 'CANCELLED' AND pay_method = 'CREDIT'`,
+      [storeId, startOfDay, endOfDay]
+    );
+    const creditRevenue = Number(creditRow?.credit_total || 0);
+
+    const profitRow = await queryOne(
+      `SELECT
+         COALESCE(SUM(oi.subtotal), 0) as sold,
+         COALESCE(SUM(COALESCE(oi.cost_snapshot, 0) * oi.quantity), 0) as cost
+       FROM order_items oi
+       JOIN orders o ON oi.order_id = o.id
+       WHERE o.store_id = $1 AND o.created_at >= $2 AND o.created_at <= $3
+         AND o.status != 'CANCELLED'`,
+      [storeId, startOfDay, endOfDay]
+    );
+    const grossProfit = Number(profitRow?.sold || 0) - Number(profitRow?.cost || 0);
+
+    const collectedRow = await queryOne(
+      `SELECT COALESCE(SUM(-amount), 0) as collected
+       FROM dues_entries
+       WHERE store_id = $1 AND kind = 'PAYMENT' AND business_date = $2`,
+      [storeId, date]
+    );
+    const duesCollected = Number(collectedRow?.collected || 0);
+
     // 3. Top Products
     const topProductsRows = await query(
       `SELECT
@@ -166,6 +196,9 @@ export class AnalyticsService {
       upiRevenue,
       cashRevenue,
       otherRevenue,
+      creditRevenue,
+      grossProfit,
+      duesCollected,
       topProducts,
       peakHour,
       hourlyDistribution,

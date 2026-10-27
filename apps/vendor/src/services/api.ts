@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import {
   Category,
+  CreditCustomer,
   DailySalesSummary,
   Order,
   OrderStatus,
@@ -292,6 +293,47 @@ class NativeApiClient {
       method: 'PATCH',
       body: JSON.stringify({ status, reason }),
     });
+  }
+
+  // Retail — credit book (Dues screen) and shop orders.
+  public async getCustomers(): Promise<{ customers: CreditCustomer[] }> {
+    return this.request('/retail/customers');
+  }
+
+  public async createCustomer(data: {
+    name: string;
+    kind: 'SHOP' | 'REGULAR';
+    phone?: string;
+    creditLimit?: number;
+  }): Promise<{ customer: CreditCustomer }> {
+    return this.request('/retail/customers', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  /** Record a repayment. Omit amount to settle the whole balance ("Got paid"). */
+  public async markCustomerPaid(id: string, amount?: number): Promise<{ customer: CreditCustomer }> {
+    return this.request(`/retail/customers/${id}/paid`, {
+      method: 'POST',
+      body: JSON.stringify(amount != null ? { amount } : {}),
+    });
+  }
+
+  /** Add a product with one pack (or a loose good). */
+  public async createRetailProduct(data: {
+    name: string;
+    nameLocal?: string;
+    categoryId: string;
+    isLoose?: boolean;
+    perKg?: number;
+    stockGrams?: number;
+    dailyGrams?: number;
+    pack?: { size: string; price: number; wholesalePrice?: number; costPrice?: number; stock: number; caseQty?: number; dailyRate?: number };
+  }): Promise<{ id: string }> {
+    return this.request('/retail/products', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  /** Add received stock (and optionally update cost) to packs / loose goods. */
+  public async receiveStock(lines: { packId?: string; productId?: string; qty: number; cost?: number }[]): Promise<{ success: boolean }> {
+    return this.request('/retail/stock/receive', { method: 'POST', body: JSON.stringify({ lines }) });
   }
 
   public async getDailyAnalytics(date?: string): Promise<DailySalesSummary> {
