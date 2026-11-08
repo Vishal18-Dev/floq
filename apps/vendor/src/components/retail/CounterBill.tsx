@@ -248,6 +248,7 @@ export function CounterBill({
         <PaySheet
           total={total}
           count={count}
+          showCredit={settings?.creditEnabled !== false}
           onCash={() => { setTender(null); setFlow('cash'); }}
           onUpi={() => setFlow('upi')}
           onCredit={() => setFlow('credit')}
@@ -389,6 +390,7 @@ function PackSheet({
 function PaySheet({
   total,
   count,
+  showCredit,
   onCash,
   onUpi,
   onCredit,
@@ -396,6 +398,7 @@ function PaySheet({
 }: {
   total: number;
   count: number;
+  showCredit: boolean;
   onCash: () => void;
   onUpi: () => void;
   onCredit: () => void;
@@ -410,7 +413,7 @@ function PaySheet({
         <Text style={styles.payTotal}>{INR(total)}</Text>
         <TouchableOpacity style={styles.payOption} onPress={onCash}><Text style={styles.payOptionText}>Cash</Text></TouchableOpacity>
         <TouchableOpacity style={styles.payOption} onPress={onUpi}><Text style={styles.payOptionText}>UPI QR</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.payOption} onPress={onCredit}><Text style={styles.payOptionText}>On credit</Text></TouchableOpacity>
+        {showCredit ? <TouchableOpacity style={styles.payOption} onPress={onCredit}><Text style={styles.payOptionText}>On credit</Text></TouchableOpacity> : null}
         <TouchableOpacity style={styles.payBack} onPress={onCancel}><Text style={styles.payBackText}>Back</Text></TouchableOpacity>
       </View>
     </View>

@@ -1,11 +1,37 @@
 import { Router, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { query, queryOne, transaction } from '../../db';
-import { UpdateStoreSettingsSchema } from '@floq/validation';
+import { UpdateStoreSettingsSchema, StoreSeedSchema } from '@floq/validation';
 import { STORE_TEMPLATES } from '@floq/constants';
+import { seedStoreContents, SeedResult } from '../../services/storeSeed';
 import crypto from 'crypto';
 
 const router = Router();
+
+/** Shape a store_settings row for the client, including the onboarding fields. */
+function mapSettings(s: any) {
+  return {
+    id: s.id,
+    storeId: s.store_id,
+    secondaryLanguage: s.secondary_language || 'none',
+    voiceEnabled: Boolean(s.voice_enabled),
+    voiceLanguage: s.voice_language,
+    voiceVerbosity: s.voice_verbosity,
+    typicalPrepTimeMinutes: s.typical_prep_time_minutes,
+    ticketPrefix: s.ticket_prefix,
+    autoAcceptQrOrders: Boolean(s.auto_accept_qr_orders),
+    upiId: s.upi_id,
+    upiName: s.upi_name,
+    creditEnabled: s.credit_enabled === undefined || s.credit_enabled === null ? true : Boolean(s.credit_enabled),
+    defaultCreditLimit: s.default_credit_limit ?? undefined,
+    servicePrefs: s.service_prefs_json ? safeJson(s.service_prefs_json) : undefined,
+  };
+}
+
+function safeJson(v: any) {
+  if (typeof v !== 'string') return v || undefined;
+  try { return JSON.parse(v); } catch { return undefined; }
+}
 
 // GET /api/stores/current - Get active store and settings
 router.get('/current', async (req: AuthenticatedRequest, res: Response, next) => {
@@ -35,22 +61,11 @@ router.get('/current', async (req: AuthenticatedRequest, res: Response, next) =>
         phone: store.phone,
         openingTime: store.opening_time,
         closingTime: store.closing_time,
+        gstin: store.gstin || undefined,
         timezone: store.timezone,
         status: store.status,
       },
-      settings: settings ? {
-        id: settings.id,
-        storeId: settings.store_id,
-        secondaryLanguage: settings.secondary_language || 'none',
-        voiceEnabled: Boolean(settings.voice_enabled),
-        voiceLanguage: settings.voice_language,
-        voiceVerbosity: settings.voice_verbosity,
-        typicalPrepTimeMinutes: settings.typical_prep_time_minutes,
-        ticketPrefix: settings.ticket_prefix,
-        autoAcceptQrOrders: Boolean(settings.auto_accept_qr_orders),
-        upiId: settings.upi_id,
-        upiName: settings.upi_name,
-      } : null,
+      settings: settings ? mapSettings(settings) : null,
       staff,
       devices,
     });
@@ -104,6 +119,14 @@ router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next)
       fields.push(`upi_name = $${idx++}`);
       values.push(data.upiName);
     }
+    if (data.creditEnabled !== undefined) {
+      fields.push(`credit_enabled = $${idx++}`);
+      values.push(data.creditEnabled);
+    }
+    if (data.defaultCreditLimit !== undefined) {
+      fields.push(`default_credit_limit = $${idx++}`);
+      values.push(data.defaultCreditLimit);
+    }
 
     if (fields.length > 0) {
       values.push(req.storeId);
@@ -112,21 +135,61 @@ router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next)
     }
 
     const updated = await queryOne('SELECT * FROM store_settings WHERE store_id = $1', [req.storeId]);
-    res.json({
-      settings: {
-        id: updated.id,
-        storeId: updated.store_id,
-        secondaryLanguage: updated.secondary_language || 'none',
-        voiceEnabled: Boolean(updated.voice_enabled),
-        voiceLanguage: updated.voice_language,
-        voiceVerbosity: updated.voice_verbosity,
-        typicalPrepTimeMinutes: updated.typical_prep_time_minutes,
-        ticketPrefix: updated.ticket_prefix,
-        autoAcceptQrOrders: Boolean(updated.auto_accept_qr_orders),
-        upiId: updated.upi_id,
-        upiName: updated.upi_name,
-      },
+    res.json({ settings: mapSettings(updated) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/stores/seed — seed the authenticated store's catalogue, opening
+// stock and credit book, plus the store-level answers the wizard captured
+// (hours, GSTIN, credit on/off + default limit, food service prefs). Called
+// once during self-serve onboarding, after the account is created. Additive:
+// it reuses the starter category and never wipes existing data.
+router.post('/seed', async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const input = StoreSeedSchema.parse(req.body);
+    const store = await queryOne('SELECT id, slug, mode FROM stores WHERE id = $1', [req.storeId]);
+    if (!store) {
+      res.status(404).json({ error: 'Store not found' });
+      return;
+    }
+
+    let result: SeedResult = { initialCategoryId: '', itemsCreated: 0, packsCreated: 0, customersCreated: 0 };
+    await transaction(async (client) => {
+      result = await seedStoreContents(client, store.id, store.slug, {
+        items: input.items,
+        customers: input.customers,
+        suppliers: input.suppliers,
+        initialCategoryName: input.initialCategoryName,
+        mode: store.mode,
+      });
+
+      // Store-level answers.
+      const storeFields: string[] = [];
+      const storeVals: any[] = [];
+      let i = 1;
+      if (input.openingTime) { storeFields.push(`opening_time = $${i++}`); storeVals.push(input.openingTime); }
+      if (input.closingTime) { storeFields.push(`closing_time = $${i++}`); storeVals.push(input.closingTime); }
+      if (input.gstin !== undefined) { storeFields.push(`gstin = $${i++}`); storeVals.push(input.gstin || null); }
+      if (storeFields.length) {
+        storeVals.push(store.id);
+        await client.query(`UPDATE stores SET ${storeFields.join(', ')} WHERE id = $${i++}`, storeVals);
+      }
+
+      const setFields: string[] = [];
+      const setVals: any[] = [];
+      let j = 1;
+      if (input.creditEnabled !== undefined) { setFields.push(`credit_enabled = $${j++}`); setVals.push(input.creditEnabled); }
+      if (input.defaultCreditLimit !== undefined) { setFields.push(`default_credit_limit = $${j++}`); setVals.push(input.defaultCreditLimit); }
+      if (input.servicePrefs !== undefined) { setFields.push(`service_prefs_json = $${j++}`); setVals.push(JSON.stringify(input.servicePrefs)); }
+      if (setFields.length) {
+        setVals.push(store.id);
+        await client.query(`UPDATE store_settings SET ${setFields.join(', ')} WHERE store_id = $${j++}`, setVals);
+      }
     });
+
+    res.status(201).json({ success: true, ...result });
   } catch (err) {
     next(err);
   }

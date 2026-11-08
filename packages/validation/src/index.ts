@@ -183,9 +183,20 @@ export const UpdateStoreSettingsSchema = z.object({
   autoAcceptQrOrders: z.boolean().optional(),
   upiId: z.string().optional(),
   upiName: z.string().optional(),
+  creditEnabled: z.boolean().optional(),
+  defaultCreditLimit: z.number().int().nonnegative().optional(),
 });
 
 export type UpdateStoreSettingsInput = z.input<typeof UpdateStoreSettingsSchema>;
+
+// Service preferences a food counter sets at onboarding. Stored as JSON.
+export const ServicePrefsSchema = z.object({
+  payFirst: z.boolean().optional(),
+  callBy: z.enum(['number', 'name']).optional(),
+  service: z.array(z.string()).optional(),
+  closedDays: z.array(z.string()).optional(),
+});
+export type ServicePrefsInput = z.input<typeof ServicePrefsSchema>;
 
 // Auth Schemas — phone + fixed PIN (no SMS OTP)
 export const PinLoginSchema = z.object({
@@ -283,10 +294,14 @@ export const OnboardMerchantSchema = z.object({
 export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
 
 // Self-serve signup (public). Phone comes from the verified Firebase OTP token,
-// not the body. Catalogue always starts empty — the merchant adds items in-app.
+// not the body. The account is created with its identity here; the catalogue,
+// opening stock and credit book are seeded afterwards via /api/stores/seed (the
+// wizard runs while authenticated). The PIN is set after onboarding as the
+// device quick-unlock, so it is optional here.
 export const SelfSignupSchema = z.object({
   idToken: z.string().min(1, 'OTP token is required'),
   storeName: z.string().min(1, 'Store name is required'),
+  storeNameLocal: z.string().optional(),
   ownerName: z.string().min(1).optional(),
   storeType: StoreTypeEnum.default('GROCERY'),
   mode: StoreModeEnum.default('RETAIL'),
@@ -294,7 +309,40 @@ export const SelfSignupSchema = z.object({
   city: z.string().optional(),
   upiId: z.string().optional(),
   imageUrl: z.string().url().optional(),
-  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only'),
+  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only').optional(),
 });
 
 export type SelfSignupInput = z.input<typeof SelfSignupSchema>;
+
+// Seed an authenticated store with catalogue, opening stock and credit book.
+// Reuses the onboarding item/customer shapes. The store is derived from the
+// session, never the body.
+export const StoreSeedSchema = z.object({
+  items: z.array(OnboardItemSchema).optional(),
+  customers: z.array(OnboardCustomerSchema).optional(),
+  suppliers: z.record(z.string()).optional(),
+  initialCategoryName: z.string().optional(),
+  // Store-level answers captured in the wizard.
+  gstin: z.string().optional(),
+  openingTime: z.string().optional(),
+  closingTime: z.string().optional(),
+  creditEnabled: z.boolean().optional(),
+  defaultCreditLimit: z.number().int().nonnegative().optional(),
+  servicePrefs: ServicePrefsSchema.optional(),
+});
+export type StoreSeedInput = z.input<typeof StoreSeedSchema>;
+
+// Owner creates a staff invite for a mobile number + role.
+export const CreateInviteSchema = z.object({
+  phone: z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
+  role: z.enum(['MANAGER', 'STAFF']).default('STAFF'),
+  title: z.string().max(40).optional(),
+});
+export type CreateInviteInput = z.input<typeof CreateInviteSchema>;
+
+// Invitee accepts an invite: verified by OTP for the invited number.
+export const AcceptInviteSchema = z.object({
+  idToken: z.string().min(1, 'OTP token is required'),
+  name: z.string().min(1).optional(),
+});
+export type AcceptInviteInput = z.input<typeof AcceptInviteSchema>;

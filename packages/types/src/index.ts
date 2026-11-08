@@ -53,6 +53,8 @@ export interface Store {
   phone?: string;
   openingTime?: string;
   closingTime?: string;
+  /** GSTIN, when registered — prints on wholesale tax invoices. */
+  gstin?: string;
   timezone: string;
   status: StoreStatus;
   createdAt: string;
@@ -328,6 +330,44 @@ export interface StoreSettings {
   autoAcceptQrOrders: boolean;
   upiId?: string;
   upiName?: string;
+  /** Retail: whether credit (udhaar) is offered. Off hides Dues + the on-credit
+   *  pay option everywhere. */
+  creditEnabled: boolean;
+  /** Suggested credit limit (₹) for a new customer. */
+  defaultCreditLimit?: number;
+  /** Food: onboarding preferences the queue can grow into (pay-first, call-by,
+   *  order types, closed days). */
+  servicePrefs?: ServicePrefs;
+}
+
+export interface ServicePrefs {
+  /** Collect payment before handing a token, vs settle after eating. */
+  payFirst?: boolean;
+  /** Call a ready order by its token number or the customer's name. */
+  callBy?: 'number' | 'name';
+  /** Order types taken: parcel / dine-in / phone. */
+  service?: string[];
+  /** Weekdays the counter is closed (Mon…Sun). */
+  closedDays?: string[];
+}
+
+export type StaffInviteRole = 'MANAGER' | 'STAFF';
+export type StaffInviteStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+
+/** An invitation for a helper to join a store with a role. Single-use,
+ *  phone-gated, expires in 7 days. */
+export interface StaffInvite {
+  id: string;
+  storeId: string;
+  merchantId: string;
+  code: string;
+  invitedPhone?: string;
+  role: StaffInviteRole;
+  /** Display label shown to the invitee (Clerk / Manager / Counter / Kitchen). */
+  title?: string;
+  status: StaffInviteStatus;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface TopProductMetric {

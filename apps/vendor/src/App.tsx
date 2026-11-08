@@ -14,8 +14,7 @@ import { DayScreen } from './components/day/DayScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
 import { SubscribeScreen } from './components/subscription/SubscribeScreen';
 import { ItemsManager } from './components/business/ItemsManager';
-import { LoginScreen } from './components/auth/LoginScreen';
-import { OnboardingWizard } from './components/auth/OnboardingWizard';
+import { OnboardingFlow } from './components/auth/OnboardingFlow';
 import { LockScreen } from './components/auth/LockScreen';
 import { SetUnlockPinScreen } from './components/auth/SetUnlockPinScreen';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -60,7 +59,6 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [itemsOpen, setItemsOpen] = useState(false);
-  const [onboarding, setOnboarding] = useState<{ idToken: string; phone: string } | null>(null);
   const [showSubscribe, setShowSubscribe] = useState(false);
 
   const mode = store?.mode || 'FOOD';
@@ -242,10 +240,7 @@ export default function App() {
     return <Splash />;
   }
   if (!isAuthenticated) {
-    if (onboarding) {
-      return <OnboardingWizard idToken={onboarding.idToken} phone={onboarding.phone} onBack={() => setOnboarding(null)} />;
-    }
-    return <LoginScreen onNeedsOnboarding={(idToken, phone) => setOnboarding({ idToken, phone })} />;
+    return <OnboardingFlow />;
   }
   // Authenticated but needs a quick-unlock PIN set, or must unlock this open.
   if (needsPinSetup) {
@@ -341,6 +336,7 @@ export default function App() {
             mode={mode}
             queueCount={queueCount}
             overdueCount={customers.filter(isOverdue).length}
+            creditEnabled={settings?.creditEnabled !== false}
           />
         )}
 
