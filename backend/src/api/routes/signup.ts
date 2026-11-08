@@ -60,9 +60,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         [merchantId, ownerName, cleanPhone, null, now, now]
       );
       await client.query(
-        `INSERT INTO stores (id, merchant_id, name, slug, store_type, mode, phone, city, image_url, opening_time, closing_time, timezone, status, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '07:00', '23:00', 'Asia/Kolkata', 'ACTIVE', $10, $11)`,
-        [storeId, merchantId, input.storeName, slug, input.storeType, input.mode, cleanPhone, input.city || null, input.imageUrl || null, now, now]
+        `INSERT INTO stores (id, merchant_id, name, name_local, slug, store_type, mode, phone, city, image_url, opening_time, closing_time, timezone, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '07:00', '23:00', 'Asia/Kolkata', 'ACTIVE', $11, $12)`,
+        [storeId, merchantId, input.storeName, input.storeNameLocal || null, slug, input.storeType, input.mode, cleanPhone, input.city || null, input.imageUrl || null, now, now]
       );
       await client.query(
         `INSERT INTO store_settings (id, store_id, secondary_language, voice_enabled, voice_language, voice_verbosity, typical_prep_time_minutes, ticket_prefix, auto_accept_qr_orders, upi_id, upi_name)
@@ -81,7 +81,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       await client.query(
         `INSERT INTO users (id, phone, name, role, merchant_id, store_ids_json, pin_hash, status, created_at, updated_at)
          VALUES ($1, $2, $3, 'OWNER', $4, $5, $6, 'ACTIVE', $7, $8)`,
-        [userId, cleanPhone, ownerName, merchantId, JSON.stringify([storeId]), hashPin(input.pin), now, now]
+        [userId, cleanPhone, ownerName, merchantId, JSON.stringify([storeId]), input.pin ? hashPin(input.pin) : null, now, now]
       );
       // One empty starter category so the merchant can add items immediately.
       await client.query(

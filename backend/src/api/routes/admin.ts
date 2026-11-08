@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { OnboardMerchantSchema } from '@floq/validation';
 import { queryOne, transaction } from '../../db';
 import { hashPin } from '../../services/authService';
+import { seedStoreContents } from '../../services/storeSeed';
 import { config } from '../../config';
 import crypto from 'crypto';
 
@@ -74,7 +75,7 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
     const storeId = `store_${slug.replace(/-/g, '_')}_${cleanPhone.slice(-4)}`;
     const userId = `user_${cleanPhone}`;
     const pinHash = hashPin(input.pin);
-    let initialCategoryId = '';
+    let seed = { initialCategoryId: '', itemsCreated: 0, packsCreated: 0, customersCreated: 0 };
 
     await transaction(async (client) => {
       // 1. Merchant
@@ -141,89 +142,14 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
         ]
       );
 
-      // 5. Catalogue. Group provided items by category; always ensure one category.
-      const items = input.items || [];
-      const categoryNames = Array.from(new Set(items.map((it) => it.category || input.initialCategoryName)));
-      if (categoryNames.length === 0) categoryNames.push(input.initialCategoryName);
-
-      const suppliers = input.suppliers || {};
-      const catIdByName: Record<string, string> = {};
-      let catSort = 0;
-      for (const catName of categoryNames) {
-        const catId = `cat_${slug.replace(/-/g, '_')}_${catSort}`;
-        catIdByName[catName] = catId;
-        await client.query(
-          `INSERT INTO categories (id, store_id, name, supplier, sort_order, is_active, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [catId, storeId, catName, suppliers[catName] || null, catSort, true, now]
-        );
-        catSort++;
-      }
-      initialCategoryId = catIdByName[input.initialCategoryName] || Object.values(catIdByName)[0] || '';
-
-      let itemSort = 0;
-      for (const it of items) {
-        const catName = it.category || input.initialCategoryName;
-        const productId = crypto.randomUUID();
-        const loose = !!it.isLoose;
-        await client.query(
-          `INSERT INTO products (id, store_id, category_id, name, name_local, price, is_available, sort_order, station, is_loose, per_kg, stock_grams, daily_grams, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-          [
-            productId,
-            storeId,
-            catIdByName[catName],
-            it.name,
-            it.nameLocal || null,
-            loose ? it.perKg ?? 0 : it.price ?? 0,
-            true,
-            itemSort,
-            it.station || (input.mode === 'FOOD' ? 'HOT_FOOD' : 'PACKAGED'),
-            loose,
-            loose ? it.perKg ?? 0 : null,
-            loose ? Math.round((it.stockKg ?? 0) * 1000) : null,
-            loose ? Math.round((it.dailyKg ?? 0) * 1000) : null,
-            now,
-            now,
-          ]
-        );
-        // Retail pack sizes, if any.
-        const packs = it.packs || [];
-        for (let j = 0; j < packs.length; j++) {
-          const k = packs[j];
-          await client.query(
-            `INSERT INTO product_packs (id, product_id, store_id, size, price, wholesale_price, cost_price, stock, case_qty, daily_rate, expiry_note, sort_order)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-            [
-              `${productId}_${j}`,
-              productId,
-              storeId,
-              k.size,
-              k.price,
-              k.wholesalePrice ?? null,
-              k.costPrice ?? null,
-              k.stock ?? 0,
-              k.caseQty ?? null,
-              k.dailyRate ?? 0,
-              k.expiryNote ?? null,
-              j,
-            ]
-          );
-        }
-        itemSort++;
-      }
-
-      // 6. Opening credit book (existing khata accounts), if provided.
-      const DAY_MS = 24 * 60 * 60 * 1000;
-      for (const c of input.customers || []) {
-        const owes = c.owes ?? 0;
-        const oldest = owes > 0 ? new Date(Date.now() - (c.oldestDueDays ?? 0) * DAY_MS).toISOString() : null;
-        await client.query(
-          `INSERT INTO credit_customers (id, store_id, name, kind, phone, credit_limit, owes, oldest_due_at, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [crypto.randomUUID(), storeId, c.name, c.kind || 'REGULAR', c.phone || null, c.creditLimit ?? 0, owes, oldest, now]
-        );
-      }
+      // 5. Catalogue, opening stock and credit book (shared with self-serve seed).
+      seed = await seedStoreContents(client, storeId, slug, {
+        items: input.items,
+        customers: input.customers,
+        suppliers: input.suppliers,
+        initialCategoryName: input.initialCategoryName,
+        mode: input.mode,
+      });
     });
 
     res.status(201).json({
@@ -236,10 +162,10 @@ router.post('/onboard-merchant', async (req: Request, res: Response, next: NextF
       phone: cleanPhone,
       mode: input.mode,
       secondaryLanguage: input.secondaryLanguage,
-      initialCategoryId,
-      itemsCreated: (input.items || []).length,
-      packsCreated: (input.items || []).reduce((n, it) => n + (it.packs?.length || 0), 0),
-      customersCreated: (input.customers || []).length,
+      initialCategoryId: seed.initialCategoryId,
+      itemsCreated: seed.itemsCreated,
+      packsCreated: seed.packsCreated,
+      customersCreated: seed.customersCreated,
     });
   } catch (err) {
     next(err);

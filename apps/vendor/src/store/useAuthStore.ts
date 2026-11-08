@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { UserSession } from '@floq/types';
-import { api, SignupPayload } from '../services/api';
+import { api } from '../services/api';
 import { authStorage } from '../services/authStorage';
 import { realtimeClient } from '../services/realtimeClient';
 
@@ -21,7 +21,9 @@ interface AuthState {
   error: string | null;
   loginWithPin: (phone: string, pin: string) => Promise<UserSession>;
   loginWithOtp: (idToken: string, phone: string) => Promise<UserSession>;
-  signup: (payload: SignupPayload) => Promise<UserSession>;
+  /** Finish the onboarding wizard with a fresh session (self-serve or join).
+   *  Flips the app to authenticated and routes into PIN setup. */
+  completeOnboarding: (session: UserSession) => Promise<void>;
   unlock: (pin: string) => Promise<boolean>;
   unlockBiometric: () => void;
   setUnlockPin: (pin: string) => Promise<void>;
@@ -85,6 +87,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setUnlockPin: async (pin: string) => {
     await authStorage.setUnlockPin(pin);
+    // Also register it on the server so phone + PIN login works on another
+    // device. Best-effort: a quick-unlock PIN is set even if the sync fails.
+    try { await api.setPin(pin); } catch { /* non-fatal — local unlock still set */ }
     set({ needsPinSetup: false, isLocked: false });
   },
 
@@ -126,19 +131,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signup: async (payload: SignupPayload) => {
-    try {
-      set({ isLoading: true, error: null });
-      const session = await api.signup(payload);
-      await applySession(set, get, session);
-      // Reuse the PIN set in the wizard as the device unlock PIN.
-      await authStorage.setUnlockPin(payload.pin);
-      set({ needsPinSetup: false });
-      return session;
-    } catch (err: any) {
-      set({ isLoading: false, error: err.message || 'Could not create account' });
-      throw err;
-    }
+  completeOnboarding: async (session: UserSession) => {
+    await applySession(set, get, session);
+    // No device unlock PIN yet → route into PIN setup before the counter opens.
+    if (!(await authStorage.hasUnlockPin())) set({ needsPinSetup: true });
   },
 
   logout: async () => {

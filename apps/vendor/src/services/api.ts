@@ -18,6 +18,7 @@ import { CreateOrderInput } from '@floq/validation';
 export interface SignupPayload {
   idToken: string;
   storeName: string;
+  storeNameLocal?: string;
   ownerName?: string;
   storeType: string;
   mode: 'FOOD' | 'RETAIL';
@@ -25,7 +26,49 @@ export interface SignupPayload {
   city?: string;
   upiId?: string;
   imageUrl?: string;
-  pin: string;
+  pin?: string;
+}
+
+export interface StoreSeedPayload {
+  items?: {
+    name: string;
+    nameLocal?: string;
+    price?: number;
+    isLoose?: boolean;
+    perKg?: number;
+    stockKg?: number;
+    packs?: { size: string; price: number; stock: number; caseQty?: number }[];
+  }[];
+  customers?: { name: string; kind?: 'SHOP' | 'REGULAR'; creditLimit?: number; owes?: number; oldestDueDays?: number }[];
+  suppliers?: Record<string, string>;
+  initialCategoryName?: string;
+  gstin?: string;
+  openingTime?: string;
+  closingTime?: string;
+  creditEnabled?: boolean;
+  defaultCreditLimit?: number;
+  servicePrefs?: { payFirst?: boolean; callBy?: 'number' | 'name'; service?: string[]; closedDays?: string[] };
+}
+
+export interface InviteInfo {
+  valid: boolean;
+  storeName?: string;
+  ownerName?: string;
+  city?: string;
+  role?: 'MANAGER' | 'STAFF';
+  title?: string;
+  reason?: string;
+  message?: string;
+}
+
+export interface StaffInviteDTO {
+  id: string;
+  code: string;
+  invitedPhone?: string;
+  role: 'MANAGER' | 'STAFF';
+  title?: string;
+  status: string;
+  expiresAt: string;
 }
 
 export interface SubscriptionStatus {
@@ -205,6 +248,45 @@ class NativeApiClient {
       method: 'POST',
       body: JSON.stringify(payload),
       timeoutMs: 55000,
+    });
+    this.applySessionContext(session);
+    return session;
+  }
+
+  /** Seed the authenticated store with catalogue, stock, credit book and the
+   *  onboarding answers (hours, GSTIN, credit on/off, service prefs). */
+  public async seedStore(payload: StoreSeedPayload): Promise<{ success: boolean }> {
+    return this.request('/stores/seed', { method: 'POST', body: JSON.stringify(payload), timeoutMs: 40000 });
+  }
+
+  /** Set the caller's PIN (also enables phone + PIN login on another device). */
+  public async setPin(pin: string): Promise<{ success: boolean }> {
+    return this.request('/auth/set-pin', { method: 'POST', body: JSON.stringify({ pin }) });
+  }
+
+  // Team invites (owner).
+  public async createInvite(data: { phone: string; role: 'MANAGER' | 'STAFF'; title?: string }): Promise<{ invite: StaffInviteDTO }> {
+    return this.request('/team/invites', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  public async getInvites(): Promise<{ invites: StaffInviteDTO[] }> {
+    return this.request('/team/invites');
+  }
+
+  public async revokeInvite(id: string): Promise<{ success: boolean }> {
+    return this.request(`/team/invites/${id}`, { method: 'DELETE' });
+  }
+
+  // Join a team (public — no session yet).
+  public async lookupInvite(code: string): Promise<InviteInfo> {
+    return this.request(`/invites/${encodeURIComponent(code)}`, { timeoutMs: 30000 });
+  }
+
+  public async acceptInvite(code: string, idToken: string, name?: string): Promise<UserSession> {
+    const session: UserSession = await this.request(`/invites/${encodeURIComponent(code)}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ idToken, name }),
+      timeoutMs: 40000,
     });
     this.applySessionContext(session);
     return session;

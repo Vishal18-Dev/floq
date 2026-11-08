@@ -15,16 +15,18 @@ interface BottomNavProps {
   queueCount: number;
   /** Overdue credit accounts, badged on Dues (retail). */
   overdueCount?: number;
+  /** When false (merchant chose cash/UPI only), the Dues tab is hidden. */
+  creditEnabled?: boolean;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mode, queueCount, overdueCount = 0 }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mode, queueCount, overdueCount = 0, creditEnabled = true }) => {
   const { bi } = useT();
 
   const tabs: { key: TabType; k: StringKey; badge?: number }[] =
     mode === 'RETAIL'
       ? [
           { key: 'SELL', k: 'sell' },
-          { key: 'DUES', k: 'dues', badge: overdueCount },
+          ...(creditEnabled ? [{ key: 'DUES' as TabType, k: 'dues' as StringKey, badge: overdueCount }] : []),
           { key: 'STOCK', k: 'stock' },
           { key: 'DAY', k: 'day' },
         ]

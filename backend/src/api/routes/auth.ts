@@ -52,6 +52,23 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+// POST /api/auth/set-pin (Authenticated) — set/rotate the caller's own PIN.
+// Used after self-serve onboarding so the quick-unlock PIN also works as a
+// phone + PIN login on another device.
+router.post('/set-pin', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const pin = String(req.body?.pin || '');
+    if (!/^\d{4,6}$/.test(pin)) {
+      res.status(400).json({ error: 'INVALID_PIN', message: 'PIN must be 4 to 6 digits' });
+      return;
+    }
+    await authService.setUserPin(req.userId!, pin);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/auth/me (Authenticated)
 router.get('/me', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
   try {

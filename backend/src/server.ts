@@ -20,6 +20,8 @@ import adminRouter from './api/routes/admin';
 import signupRouter from './api/routes/signup';
 import subscriptionRouter from './api/routes/subscription';
 import retailRouter from './api/routes/retail';
+import teamRouter from './api/routes/team';
+import invitesRouter from './api/routes/invites';
 
 export function createServer() {
   const app = express();
@@ -81,6 +83,9 @@ export function createServer() {
   app.use('/api/public', publicRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/signup', signupRouter);
+  // Invite lookup + accept is public: the invitee has no session yet, and the
+  // accept is gated by an OTP on the invited number.
+  app.use('/api/invites', invitesRouter);
 
   // Authenticated Merchant API Routes (with Data Isolation Middleware)
   app.use('/api/stores', authMiddleware, storesRouter);
@@ -92,6 +97,7 @@ export function createServer() {
   app.use('/api/subscription', authMiddleware, subscriptionRouter);
   app.use('/api/sync', authMiddleware, syncRouter);
   app.use('/api/retail', authMiddleware, retailRouter);
+  app.use('/api/team', authMiddleware, teamRouter);
 
   // Central Error Handler
   app.use(errorHandler);
