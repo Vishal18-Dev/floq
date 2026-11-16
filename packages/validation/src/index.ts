@@ -173,6 +173,19 @@ export const CreateStoreSchema = z.object({
 
 export type CreateStoreInput = z.input<typeof CreateStoreSchema>;
 
+// Service preferences set at onboarding / in Settings. Stored as JSON.
+export const ServicePrefsSchema = z.object({
+  payFirst: z.boolean().optional(),
+  callBy: z.enum(['number', 'name']).optional(),
+  service: z.array(z.string()).optional(),
+  closedDays: z.array(z.string()).optional(),
+  /** Retail: warn when an item has under this many days of stock left. */
+  lowStockDays: z.number().int().min(2).max(14).optional(),
+  /** Retail: credit is overdue after this many days. */
+  creditTermDays: z.union([z.literal(7), z.literal(15), z.literal(30)]).optional(),
+});
+export type ServicePrefsInput = z.input<typeof ServicePrefsSchema>;
+
 export const UpdateStoreSettingsSchema = z.object({
   secondaryLanguage: SecondaryLanguageEnum.optional(),
   voiceEnabled: z.boolean().optional(),
@@ -185,18 +198,10 @@ export const UpdateStoreSettingsSchema = z.object({
   upiName: z.string().optional(),
   creditEnabled: z.boolean().optional(),
   defaultCreditLimit: z.number().int().nonnegative().optional(),
+  servicePrefs: ServicePrefsSchema.optional(),
 });
 
 export type UpdateStoreSettingsInput = z.input<typeof UpdateStoreSettingsSchema>;
-
-// Service preferences a food counter sets at onboarding. Stored as JSON.
-export const ServicePrefsSchema = z.object({
-  payFirst: z.boolean().optional(),
-  callBy: z.enum(['number', 'name']).optional(),
-  service: z.array(z.string()).optional(),
-  closedDays: z.array(z.string()).optional(),
-});
-export type ServicePrefsInput = z.input<typeof ServicePrefsSchema>;
 
 // Auth Schemas — phone + fixed PIN (no SMS OTP)
 export const PinLoginSchema = z.object({

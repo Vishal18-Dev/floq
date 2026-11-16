@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { DailySalesSummary } from '@floq/types';
 import { formatINR } from '@floq/utils';
-import { palette, fonts, borders } from '../../theme';
+import { palette, fonts } from '../../theme';
 import { useT } from '../../i18n';
-import { Kicker, PrimaryBar, EmptyState } from '../common/ui';
 import { HistoryModal } from './HistoryModal';
 
 interface Props {
@@ -13,117 +12,127 @@ interface Props {
   onManageItems: () => void;
 }
 
+// Day — design 4c. Real totals only: cash/UPI split and best sellers.
 export const DayScreen: React.FC<Props> = ({ dailySummary, onCloseDay, onManageItems }) => {
-  const { t, bi } = useT();
+  const { t, bi, localFont } = useT();
   const [closing, setClosing] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const revenue = dailySummary?.revenue ?? 0;
   const orders = dailySummary?.orders ?? 0;
-  const cash = dailySummary?.cashRevenue ?? 0;
-  const upi = dailySummary?.upiRevenue ?? 0;
-  const top = dailySummary?.topProducts ?? [];
+  const top = (dailySummary?.topProducts ?? []).slice(0, 5);
   const maxQty = top.reduce((m, p) => Math.max(m, p.quantity), 0) || 1;
+  const localSales = bi('todaysSales').secondary;
+  const localClose = bi('closeTheDay').secondary;
 
   const confirmClose = () => {
-    Alert.alert(
-      'Close the day?',
-      'This records today’s totals. Any open tokens carry over to tomorrow. You can keep selling after.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Close day',
-          style: 'destructive',
-          onPress: async () => {
-            setClosing(true);
-            try {
-              await onCloseDay();
-              Alert.alert('Day closed', 'Today’s totals are saved.');
-            } catch (e: any) {
-              Alert.alert('Could not close', e?.message || 'Try again.');
-            } finally {
-              setClosing(false);
-            }
-          },
+    Alert.alert('Close the day?', 'This records today’s totals. Any open tokens carry over to tomorrow. You can keep selling after.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Close day',
+        onPress: async () => {
+          setClosing(true);
+          try {
+            await onCloseDay();
+            Alert.alert('Day closed', 'Today’s totals are saved.');
+          } catch (e: any) {
+            Alert.alert('Could not close', e?.message || 'Try again.');
+          } finally {
+            setClosing(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
-    <ScrollView style={styles.screen}>
-      <View style={styles.hero}>
-        <Kicker>{bi('todaysSales').primary}{bi('todaysSales').secondary ? ` · ${bi('todaysSales').secondary}` : ''}</Kicker>
-        <Text style={styles.revenue}>{formatINR(revenue)}</Text>
-        <Text style={styles.orders}>{orders} {t('orders')}</Text>
-      </View>
-
-      <View style={styles.split}>
-        <View style={styles.splitCell}>
-          <Kicker>{bi('cash').primary}{bi('cash').secondary ? ` · ${bi('cash').secondary}` : ''}</Kicker>
-          <Text style={styles.splitAmt}>{formatINR(cash)}</Text>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.body}>
+        <View>
+          <Text style={styles.label16}>
+            {bi('todaysSales').primary}
+            {localSales ? <Text style={{ fontFamily: localFont() }}> · {localSales}</Text> : null}
+          </Text>
+          <Text style={styles.revenue}>{formatINR(revenue)}</Text>
+          <Text style={styles.muted16}>{orders} {t('orders')}</Text>
         </View>
-        <View style={styles.splitCell}>
-          <Kicker>{bi('upi').primary}</Kicker>
-          <Text style={styles.splitAmt}>{formatINR(upi)}</Text>
-        </View>
-      </View>
 
-      <View style={styles.section}>
-        <Kicker>{bi('topItems').primary}</Kicker>
-      </View>
-      {top.length === 0 ? (
-        <EmptyState title={t('noSalesYet')} subtitle={t('firstOrderHint')} />
-      ) : (
-        top.map((p) => (
-          <View key={p.productId + p.name} style={styles.topRow}>
-            <Text style={styles.topQty}>{p.quantity}</Text>
-            <Text style={styles.topName} numberOfLines={1}>{p.name}</Text>
-            <View style={styles.barTrack}><View style={[styles.barFill, { width: `${Math.round((p.quantity / maxQty) * 100)}%` }]} /></View>
-            <Text style={styles.topAmt}>{formatINR(p.revenue)}</Text>
+        <View style={styles.split}>
+          <View style={styles.splitCard}>
+            <Text style={styles.label14}>{bi('cash').primary}</Text>
+            <Text style={styles.splitAmt}>{formatINR(dailySummary?.cashRevenue ?? 0)}</Text>
           </View>
-        ))
-      )}
+          <View style={styles.splitCard}>
+            <Text style={styles.label14}>{bi('upi').primary}</Text>
+            <Text style={styles.splitAmt}>{formatINR(dailySummary?.upiRevenue ?? 0)}</Text>
+          </View>
+        </View>
 
-      <TouchableOpacity style={styles.manage} onPress={onManageItems} activeOpacity={0.7}>
-        <Text style={styles.manageText}>MANAGE ITEMS & PRICES →</Text>
-      </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Best sellers</Text>
+          {top.length === 0 ? (
+            <Text style={styles.muted16}>{t('noSalesYet')}. {t('firstOrderHint')}</Text>
+          ) : (
+            top.map((p) => (
+              <View key={p.productId + p.name} style={{ gap: 4 }}>
+                <View style={styles.topRow}>
+                  <Text style={styles.topName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={styles.topName}>
+                    <Text style={{ fontFamily: fonts.semibold }}>{p.quantity}</Text>
+                    <Text style={{ color: palette.neutral[600] }}> · {formatINR(p.revenue)}</Text>
+                  </Text>
+                </View>
+                <View style={styles.barTrack}><View style={[styles.barFill, { width: `${Math.round((p.quantity / maxQty) * 100)}%` }]} /></View>
+              </View>
+            ))
+          )}
+        </View>
 
-      <TouchableOpacity style={styles.manage} onPress={() => setHistoryOpen(true)} activeOpacity={0.7}>
-        <Text style={styles.manageText}>{bi('viewHistory').primary}{bi('viewHistory').secondary ? ` · ${bi('viewHistory').secondary}` : ''} →</Text>
-      </TouchableOpacity>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.linkRow} onPress={onManageItems}>
+            <Text style={styles.linkText}>Menu and prices</Text>
+            <Text style={styles.chev}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.linkRow, styles.rule]} onPress={() => setHistoryOpen(true)}>
+            <Text style={styles.linkText}>{bi('viewHistory').primary}</Text>
+            <Text style={styles.chev}>›</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
-      <View style={{ padding: 16 }}>
-        <PrimaryBar
-          tone="outline"
-          minHeight={64}
-          label={closing ? '…' : bi('closeTheDay').primary}
-          sub={bi('closeTheDay').secondary || undefined}
-          disabled={closing}
-          onPress={confirmClose}
-        />
+      <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+        <TouchableOpacity style={[styles.closeBtn, closing && { opacity: 0.5 }]} disabled={closing} onPress={confirmClose}>
+          <Text style={styles.closeLabel}>{closing ? '…' : bi('closeTheDay').primary}</Text>
+          {localClose ? <Text style={[styles.closeSub, { fontFamily: localFont() }]}>{localClose}</Text> : null}
+        </TouchableOpacity>
       </View>
 
       <HistoryModal visible={historyOpen} onClose={() => setHistoryOpen(false)} />
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.bg },
-  hero: { padding: 16, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
-  revenue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 52, letterSpacing: -2.5, color: palette.ink, marginTop: 4, lineHeight: 56 },
-  orders: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[700] },
-  split: { flexDirection: 'row', gap: borders.rule, backgroundColor: palette.divider, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
-  splitCell: { flex: 1, backgroundColor: palette.bg, padding: 14 },
-  splitAmt: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 24, letterSpacing: -0.6, color: palette.ink, marginTop: 4 },
-  section: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 9, borderBottomWidth: borders.hair, borderBottomColor: palette.dividerFaint },
-  topQty: { width: 34, fontFamily: fonts.heading, fontWeight: '800', fontSize: 17, color: palette.ink },
-  topName: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: palette.ink },
-  barTrack: { width: 60, height: 8, backgroundColor: palette.neutral[200] },
-  barFill: { height: 8, backgroundColor: palette.accent },
-  topAmt: { width: 70, textAlign: 'right', fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, color: palette.ink },
-  manage: { margin: 16, borderWidth: borders.rule, borderColor: palette.divider, paddingVertical: 16, alignItems: 'center' },
-  manageText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.ink },
+  body: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, gap: 12 },
+  label16: { fontFamily: fonts.semibold, fontSize: 16, color: palette.neutral[600] },
+  label14: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[600] },
+  muted16: { fontFamily: fonts.body, fontSize: 16, color: palette.neutral[600] },
+  revenue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 44, lineHeight: 48, marginTop: 4, color: palette.ink },
+  split: { flexDirection: 'row', gap: 8 },
+  splitCard: { flex: 1, backgroundColor: palette.card, padding: 14, gap: 2 },
+  splitAmt: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 24, color: palette.ink },
+  card: { backgroundColor: palette.card, padding: 14, gap: 10 },
+  cardTitle: { fontFamily: fonts.semibold, fontSize: 20, lineHeight: 24, color: palette.ink },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  topName: { fontFamily: fonts.body, fontSize: 16, color: palette.ink, flexShrink: 1 },
+  barTrack: { height: 8, borderRadius: 4, backgroundColor: palette.bg },
+  barFill: { height: 8, borderRadius: 4, backgroundColor: palette.highlight },
+  linkRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  rule: { borderTopWidth: 1, borderTopColor: palette.surface },
+  linkText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
+  chev: { fontFamily: fonts.semibold, fontSize: 22, color: palette.neutral[600] },
+  closeBtn: { minHeight: 60, backgroundColor: palette.highlight, justifyContent: 'center', paddingHorizontal: 18 },
+  closeLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, lineHeight: 24, color: palette.onHighlight },
+  closeSub: { fontSize: 14, color: palette.onHighlight },
 });

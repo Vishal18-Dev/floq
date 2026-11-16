@@ -2,9 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { DailySalesSummary, Product, CreditCustomer } from '@floq/types';
 import { palette, fonts } from '../../theme';
-import { INR, entries, daysLeft, isOverdue, customerDays } from '../../services/retail';
-
-const LOW_DAYS = 5;
+import { INR, entries, daysLeft, isOverdue, customerDays, retailPrefs } from '../../services/retail';
 
 export function DayScreenRetail({
   summary,
@@ -29,6 +27,7 @@ export function DayScreenRetail({
   const top = summary?.topProducts || [];
   const maxRev = Math.max(1, ...top.map((t) => t.revenue));
 
+  const { lowDays: LOW_DAYS, termDays } = retailPrefs();
   // Insights, computed client-side from live stock and the credit book.
   const low = entries(products)
     .filter((e) => daysLeft(e) <= LOW_DAYS)
@@ -44,7 +43,7 @@ export function DayScreenRetail({
   }
   if (overdue.length) {
     insights.push(
-      `${INR(overdue.reduce((s, c) => s + c.owes, 0))} has been owed for over 30 days by ${overdue
+      `${INR(overdue.reduce((s, c) => s + c.owes, 0))} has been owed for over ${termDays} days by ${overdue
         .map((c) => c.name)
         .join(' and ')}. A reminder in the morning gets paid fastest.`
     );

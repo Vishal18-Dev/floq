@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } 
 import { CreditCustomer } from '@floq/types';
 import { palette, fonts } from '../../theme';
 import { useT } from '../../i18n';
-import { INR, customerDays, isOverdue } from '../../services/retail';
+import { INR, customerDays, isOverdue, retailPrefs } from '../../services/retail';
 import { useCustomersStore } from '../../store/useCustomersStore';
 import { EmptyState } from '../common/ui';
 
@@ -55,7 +55,7 @@ export function DuesScreen({ customers, storeName }: { customers: CreditCustomer
           <View style={styles.overdueCard}>
             <Text style={styles.overdueTitle}>Collect these first</Text>
             <Text style={styles.overdueText}>
-              {INR(overdue.reduce((s, c) => s + c.owes, 0))} is more than 30 days old — {overdue.map((c) => c.name).join(' and ')}.
+              {INR(overdue.reduce((s, c) => s + c.owes, 0))} is more than {retailPrefs().termDays} days old —{overdue.map((c) => c.name).join(' and ')}.
             </Text>
           </View>
         ) : null}

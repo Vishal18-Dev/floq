@@ -48,10 +48,16 @@ router.post('/customers', async (req: AuthenticatedRequest, res: Response, next)
     }
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    // No limit given → the store's "Limit for new customers" from Settings.
+    let limit = Number(creditLimit) || 0;
+    if (!limit) {
+      const s = await queryOne('SELECT default_credit_limit FROM store_settings WHERE store_id = $1', [req.storeId]);
+      limit = Number(s?.default_credit_limit) || 0;
+    }
     await query(
       `INSERT INTO credit_customers (id, store_id, name, kind, phone, credit_limit, owes, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, 0, $7)`,
-      [id, req.storeId, name, kind === 'SHOP' ? 'SHOP' : 'REGULAR', phone || null, Number(creditLimit) || 0, now]
+      [id, req.storeId, name, kind === 'SHOP' ? 'SHOP' : 'REGULAR', phone || null, limit, now]
     );
     const created = await queryOne('SELECT * FROM credit_customers WHERE id = $1', [id]);
     res.status(201).json({ customer: mapCustomer(created) });

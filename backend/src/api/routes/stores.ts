@@ -127,6 +127,10 @@ router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next)
       fields.push(`default_credit_limit = $${idx++}`);
       values.push(data.defaultCreditLimit);
     }
+    if (data.servicePrefs !== undefined) {
+      fields.push(`service_prefs_json = $${idx++}`);
+      values.push(JSON.stringify(data.servicePrefs));
+    }
 
     if (fields.length > 0) {
       values.push(req.storeId);

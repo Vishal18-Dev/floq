@@ -18,11 +18,12 @@ import {
   Cart,
   RetailCharge,
   chargeItemsFromCart,
+  retailPrefs,
 } from '../../services/retail';
 
 // ponytail: fixed 5-day low-stock threshold; lift to a store setting if a
 // merchant wants to tune it.
-const LOW_DAYS = 5;
+
 
 type Flow = null | 'pay' | 'cash' | 'upi' | 'credit' | 'done';
 
@@ -154,7 +155,7 @@ export function CounterBill({
         ) : (
           shelf.map((p) => {
             const pe = allEntries.filter((e) => e.product.id === p.id);
-            const lowE = pe.filter((e) => daysLeft(e) <= LOW_DAYS).sort((a, b) => a.stock - b.stock)[0];
+            const lowE = pe.filter((e) => daysLeft(e) <= retailPrefs().lowDays).sort((a, b) => a.stock - b.stock)[0];
             const inBill = p.isLoose
               ? cart[p.id]
                 ? fmtG(cart[p.id])
