@@ -349,6 +349,10 @@ export interface ServicePrefs {
   service?: string[];
   /** Weekdays the counter is closed (Mon…Sun). */
   closedDays?: string[];
+  /** Retail: warn when an item has under this many days of stock left (default 5). */
+  lowStockDays?: number;
+  /** Retail: credit is overdue after this many days (default 30). */
+  creditTermDays?: number;
 }
 
 export type StaffInviteRole = 'MANAGER' | 'STAFF';

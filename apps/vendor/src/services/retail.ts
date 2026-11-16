@@ -6,6 +6,7 @@
  */
 import { Product, ProductPack, CreditCustomer, SellUnit } from '@floq/types';
 import { formatINR } from '@floq/utils';
+import { useStoreStore } from '../store/useStoreStore';
 
 /** Money, rounded to whole rupees like the design (₹1,234). */
 export const INR = (n: number): string => formatINR(Math.round(n || 0));
@@ -114,7 +115,13 @@ export function customerDays(c: CreditCustomer): number {
   return Math.max(0, Math.floor((Date.now() - new Date(c.oldestDueAt).getTime()) / 86400000));
 }
 
-export const isOverdue = (c: CreditCustomer): boolean => c.owes > 0 && customerDays(c) > 30;
+/** Merchant-set thresholds from Settings (5g), with the design's defaults. */
+export function retailPrefs(): { lowDays: number; termDays: number } {
+  const p = useStoreStore.getState().settings?.servicePrefs;
+  return { lowDays: p?.lowStockDays ?? 5, termDays: p?.creditTermDays ?? 30 };
+}
+
+export const isOverdue = (c: CreditCustomer): boolean => c.owes > 0 && customerDays(c) > retailPrefs().termDays;
 
 // ---- Charging a bill ----
 

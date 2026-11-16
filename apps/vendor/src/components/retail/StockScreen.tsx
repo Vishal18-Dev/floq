@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
 import { Product, Category } from '@floq/types';
 import { palette, fonts } from '../../theme';
-import { entries, daysLeft, reorderSuggest, fmtG, Entry } from '../../services/retail';
+import { entries, daysLeft, reorderSuggest, fmtG, Entry, retailPrefs } from '../../services/retail';
 import { NewProductScreen } from './NewProductScreen';
 import { StockReceiveScreen } from './StockReceiveScreen';
 
-const LOW_DAYS = 5;
+
 
 type View_ = 'list' | 'receive' | 'newproduct';
 
@@ -33,8 +33,8 @@ export function StockScreen({
 
   const supplierFor = (e: Entry) => categories.find((c) => c.id === e.product.categoryId)?.supplier || 'your supplier';
 
-  const low = all.filter((e) => daysLeft(e) <= LOW_DAYS).sort((a, b) => daysLeft(a) - daysLeft(b));
-  const ok = all.filter((e) => daysLeft(e) > LOW_DAYS);
+  const low = all.filter((e) => daysLeft(e) <= retailPrefs().lowDays).sort((a, b) => daysLeft(a) - daysLeft(b));
+  const ok = all.filter((e) => daysLeft(e) > retailPrefs().lowDays);
   const selected = low.filter((e) => !off[e.key]);
   const suppliers = Array.from(new Set(selected.map(supplierFor)));
 

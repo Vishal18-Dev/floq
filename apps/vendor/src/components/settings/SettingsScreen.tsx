@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
-import { palette, fonts, borders, spacing } from '../../theme';
+import { palette, fonts } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
+import { useCatalogStore } from '../../store/useCatalogStore';
 import { SubscriptionStatus } from '../../services/api';
 import { voiceService } from '../../services/voice';
-import { SECONDARY_LANGUAGE_LABELS } from '../../i18n';
+import { INR, entries, daysLeft, retailPrefs } from '../../services/retail';
 import type { SecondaryLanguage } from '../../i18n/strings';
-import { Kicker } from '../common/ui';
+import type { ServicePrefs, StoreSettings } from '@floq/types';
 
-const LANGS: SecondaryLanguage[] = ['none', 'ta', 'hi', 'mr'];
+// Settings — design 5g. Opened from the store name in the header. Every row
+// here changes something real; rows the design sketches that have nothing
+// behind them yet (bill printer, scale, GST invoices, WhatsApp reminders…) are
+// left out rather than shown as dead switches.
+
+const LANGS: [SecondaryLanguage, string][] = [['ta', 'தமிழ்'], ['hi', 'हिन्दी'], ['mr', 'मराठी'], ['none', 'English only']];
+const LANG_NAME: Record<SecondaryLanguage, string> = { ta: 'Tamil', hi: 'Hindi', mr: 'Marathi', none: '' };
+const TERMS = [7, 15, 30];
+const LIMITS = [1000, 2000, 5000];
 
 function subLabel(s: SubscriptionStatus): string {
   if (s.status === 'active') return s.plan === 'exempt' ? 'Active · Complimentary' : 'Active';
@@ -33,88 +42,242 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
   const settings = useStoreStore((s) => s.settings);
   const subscription = useStoreStore((s) => s.subscription);
   const updateSettings = useStoreStore((s) => s.updateSettings);
+  const products = useCatalogStore((s) => s.products);
+  const retail = store?.mode === 'RETAIL';
 
+  const [upiOpen, setUpiOpen] = useState(false);
   const [upiId, setUpiId] = useState(settings?.upiId || '');
-  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastT = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(toastT.current), []);
 
-  const setLang = async (lang: SecondaryLanguage) => {
-    try { await updateSettings({ secondaryLanguage: lang }); } catch {}
+  const flash = (msg: string) => {
+    clearTimeout(toastT.current);
+    setToast(msg);
+    toastT.current = setTimeout(() => setToast(null), 2600);
   };
-  const toggleVoice = async () => {
-    const next = !(settings?.voiceEnabled ?? true);
-    voiceService.updateConfig({ enabled: next });
-    try { await updateSettings({ voiceEnabled: next }); } catch {}
-  };
-  const saveUpi = async () => {
-    setSaving(true);
-    try { await updateSettings({ upiId: upiId.trim() }); Alert.alert('Saved', 'UPI ID updated.'); }
+  const save = async (updates: Partial<StoreSettings>, msg: string) => {
+    try { await updateSettings(updates); flash(msg); }
     catch (e: any) { Alert.alert('Could not save', e?.message || 'Try again.'); }
-    finally { setSaving(false); }
+  };
+  const savePrefs = (p: Partial<ServicePrefs>, msg: string) => save({ servicePrefs: { ...settings?.servicePrefs, ...p } }, msg);
+
+  const lang = (settings?.secondaryLanguage || 'none') as SecondaryLanguage;
+  const { lowDays, termDays } = retailPrefs();
+  const limit = settings?.defaultCreditLimit ?? 2000;
+  const creditOn = settings?.creditEnabled !== false;
+  const voiceOn = settings?.voiceEnabled ?? true;
+  const lowCount = entries(products).filter((e) => daysLeft(e) <= lowDays).length;
+  const due = new Date(Date.now() + termDays * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+  const saveUpi = async () => {
+    const v = upiId.trim();
+    if (v && !/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(v)) { Alert.alert('Check the UPI ID', 'It looks like name@bank.'); return; }
+    await save({ upiId: v }, v ? 'UPI ID saved. It shows on every bill QR.' : 'UPI ID removed.');
+    setUpiOpen(false);
   };
 
   return (
-    <ScrollView style={styles.screen}>
+    <View style={styles.screen}>
       <View style={styles.head}>
-        <TouchableOpacity onPress={onBack}><Text style={styles.back}>← Back</Text></TouchableOpacity>
-        <Text style={styles.title}>{store?.name || 'Settings'}</Text>
-        <Text style={styles.sub}>{store?.mode === 'RETAIL' ? 'Retail store' : 'Food counter'} · {store?.phone || ''}</Text>
-      </View>
-
-      {/* Subscription */}
-      {subscription ? (
-        <>
-          <View style={styles.section}><Kicker>SUBSCRIPTION</Kicker></View>
-          <TouchableOpacity style={styles.subRow} onPress={onManageSubscription} activeOpacity={0.7}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.subStatus}>{subLabel(subscription)}</Text>
-              <Text style={styles.subDetail}>{subDetail(subscription)}</Text>
-            </View>
-            <Text style={styles.subCta}>{subscription.status === 'expired' ? 'SUBSCRIBE →' : 'VIEW PLANS →'}</Text>
-          </TouchableOpacity>
-        </>
-      ) : null}
-
-      {/* Language */}
-      <View style={styles.section}><Kicker>SECOND LANGUAGE</Kicker></View>
-      <View style={styles.langRow}>
-        {LANGS.map((l) => (
-          <TouchableOpacity key={l} style={[styles.langChip, settings?.secondaryLanguage === l && styles.langChipActive]} onPress={() => setLang(l)}>
-            <Text style={[styles.langText, settings?.secondaryLanguage === l && styles.langTextActive]}>{SECONDARY_LANGUAGE_LABELS[l]}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Voice (food only) */}
-      {store?.mode !== 'RETAIL' && (
-        <TouchableOpacity style={styles.row} onPress={toggleVoice}>
-          <View><Text style={styles.rowLabel}>Voice call-outs</Text><Text style={styles.rowSub}>Announce “token ready” aloud</Text></View>
-          <View style={[styles.switch, (settings?.voiceEnabled ?? true) && styles.switchOn]}>
-            <Text style={styles.switchText}>{(settings?.voiceEnabled ?? true) ? 'ON' : 'OFF'}</Text>
-          </View>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back to Sell">
+          <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-      )}
-
-      {/* UPI */}
-      <View style={styles.section}><Kicker>UPI ID (FOR QR)</Kicker></View>
-      <View style={styles.upiRow}>
-        <TextInput style={styles.input} value={upiId} onChangeText={setUpiId} placeholder="name@bank" placeholderTextColor={palette.neutral[500]} autoCapitalize="none" />
-        <TouchableOpacity style={styles.saveBtn} onPress={saveUpi} disabled={saving}><Text style={styles.saveText}>{saving ? '…' : 'SAVE'}</Text></TouchableOpacity>
+        <Text style={styles.title}>Settings</Text>
       </View>
-      {!upiId ? <Text style={styles.warn}>No UPI ID set — the UPI QR is hidden until you add one. Cash still works.</Text> : null}
 
-      {/* Manage items */}
-      <TouchableOpacity style={styles.bigRow} onPress={onManageItems}>
-        <Text style={styles.bigRowText}>MANAGE ITEMS & PRICES →</Text>
-      </TouchableOpacity>
+      {toast ? <Text accessibilityLiveRegion="polite" style={styles.toast}>{toast}</Text> : null}
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logout} onPress={() => Alert.alert('Log out?', 'You will need your PIN to log back in.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: onLogout }])}>
-        <Text style={styles.logoutText}>LOG OUT</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.body}>
+        {/* Store profile */}
+        <View style={[styles.card, styles.profile]}>
+          <View style={styles.initial}><Text style={styles.initialText}>{(store?.name || 'f').trim().charAt(0).toUpperCase()}</Text></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.profileName} numberOfLines={1}>{store?.name || 'Your store'}</Text>
+            {store?.phone ? <Text style={styles.sub}>Owner · {store.phone}</Text> : null}
+            <Text style={styles.sub}>{retail ? 'Shop' : 'Food counter'}{store?.city ? ` · ${store.city}` : ''}</Text>
+          </View>
+        </View>
 
-      <Text style={styles.version}>floq · beta</Text>
-      <Text style={styles.build}>{buildLine()}</Text>
-    </ScrollView>
+        {/* Store */}
+        <Section label="STORE">
+          <View style={styles.rowCol}>
+            <RowText title="Bill and screen language" sub="English always shows. Product names and bills add this language." />
+            <Segmented
+              label="Bill and screen language"
+              options={LANGS.map(([v, l]) => ({ value: v, label: l }))}
+              value={lang}
+              onChange={(v) => save({ secondaryLanguage: v }, v === 'none' ? 'Bills and screens now show English only.' : `Bills and screens now show English and ${LANG_NAME[v]}.`)}
+            />
+          </View>
+          <TouchableOpacity style={[styles.row, styles.rule]} onPress={() => setUpiOpen((o) => !o)} accessibilityRole="button">
+            <RowText title="UPI for payments" sub={settings?.upiId ? `${settings.upiId} · shows on every bill QR` : 'Not set — the UPI QR is hidden. Cash still works.'} />
+            {settings?.upiId ? <Text style={styles.chipOk}>Set</Text> : <Text style={styles.chipWarn}>Add</Text>}
+            <Text style={styles.chev}>{upiOpen ? '⌄' : '›'}</Text>
+          </TouchableOpacity>
+          {upiOpen ? (
+            <View style={styles.upiEdit}>
+              <TextInput
+                style={styles.input}
+                value={upiId}
+                onChangeText={setUpiId}
+                placeholder="name@bank"
+                placeholderTextColor={palette.neutral[500]}
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="UPI ID"
+              />
+              <TouchableOpacity style={styles.saveBtn} onPress={saveUpi}><Text style={styles.saveText}>Save</Text></TouchableOpacity>
+            </View>
+          ) : null}
+          {!retail ? (
+            <Switch
+              title="Voice call-outs"
+              sub={voiceOn ? 'Announces “Token 36 is ready” aloud' : 'Off — call tokens yourself'}
+              on={voiceOn}
+              onPress={() => { voiceService.updateConfig({ enabled: !voiceOn }); save({ voiceEnabled: !voiceOn }, !voiceOn ? 'Voice call-outs on.' : 'Voice call-outs off.'); }}
+            />
+          ) : null}
+        </Section>
+
+        {/* Credit (retail) */}
+        {retail ? (
+          <Section label="CREDIT (UDHAAR)">
+            <Switch
+              title="Give credit"
+              sub={creditOn ? 'On credit shows when you charge, and Dues tracks it' : 'Off — cash and UPI only, Dues is hidden'}
+              on={creditOn}
+              first
+              onPress={() => save({ creditEnabled: !creditOn }, !creditOn ? 'Credit is on. Dues is back in the menu.' : 'Credit is off. Dues is hidden.')}
+            />
+            {creditOn ? (
+              <>
+                <View style={[styles.rowCol, styles.rule]}>
+                  <RowText title="Pay back within" sub={`For new credit bills and shop orders. Credit given today is due ${due}.`} />
+                  <Segmented
+                    label="Credit term"
+                    options={TERMS.map((v) => ({ value: v, label: `${v} days` }))}
+                    value={termDays}
+                    onChange={(v) => savePrefs({ creditTermDays: v }, `New credit is now due in ${v} days.`)}
+                  />
+                </View>
+                <View style={[styles.rowCol, styles.rule]}>
+                  <RowText title="Limit for new customers" sub="Each customer keeps their own limit once added." />
+                  <Segmented
+                    label="Default credit limit"
+                    options={LIMITS.map((v) => ({ value: v, label: INR(v) }))}
+                    value={limit}
+                    onChange={(v) => save({ defaultCreditLimit: v }, `New customers start with a ${INR(v)} limit.`)}
+                  />
+                </View>
+              </>
+            ) : null}
+          </Section>
+        ) : null}
+
+        {/* Stock (retail) */}
+        {retail ? (
+          <Section label="STOCK">
+            <View style={styles.row}>
+              <RowText
+                title="Low-stock warning"
+                sub={`Warn when an item has under ${lowDays} days left. ${lowCount ? (lowCount === 1 ? '1 item is' : `${lowCount} items are`) + ' low right now.' : 'Nothing is low right now.'}`}
+              />
+              <View style={styles.stepper}>
+                <StepBtn label="−" a11y="Fewer days" disabled={lowDays <= 2} onPress={() => savePrefs({ lowStockDays: lowDays - 1 }, `Low-stock warning at ${lowDays - 1} days.`)} />
+                <Text style={styles.stepVal} accessibilityLiveRegion="polite">{lowDays} days</Text>
+                <StepBtn label="+" a11y="More days" disabled={lowDays >= 14} onPress={() => savePrefs({ lowStockDays: lowDays + 1 }, `Low-stock warning at ${lowDays + 1} days.`)} />
+              </View>
+            </View>
+          </Section>
+        ) : null}
+
+        {/* Account */}
+        <Section label="TEAM AND ACCOUNT">
+          {subscription ? (
+            <NavRow first title={`Subscription · ${subLabel(subscription)}`} sub={subDetail(subscription)} onPress={onManageSubscription} />
+          ) : null}
+          <NavRow first={!subscription} title={retail ? 'Products and prices' : 'Menu and prices'} sub="Add, edit or remove items" onPress={onManageItems} />
+        </Section>
+
+        <View style={{ gap: 2 }}>
+          <TouchableOpacity
+            style={styles.logout}
+            onPress={() => Alert.alert('Log out of this phone?', 'You will need your PIN to log back in.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: onLogout }])}
+          >
+            <Text style={styles.logoutText}>Log out of this phone</Text>
+          </TouchableOpacity>
+          <Text style={styles.foot}>Bills on this phone are synced. {buildLine()}</Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.sectionLabel}>{label}</Text>
+      <View style={styles.card}>{children}</View>
+    </View>
+  );
+}
+
+function RowText({ title, sub }: { title: string; sub: string }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text style={styles.rowTitle}>{title}</Text>
+      <Text style={styles.sub}>{sub}</Text>
+    </View>
+  );
+}
+
+function Segmented<T extends string | number>({ label, options, value, onChange }: { label: string; options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <View style={styles.seg} accessibilityLabel={label}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <TouchableOpacity
+            key={String(o.value)}
+            style={[styles.segBtn, on && styles.segBtnOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: on }}
+            onPress={() => { if (!on) onChange(o.value); }}
+          >
+            <Text style={[styles.segText, on && styles.segTextOn]} numberOfLines={1}>{o.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function Switch({ title, sub, on, onPress, first }: { title: string; sub: string; on: boolean; onPress: () => void; first?: boolean }) {
+  return (
+    <TouchableOpacity style={[styles.row, !first && styles.rule]} onPress={onPress} accessibilityRole="switch" accessibilityState={{ checked: on }}>
+      <RowText title={title} sub={sub} />
+      <View style={[styles.track, on ? styles.trackOn : styles.trackOff]}>
+        <View style={[styles.knob, on ? styles.knobOn : styles.knobOff]} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function NavRow({ title, sub, onPress, first }: { title: string; sub: string; onPress: () => void; first?: boolean }) {
+  return (
+    <TouchableOpacity style={[styles.row, !first && styles.rule]} onPress={onPress} accessibilityRole="button">
+      <RowText title={title} sub={sub} />
+      <Text style={styles.chev}>›</Text>
+    </TouchableOpacity>
+  );
+}
+
+function StepBtn({ label, a11y, disabled, onPress }: { label: string; a11y: string; disabled: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={[styles.stepBtn, disabled && { opacity: 0.6 }]} disabled={disabled} onPress={onPress} accessibilityLabel={a11y}>
+      <Text style={[styles.stepText, disabled && { color: palette.neutral[500] }]}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -128,40 +291,51 @@ function buildLine(): string {
     if (Updates.updateId) update = Updates.updateId.slice(0, 8);
   } catch {}
   const channel = (() => { try { return Updates.channel || 'dev'; } catch { return 'dev'; } })();
-  return `v${version} · ${channel} · ${update}`;
+  return `floq v${version} · ${channel} · ${update}`;
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.bg },
-  head: { padding: 16, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
-  back: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], marginBottom: 10 },
-  title: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, letterSpacing: -0.5, color: palette.ink },
-  sub: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[700], marginTop: 2 },
-  section: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 6 },
-  langRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
-  langChip: { borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 10 },
-  langChipActive: { backgroundColor: palette.ink, borderColor: palette.ink },
-  langText: { fontFamily: fonts.semibold, fontSize: 13, color: palette.ink },
-  langTextActive: { color: palette.onAccent },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, borderWidth: borders.rule, borderColor: palette.divider, padding: 14 },
-  subStatus: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
-  subDetail: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[700], marginTop: 2 },
-  subCta: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, letterSpacing: 0.5, color: palette.accent },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, marginTop: 12, borderTopWidth: borders.rule, borderBottomWidth: borders.rule, borderColor: palette.divider },
-  rowLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 15, color: palette.ink },
-  rowSub: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[700], marginTop: 2 },
-  switch: { borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 6 },
-  switchOn: { backgroundColor: palette.accent, borderColor: palette.accent },
-  switchText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, color: palette.ink },
-  upiRow: { flexDirection: 'row', gap: borders.rule, paddingHorizontal: 16, alignItems: 'stretch' },
-  input: { flex: 1, borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 12, fontFamily: fonts.semibold, fontSize: 15, color: palette.ink, backgroundColor: palette.surface },
-  saveBtn: { backgroundColor: palette.ink, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
-  saveText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, color: palette.onAccent },
-  warn: { fontFamily: fonts.body, fontSize: 12, color: palette.accentRamp[700], paddingHorizontal: 16, paddingTop: 8 },
-  bigRow: { margin: 16, borderWidth: borders.rule, borderColor: palette.divider, paddingVertical: 16, alignItems: 'center' },
-  bigRowText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.ink },
-  logout: { marginHorizontal: 16, backgroundColor: palette.accent, paddingVertical: 16, alignItems: 'center' },
-  logoutText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 1, color: palette.onAccent },
-  version: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[500], textAlign: 'center', paddingTop: 24 },
-  build: { fontFamily: fonts.body, fontSize: 11, color: palette.neutral[500], textAlign: 'center', paddingBottom: 24, paddingTop: 2 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 },
+  backBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  backArrow: { fontFamily: fonts.semibold, fontSize: 24, color: palette.ink },
+  title: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, color: palette.ink },
+  toast: { marginHorizontal: 16, marginTop: 4, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: palette.successBg, color: palette.success, fontFamily: fonts.semibold, fontSize: 16 },
+  body: { padding: 16, paddingTop: 8, gap: 18, paddingBottom: 24 },
+  card: { backgroundColor: palette.card },
+  profile: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
+  initial: { width: 52, height: 52, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  initialText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 24, color: palette.onHighlight },
+  profileName: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.ink },
+  sectionLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 0.3, color: palette.link, paddingHorizontal: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 64 },
+  rowCol: { paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
+  rule: { borderTopWidth: 1, borderTopColor: palette.surface },
+  rowTitle: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
+  sub: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: palette.neutral[600] },
+  chev: { fontFamily: fonts.semibold, fontSize: 22, color: palette.neutral[600] },
+  chipOk: { fontFamily: fonts.semibold, fontSize: 13, color: palette.success, backgroundColor: palette.successBg, paddingHorizontal: 8, paddingVertical: 4, overflow: 'hidden' },
+  chipWarn: { fontFamily: fonts.semibold, fontSize: 13, color: palette.accentRamp[600], backgroundColor: palette.accentRamp[100], paddingHorizontal: 8, paddingVertical: 4, overflow: 'hidden' },
+  upiEdit: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingBottom: 12 },
+  input: { flex: 1, minHeight: 48, backgroundColor: palette.bg, paddingHorizontal: 12, fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
+  saveBtn: { minHeight: 48, paddingHorizontal: 18, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  saveText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.onHighlight },
+  seg: { flexDirection: 'row', padding: 4, gap: 4, backgroundColor: palette.surface },
+  segBtn: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  segBtnOn: { backgroundColor: palette.card, shadowColor: palette.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.14, shadowRadius: 2, elevation: 1 },
+  segText: { fontFamily: fonts.body, fontSize: 16, color: palette.ink },
+  segTextOn: { fontFamily: fonts.heading, fontWeight: '800' },
+  track: { width: 52, height: 32, borderRadius: 16, justifyContent: 'center' },
+  trackOn: { backgroundColor: palette.ink },
+  trackOff: { backgroundColor: palette.surface, borderWidth: 2, borderColor: palette.neutral[600] },
+  knob: { position: 'absolute', width: 24, height: 24, borderRadius: 12 },
+  knobOn: { left: 24, backgroundColor: palette.highlight },
+  knobOff: { left: 2, backgroundColor: palette.neutral[600] },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  stepBtn: { width: 44, height: 44, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center' },
+  stepText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, color: palette.ink },
+  stepVal: { minWidth: 56, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
+  logout: { alignSelf: 'flex-start', minHeight: 48, justifyContent: 'center', paddingHorizontal: 4 },
+  logoutText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },
+  foot: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: palette.neutral[600], paddingHorizontal: 4 },
 });
