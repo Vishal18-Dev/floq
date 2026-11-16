@@ -379,9 +379,9 @@ const bannerStyles = StyleSheet.create({
 function Splash({ storeName, carryOver }: { storeName?: string; carryOver?: number }) {
   return (
     <View style={styles.splash}>
-      <Text style={styles.splashStore}>{(storeName || 'FLOQ MERCHANT').toUpperCase()}</Text>
+      <Text style={styles.splashStore}>{storeName || 'floq Merchant'}</Text>
       <View>
-        <Image source={require('../assets/floq_logo_horizontal.png')} style={styles.splashLogo} resizeMode="contain" />
+        <Image source={require('../assets/floq_wordmark.png')} style={styles.splashLogo} resizeMode="contain" />
         <Text style={styles.splashSub}>
           {carryOver && carryOver > 0 ? `Counter loading, ${carryOver} tokens carried over` : 'Counter loading…'}
         </Text>
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   app: { flex: 1, backgroundColor: palette.bg },
   main: { flex: 1, backgroundColor: palette.bg },
   splash: { flex: 1, backgroundColor: palette.highlight, justifyContent: 'space-between', padding: 30, paddingTop: 60, paddingBottom: 50 },
-  splashStore: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 2, color: palette.ink, opacity: 0.8 },
-  splashLogo: { width: 260, height: 76 },
+  splashStore: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink, opacity: 0.8 },
+  splashLogo: { width: 200, height: 100 },
   splashSub: { fontFamily: fonts.body, fontSize: 18, color: palette.ink, opacity: 0.85, marginTop: 16 },
 });

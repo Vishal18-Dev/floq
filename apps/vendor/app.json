@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FLOQ Merchant",
+    "name": "floq Merchant",
     "slug": "floq-merchant",
     "version": "1.2.0",
     "orientation": "portrait",
@@ -13,6 +13,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png",
         "backgroundColor": "#FFB42E"
       },
       "package": "in.floq.merchant",

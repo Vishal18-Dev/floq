@@ -22,7 +22,7 @@ export function SetUnlockPinScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.brand}>
-        <Image source={require('../../../assets/floq_logo_horizontal.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../../assets/floq_wordmark.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.tagline}>Set a PIN to open the app quickly</Text>
       </View>
       <View style={styles.body}>
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: palette.bg },
   brand: { paddingHorizontal: spacing.xxl, paddingTop: spacing.xxl, paddingBottom: spacing.lg },
   wordmark: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 56, letterSpacing: -3, color: palette.ink },
-  logo: { width: 168, height: 50, marginBottom: 4 },
+  logo: { width: 112, height: 56, marginBottom: 4 },
   rule: { width: 56, height: 6, backgroundColor: palette.accent, marginTop: 10 },
   tagline: { fontFamily: fonts.body, fontSize: 15, color: palette.neutral[700], marginTop: 12 },
   body: { flex: 1, justifyContent: 'flex-end' },

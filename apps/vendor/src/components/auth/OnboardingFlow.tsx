@@ -530,7 +530,7 @@ type StepProps = { s: S; set: (p: Partial<S>) => void };
 function Welcome({ s, set }: StepProps) {
   return (
     <View style={{ gap: 28, paddingTop: 48 }}>
-      <Image source={require('../../../assets/floq_logo_horizontal.png')} style={styles.wordmark} resizeMode="contain" />
+      <Image source={require('../../../assets/floq_wordmark.png')} style={styles.wordmark} resizeMode="contain" />
       <View style={{ gap: 6 }}>
         <Text style={styles.hero}>Bills, stock and money for your counter.</Text>
         {s.lang !== 'none' && local(s.lang, 'welcome') ? <Text style={styles.heroLocal}>{local(s.lang, 'welcome')}</Text> : null}
@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
   h1local: { fontFamily: fonts.body, fontSize: 15, color: palette.neutral[600] },
   sub: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: palette.neutral[600] },
 
-  wordmark: { width: 150, height: 44, alignSelf: 'flex-start' },
+  wordmark: { width: 150, height: 75, alignSelf: 'flex-start' },
   hero: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, lineHeight: 34, letterSpacing: -0.6, color: palette.ink },
   heroLocal: { fontFamily: fonts.body, fontSize: 17, color: palette.neutral[600] },
 
