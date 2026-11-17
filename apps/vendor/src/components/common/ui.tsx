@@ -4,6 +4,7 @@ import { palette, fonts, borders } from '../../theme';
 import { useT } from '../../i18n';
 import type { StringKey } from '../../i18n/strings';
 import { HapticFeedback } from '../../services/haptics';
+import { Icon } from './Icon';
 
 /**
  * BiText — the bilingual label pattern used everywhere in the design: a bold
@@ -92,6 +93,58 @@ export function Numpad({
   );
 }
 
+/** The four PIN dots: ink outline, filled as digits go in, red on a wrong PIN. */
+export function PinDots({ filled, error, length = 4 }: { filled: number; error?: boolean; length?: number }) {
+  const c = error ? palette.accentRamp[600] : palette.ink;
+  return (
+    <View style={styles.dots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {Array.from({ length }).map((_, i) => (
+        <View key={i} style={[styles.dot, { borderColor: c, backgroundColor: i < filled ? c : 'transparent' }]} />
+      ))}
+    </View>
+  );
+}
+
+/**
+ * PIN keypad from the unlock design: white keys on the paper ground with gaps,
+ * fingerprint/face key bottom-left (when offered), delete bottom-right.
+ */
+export function PinPad({
+  onKey,
+  onBackspace,
+  bio,
+  onBio,
+}: {
+  onKey: (digit: string) => void;
+  onBackspace: () => void;
+  bio?: 'face' | 'finger' | null;
+  onBio?: () => void;
+}) {
+  const press = (fn?: () => void) => () => { HapticFeedback.light(); fn?.(); };
+  return (
+    <View style={styles.pinPad}>
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
+        <TouchableOpacity key={d} style={[styles.pinKey, styles.pinKeyDigit]} activeOpacity={0.6} onPress={press(() => onKey(d))}>
+          <Text style={styles.pinKeyLabel}>{d}</Text>
+        </TouchableOpacity>
+      ))}
+      {bio ? (
+        <TouchableOpacity style={styles.pinKey} activeOpacity={0.6} onPress={press(onBio)}
+          accessibilityRole="button" accessibilityLabel={bio === 'face' ? 'Unlock with face' : 'Unlock with fingerprint'}>
+          <Icon name={bio === 'face' ? 'scan-face' : 'fingerprint'} size={28} color={palette.ink} />
+        </TouchableOpacity>
+      ) : <View style={styles.pinKey} />}
+      <TouchableOpacity style={[styles.pinKey, styles.pinKeyDigit]} activeOpacity={0.6} onPress={press(() => onKey('0'))}>
+        <Text style={styles.pinKeyLabel}>0</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.pinKey} activeOpacity={0.6} onPress={press(onBackspace)}
+        accessibilityRole="button" accessibilityLabel="Delete last digit">
+        <Icon name="delete" size={26} color={palette.ink} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 /**
  * Full-width primary action button — the single red bar anchored at the bottom
  * of a screen. `tone="ink"` for a secondary dark action.
@@ -168,6 +221,12 @@ const styles = StyleSheet.create({
     marginBottom: borders.rule,
   },
   numKeyLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, color: palette.ink },
+  dots: { flexDirection: 'row', gap: 16 },
+  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2 },
+  pinPad: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
+  pinKey: { width: '32%', minHeight: 60, alignItems: 'center', justifyContent: 'center' },
+  pinKeyDigit: { backgroundColor: palette.card },
+  pinKeyLabel: { fontFamily: fonts.semibold, fontSize: 26, color: palette.ink, fontVariant: ['tabular-nums'] },
   primaryBar: {
     flexDirection: 'row',
     alignItems: 'center',

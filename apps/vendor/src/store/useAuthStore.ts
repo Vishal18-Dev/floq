@@ -24,9 +24,10 @@ interface AuthState {
   /** Finish the onboarding wizard with a fresh session (self-serve or join).
    *  Flips the app to authenticated and routes into PIN setup. */
   completeOnboarding: (session: UserSession) => Promise<void>;
-  unlock: (pin: string) => Promise<boolean>;
+  /** Check the quick-unlock PIN. triesLeft hits 0 after MAX_UNLOCK_TRIES misses. */
+  unlock: (pin: string) => Promise<{ ok: boolean; triesLeft: number }>;
   unlockBiometric: () => void;
-  setUnlockPin: (pin: string) => Promise<void>;
+  setUnlockPin: (pin: string, bioOn?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
   clearError: () => void;
@@ -40,6 +41,8 @@ async function applySession(set: any, get: any, session: UserSession) {
   set({ session, isAuthenticated: true, isLocked: false, isLoading: false, error: null });
   realtimeClient.connect();
 }
+
+export const MAX_UNLOCK_TRIES = 5;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -75,18 +78,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   unlock: async (pin: string) => {
+    const tries = await authStorage.getUnlockTries();
+    if (tries >= MAX_UNLOCK_TRIES) return { ok: false, triesLeft: 0 };
     const stored = await authStorage.getUnlockPin();
     if (stored && pin === stored) {
+      await authStorage.setUnlockTries(0);
       set({ isLocked: false });
-      return true;
+      return { ok: true, triesLeft: MAX_UNLOCK_TRIES };
     }
-    return false;
+    await authStorage.setUnlockTries(tries + 1);
+    return { ok: false, triesLeft: MAX_UNLOCK_TRIES - tries - 1 };
   },
 
-  unlockBiometric: () => set({ isLocked: false }),
+  unlockBiometric: () => {
+    authStorage.setUnlockTries(0).catch(() => {});
+    set({ isLocked: false });
+  },
 
-  setUnlockPin: async (pin: string) => {
+  setUnlockPin: async (pin: string, bioOn = true) => {
     await authStorage.setUnlockPin(pin);
+    await authStorage.setUnlockTries(0);
+    await authStorage.setBioEnabled(bioOn);
     // Also register it on the server so phone + PIN login works on another
     // device. Best-effort: a quick-unlock PIN is set even if the sync fails.
     try { await api.setPin(pin); } catch { /* non-fatal — local unlock still set */ }
