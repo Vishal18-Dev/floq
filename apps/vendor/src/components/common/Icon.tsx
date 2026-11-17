@@ -29,7 +29,10 @@ export type IconName =
   | 'users'
   | 'smartphone'
   | 'clock'
-  | 'edit';
+  | 'edit'
+  | 'fingerprint'
+  | 'scan-face'
+  | 'delete';
 
 interface IconProps {
   name: IconName;
@@ -220,6 +223,40 @@ export const Icon: React.FC<IconProps> = ({ name, size = 20, color = '#0f172a' }
           <Path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
           <Path d="M2 7h20" />
           <Path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7" />
+        </Svg>
+      );
+    case 'fingerprint':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
+          <Path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+          <Path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
+          <Path d="M2 12a10 10 0 0 1 18-6" />
+          <Path d="M2 16h.01" />
+          <Path d="M21.8 16c.2-2 .131-5.354 0-6" />
+          <Path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" />
+          <Path d="M8.65 22c.21-.66.45-1.32.57-2" />
+          <Path d="M9 6.8a6 6 0 0 1 9 5.2v2" />
+        </Svg>
+      );
+    case 'scan-face':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M3 7V5a2 2 0 0 1 2-2h2" />
+          <Path d="M17 3h2a2 2 0 0 1 2 2v2" />
+          <Path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+          <Path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+          <Path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <Path d="M9 9h.01" />
+          <Path d="M15 9h.01" />
+        </Svg>
+      );
+    case 'delete':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+          <Path d="m12 9 6 6" />
+          <Path d="m18 9-6 6" />
         </Svg>
       );
     default:

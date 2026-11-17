@@ -6,6 +6,8 @@ import { UserSession } from '@floq/types';
 const TOKEN_KEY = 'floq_merchant_jwt_token';
 const SESSION_KEY = 'floq_merchant_user_session';
 const PIN_KEY = 'floq_merchant_unlock_pin';
+const BIO_KEY = 'floq_merchant_unlock_bio'; // '0' = PIN only
+const TRIES_KEY = 'floq_merchant_unlock_tries'; // wrong PINs since last unlock
 
 export class AuthStorage {
   public async saveSession(session: UserSession): Promise<void> {
@@ -57,11 +59,13 @@ export class AuthStorage {
     if (Platform.OS === 'web') {
       await AsyncStorage.removeItem(TOKEN_KEY);
       await AsyncStorage.removeItem(SESSION_KEY);
-      await AsyncStorage.removeItem(PIN_KEY);
+      await AsyncStorage.multiRemove([PIN_KEY, BIO_KEY, TRIES_KEY]);
     } else {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       await SecureStore.deleteItemAsync(SESSION_KEY);
       await SecureStore.deleteItemAsync(PIN_KEY);
+      await SecureStore.deleteItemAsync(BIO_KEY);
+      await SecureStore.deleteItemAsync(TRIES_KEY);
     }
   }
 
@@ -79,6 +83,22 @@ export class AuthStorage {
   }
   public async hasUnlockPin(): Promise<boolean> {
     return !!(await this.getUnlockPin());
+  }
+
+  // Fingerprint/Face on by default; the PIN screen can turn it off.
+  public async setBioEnabled(on: boolean): Promise<void> {
+    await this.pinStore.set(BIO_KEY, on ? '1' : '0');
+  }
+  public async getBioEnabled(): Promise<boolean> {
+    try { return (await this.pinStore.get(BIO_KEY)) !== '0'; } catch { return true; }
+  }
+
+  // Persisted so killing the app doesn't reset the 5-try limit.
+  public async getUnlockTries(): Promise<number> {
+    try { return Number(await this.pinStore.get(TRIES_KEY)) || 0; } catch { return 0; }
+  }
+  public async setUnlockTries(n: number): Promise<void> {
+    await this.pinStore.set(TRIES_KEY, String(n));
   }
 }
 
