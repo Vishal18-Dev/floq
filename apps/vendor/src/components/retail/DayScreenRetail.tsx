@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { DailySalesSummary, Product, CreditCustomer } from '@floq/types';
 import { palette, fonts } from '../../theme';
+import { HeroCard } from '../common/ui';
 import { INR, entries, daysLeft, isOverdue, customerDays, retailPrefs } from '../../services/retail';
 
 export function DayScreenRetail({
@@ -59,20 +60,24 @@ export function DayScreenRetail({
   return (
     <View style={styles.wrap}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 24 }}>
-        <View>
-          <Text style={styles.label}>Today's sales</Text>
-          <Text style={styles.total}>{INR(revenue)}</Text>
-          <Text style={styles.sub}>{bills} {bills === 1 ? 'bill' : 'bills'} · profit {INR(profit)}</Text>
-        </View>
-
-        <View style={styles.splitRow}>
-          {splits.map((s) => (
-            <View key={s.label} style={styles.splitCard}>
-              <Text style={styles.splitLabel}>{s.label}</Text>
-              <Text style={styles.splitValue}>{INR(s.value)}</Text>
+        <HeroCard>
+          <View>
+            <Text style={styles.label}>Today's sales</Text>
+            <Text style={styles.total}>{INR(revenue)}</Text>
+            <View style={styles.subRow}>
+              <Text style={styles.sub}>{bills} {bills === 1 ? 'bill' : 'bills'}</Text>
+              <Text style={styles.profitChip}>profit {INR(profit)}</Text>
             </View>
-          ))}
-        </View>
+          </View>
+          <View style={styles.splitRow}>
+            {splits.map((s) => (
+              <View key={s.label} style={styles.splitCard}>
+                <Text style={styles.splitLabel}>{s.label}</Text>
+                <Text style={styles.splitValue}>{INR(s.value)}</Text>
+              </View>
+            ))}
+          </View>
+        </HeroCard>
 
         <View style={styles.collectedCard}>
           <Text style={styles.collectedLabel}>Dues collected today</Text>
@@ -116,29 +121,31 @@ export function DayScreenRetail({
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: palette.bg },
-  label: { fontFamily: fonts.semibold, fontSize: 16, color: palette.neutral[600] },
-  total: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 44, color: palette.ink, letterSpacing: -1 },
-  sub: { fontFamily: fonts.body, fontSize: 16, color: palette.neutral[600] },
+  label: { fontFamily: fonts.semibold, fontSize: 15, color: '#C4C9D1' },
+  total: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 46, lineHeight: 52, color: palette.bg, letterSpacing: -1, marginTop: 4 },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sub: { fontFamily: fonts.body, fontSize: 15, color: '#C4C9D1' },
+  profitChip: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 15, color: palette.ink, backgroundColor: palette.highlight, borderRadius: 12, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 2 },
   splitRow: { flexDirection: 'row', gap: 8 },
-  splitCard: { flex: 1, backgroundColor: palette.card, padding: 12, gap: 2 },
-  splitLabel: { fontFamily: fonts.semibold, fontSize: 13, color: palette.neutral[600] },
-  splitValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 18, color: palette.ink },
-  collectedCard: { backgroundColor: palette.successBg, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  splitCard: { borderRadius: 16, flex: 1, backgroundColor: 'rgba(244,245,241,0.08)', borderWidth: 1, borderColor: 'rgba(244,245,241,0.12)', paddingHorizontal: 12, paddingVertical: 10, gap: 2 },
+  splitLabel: { fontFamily: fonts.semibold, fontSize: 13, color: '#C4C9D1' },
+  splitValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 18, color: palette.bg },
+  collectedCard: { borderRadius: 18, backgroundColor: palette.successBg, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   collectedLabel: { fontFamily: fonts.semibold, fontSize: 16, color: palette.success },
   collectedValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.success },
-  card: { backgroundColor: palette.card, padding: 14, gap: 10 },
+  card: { borderRadius: 18, backgroundColor: palette.card, padding: 14, gap: 10 },
   cardTitle: { fontFamily: fonts.semibold, fontSize: 20, color: palette.ink },
   bestRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   bestName: { flex: 1, fontFamily: fonts.body, fontSize: 16, color: palette.ink },
   bestAmt: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   barTrack: { height: 8, backgroundColor: palette.bg },
   barFill: { height: 8, backgroundColor: palette.highlight },
-  insightCard: { backgroundColor: palette.ink, padding: 16, gap: 8 },
+  insightCard: { borderRadius: 18, backgroundColor: palette.ink, padding: 16, gap: 8 },
   insightKicker: { fontFamily: fonts.semibold, fontSize: 16, color: palette.highlight },
   insightText: { fontFamily: fonts.body, fontSize: 16, color: palette.bg, lineHeight: 22, paddingTop: 8 },
-  insightBorder: { borderTopWidth: 1, borderTopColor: 'rgba(255,246,227,0.16)' },
+  insightBorder: { borderTopWidth: 1, borderTopColor: 'rgba(244,245,241,0.16)' },
   insightFoot: { fontFamily: fonts.body, fontSize: 14, color: palette.surface },
   footer: { padding: 16 },
-  closeBtn: { minHeight: 60, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  closeBtn: { borderRadius: 18, minHeight: 60, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
   closeText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onHighlight },
 });

@@ -5,7 +5,7 @@ import { palette, fonts } from '../../theme';
 import { useT } from '../../i18n';
 import { INR, customerDays, isOverdue, retailPrefs } from '../../services/retail';
 import { useCustomersStore } from '../../store/useCustomersStore';
-import { EmptyState } from '../common/ui';
+import { EmptyState, HeroCard } from '../common/ui';
 
 export function DuesScreen({ customers, storeName }: { customers: CreditCustomer[]; storeName: string }) {
   const { t } = useT();
@@ -46,11 +46,15 @@ export function DuesScreen({ customers, storeName }: { customers: CreditCustomer
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
-        <Text style={styles.headLabel}>To collect</Text>
-        <Text style={styles.headTotal}>{INR(total)}</Text>
-        <Text style={styles.headSub}>
-          {owing.length} {owing.length === 1 ? 'customer' : 'customers'} · {overdue.length} overdue
-        </Text>
+        <HeroCard>
+          <View>
+            <Text style={styles.headLabel}>To collect</Text>
+            <Text style={styles.headTotal}>{INR(total)}</Text>
+            <Text style={styles.headSub}>
+              {owing.length} {owing.length === 1 ? 'customer' : 'customers'} · {overdue.length} overdue
+            </Text>
+          </View>
+        </HeroCard>
         {overdue.length > 0 ? (
           <View style={styles.overdueCard}>
             <Text style={styles.overdueTitle}>Collect these first</Text>
@@ -146,34 +150,34 @@ function RemindSheet({ customer, storeName, onClose }: { customer: CreditCustome
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: palette.bg },
-  head: { padding: 16, gap: 4 },
-  headLabel: { fontFamily: fonts.semibold, fontSize: 16, color: palette.neutral[600] },
-  headTotal: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 44, color: palette.ink, letterSpacing: -1 },
-  headSub: { fontFamily: fonts.body, fontSize: 16, color: palette.neutral[600] },
-  overdueCard: { backgroundColor: palette.ink, padding: 14, marginTop: 8, gap: 2 },
+  head: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, gap: 12 },
+  headLabel: { fontFamily: fonts.semibold, fontSize: 15, color: '#C4C9D1' },
+  headTotal: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 46, lineHeight: 52, color: palette.bg, letterSpacing: -1, marginTop: 4 },
+  headSub: { fontFamily: fonts.body, fontSize: 15, color: '#C4C9D1' },
+  overdueCard: { borderRadius: 18, backgroundColor: palette.ink, padding: 14, marginTop: 8, gap: 2 },
   overdueTitle: { fontFamily: fonts.semibold, fontSize: 16, color: palette.highlight },
   overdueText: { fontFamily: fonts.body, fontSize: 16, color: palette.bg, lineHeight: 22 },
-  card: { backgroundColor: palette.card, padding: 14, gap: 10 },
+  card: { borderRadius: 18, backgroundColor: palette.card, padding: 14, gap: 10 },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   name: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink, lineHeight: 20 },
   kind: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600] },
   owes: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.ink },
   chip: { fontFamily: fonts.semibold, fontSize: 12, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
-  chipPaid: { backgroundColor: palette.successBg, color: palette.success },
+  chipPaid: { borderRadius: 12, backgroundColor: palette.successBg, color: palette.success },
   chipLate: { backgroundColor: palette.accentRamp[100], color: palette.accentRamp[600] },
   chipDue: { borderWidth: 1.5, borderColor: palette.neutral[600], color: palette.ink },
   actions: { flexDirection: 'row', gap: 8 },
-  remindBtn: { flex: 1, minHeight: 48, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: palette.dividerFaint },
+  remindBtn: { borderRadius: 18, flex: 1, minHeight: 48, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: palette.dividerFaint },
   remindText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
-  paidBtn: { flex: 1, minHeight: 48, backgroundColor: palette.successBg, alignItems: 'center', justifyContent: 'center' },
+  paidBtn: { borderRadius: 18, flex: 1, minHeight: 48, backgroundColor: palette.successBg, alignItems: 'center', justifyContent: 'center' },
   paidText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.success },
-  overlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(28,27,26,0.45)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: palette.bg, padding: 16, gap: 12 },
+  overlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(16,19,23,0.45)', justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: palette.bg, padding: 16, gap: 12 },
   sheetGrip: { width: 40, height: 4, borderRadius: 2, backgroundColor: palette.surface, alignSelf: 'center' },
   sheetTitle: { fontFamily: fonts.semibold, fontSize: 20, color: palette.ink },
   sheetSub: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600] },
-  msgBox: { backgroundColor: palette.card, padding: 14 },
+  msgBox: { borderRadius: 18, backgroundColor: palette.card, padding: 14 },
   msgText: { fontFamily: fonts.body, fontSize: 16, color: palette.ink, lineHeight: 24 },
-  sendBtn: { minHeight: 64, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { borderRadius: 18, minHeight: 64, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
   sendText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onHighlight },
 });

@@ -1,63 +1,63 @@
 /**
- * FLOQ brand design tokens — per the official Brand Guidelines v1.0.
+ * FLOQ design tokens — "v3 new skin" (design fb2b0536, Onboarding v3 / Retail v3).
  *
- * Character: warm "paper" ground (#FFF6E3), ink text (#1C1B1A), navy as the
- * primary/structural colour (#103B78, white text on it), amber as the signature
- * highlight (#FFB42E, ink text on it), green for positive/success (#32C48D),
- * red reserved for errors (#B42318). Warm "stone" neutral scale. Sharp corners,
- * 2px dividers, Anek typeface.
+ * Character: cool mist ground (#F4F5F1), ink text (#101317), lime as the
+ * signature highlight / primary action (#C9F158, ink text on it), cobalt for
+ * links and structure (#2B4BEB, white text on it), green for success (#0E7A55),
+ * red reserved for errors (#C2261B). Cool slate neutrals. Rounded cards (18) and
+ * chips (12) with a soft lift, Anek typeface.
  */
 
 export const palette = {
-  bg: '#FFF6E3', // paper
-  surface: '#F2E6CC', // cream card/surface
-  ink: '#1C1B1A',
-  accent: '#103B78', // FLOQ navy — primary action / structure (takes white text)
-  accent2: '#32C48D', // FLOQ green — positive / success
-  highlight: '#FFB42E', // FLOQ amber — signature highlight (takes ink text)
-  onHighlight: '#1C1B1A',
+  bg: '#F4F5F1', // mist
+  surface: '#ECEEE8', // segment / track / inset surface
+  ink: '#101317',
+  accent: '#2B4BEB', // cobalt — structure / secondary action (takes white text)
+  accent2: '#0E7A55', // FLOQ green — positive / success
+  highlight: '#C9F158', // lime — signature highlight / primary CTA (takes ink text)
+  onHighlight: '#101317',
 
   // divider = ink at alpha (warm)
-  divider: 'rgba(28,27,26,0.34)',
-  dividerFaint: 'rgba(28,27,26,0.12)',
+  divider: 'rgba(16,19,23,0.22)',
+  dividerFaint: 'rgba(16,19,23,0.08)',
 
-  // Warm "stone" neutral scale
+  // Cool slate neutral scale
   neutral: {
-    100: '#FBF6EA',
-    200: '#EFE6D2',
-    300: '#D9CCB0',
-    400: '#BDB4A4',
-    500: '#8E887E',
-    600: '#6B665E', // stone
-    700: '#4A463F',
-    800: '#322F2A',
-    900: '#1C1B1A',
+    100: '#F7F8F5',
+    200: '#ECEEE8',
+    300: '#DADDD4',
+    400: '#AEB4BD',
+    500: '#8A919B',
+    600: '#5B626C', // slate
+    700: '#3F454D',
+    800: '#262A30',
+    900: '#101317',
   },
 
-  // Alert/danger ramp (brand red #B42318). Errors, "running late", delete and
+  // Alert/danger ramp (red #C2261B). Errors, "running late", delete and
   // warnings stay red regardless of branding.
   accentRamp: {
-    100: '#FDECEA',
-    200: '#F8D2CD',
-    300: '#F0ADA4',
-    400: '#E07A6E',
-    500: '#CF4436',
-    600: '#B42318', // brand error
+    100: '#FEE6E2',
+    200: '#FBCFC7',
+    300: '#F3A79B',
+    400: '#E8711F',
+    500: '#D9452F',
+    600: '#C2261B', // error
     700: '#8E1C13',
     800: '#6A160F',
     900: '#45130E',
   },
 
   white: '#ffffff',
-  onAccent: '#ffffff', // text on navy
+  onAccent: '#ffffff', // text on cobalt
 
   // Retail surfaces. The shop screens sit white cards on the paper ground (per
   // the floq Retail design), and use a softer green pair for positive states
   // (stock received, paid, UPI confirmed) than the signature accent2.
   card: '#FFFFFF',
-  success: '#1E7A46',
-  successBg: '#E7F4EC',
-  link: '#A15C00', // the amber-brown link/affordance colour from the guidelines
+  success: '#0E7A55',
+  successBg: '#DDF6EA',
+  link: '#2B4BEB', // cobalt link/affordance
 } as const;
 
 /**
@@ -122,13 +122,12 @@ export const spacing = {
   xxxl: 32,
 } as const;
 
-// Modernist system: sharp corners everywhere. `full` kept only for the rare
-// dot/pulse indicator; avoid it on containers.
+// v3 skin: chips/segments 12, cards/buttons/fields 18, sheet tops 28.
 export const radius = {
-  sm: 0,
-  md: 0,
-  lg: 0,
-  xl: 0,
+  sm: 4,
+  md: 12,
+  lg: 18,
+  xl: 28,
   full: 9999,
 } as const;
 
@@ -160,8 +159,10 @@ export const typography = {
   caption: { fontFamily: fonts.body, fontSize: 12, fontWeight: '400' as const, color: palette.neutral[600] },
 } as const;
 
-// Modernist relies on hard 2px rules, not soft shadows. Keep near-flat.
+// v3 lifts cards off the mist ground with a soft shadow.
 export const shadow = {
+  card: { shadowColor: '#101317', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
+  cta: { shadowColor: '#96BE1E', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.28, shadowRadius: 12, elevation: 4 },
   sm: { shadowColor: palette.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2, elevation: 1 },
   md: { shadowColor: palette.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
   lg: { shadowColor: palette.ink, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 4 },

@@ -5,7 +5,8 @@ import {
 import { useAuthStore, NeedsOnboardingError } from '../../store/useAuthStore';
 import { sendOtp, confirmOtp, OtpConfirmation } from '../../services/firebaseOtp';
 import { api } from '../../services/api';
-import { palette, fonts, borders } from '../../theme';
+import { palette, fonts, borders, shadow } from '../../theme';
+import { HeroCard } from '../common/ui';
 import { formatINR } from '@floq/utils';
 import {
   CATALOG, MENUS, ShopKind, FoodKind, BizType, OnbLang,
@@ -529,12 +530,19 @@ type StepProps = { s: S; set: (p: Partial<S>) => void };
 
 function Welcome({ s, set }: StepProps) {
   return (
-    <View style={{ gap: 28, paddingTop: 48 }}>
-      <Image source={require('../../../assets/floq_wordmark.png')} style={styles.wordmark} resizeMode="contain" />
-      <View style={{ gap: 6 }}>
-        <Text style={styles.hero}>Bills, stock and money for your counter.</Text>
-        {s.lang !== 'none' && local(s.lang, 'welcome') ? <Text style={styles.heroLocal}>{local(s.lang, 'welcome')}</Text> : null}
-      </View>
+    <View style={{ gap: 24, paddingTop: 8 }}>
+      <HeroCard style={styles.welcomeHero}>
+        <Image source={require('../../../assets/floq_wordmark.png')} style={[styles.wordmark, { tintColor: palette.bg }]} resizeMode="contain" />
+        <View style={{ gap: 6 }}>
+          <Text style={styles.hero}>Bills, stock and money for your counter.</Text>
+          {s.lang !== 'none' && local(s.lang, 'welcome') ? <Text style={styles.heroLocal}>{local(s.lang, 'welcome')}</Text> : null}
+        </View>
+        <View style={styles.heroChips}>
+          <Text style={styles.heroChip}>UPI & cash</Text>
+          <Text style={styles.heroChip}>Stock alerts</Text>
+          <Text style={[styles.heroChip, styles.heroChipOn]}>Udhaar on WhatsApp</Text>
+        </View>
+      </HeroCard>
       <View style={{ gap: 8 }}>
         <Text style={styles.fieldLabel}>Language · भाषा · மொழி</Text>
         <View style={styles.langSeg}>
@@ -919,44 +927,48 @@ const styles = StyleSheet.create({
   progLabel: { fontFamily: fonts.semibold, fontSize: 13, color: palette.neutral[600] },
   segRow: { flexDirection: 'row', gap: 4 },
   seg: { flex: 1, height: 4, borderRadius: 2 },
-  langPill: { minHeight: 40, paddingHorizontal: 12, backgroundColor: palette.card, alignItems: 'center', justifyContent: 'center', borderWidth: borders.rule, borderColor: palette.divider },
+  langPill: { borderRadius: 12, minHeight: 40, paddingHorizontal: 12, backgroundColor: palette.card, alignItems: 'center', justifyContent: 'center', borderWidth: borders.rule, borderColor: 'transparent' },
   langPillText: { fontFamily: fonts.semibold, fontSize: 14, color: palette.ink },
 
   body: { padding: 16, gap: 16, paddingBottom: 28 },
-  toast: { padding: 12, backgroundColor: palette.successBg }, toastText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.success },
+  toast: { borderRadius: 18, padding: 12, backgroundColor: palette.successBg }, toastText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.success },
 
   h1: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, letterSpacing: -0.4, color: palette.ink },
   h1local: { fontFamily: fonts.body, fontSize: 15, color: palette.neutral[600] },
   sub: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: palette.neutral[600] },
 
-  wordmark: { width: 150, height: 75, alignSelf: 'flex-start' },
-  hero: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, lineHeight: 34, letterSpacing: -0.6, color: palette.ink },
-  heroLocal: { fontFamily: fonts.body, fontSize: 17, color: palette.neutral[600] },
+  wordmark: { width: 132, height: 66, alignSelf: 'flex-start' },
+  welcomeHero: { borderRadius: 28, paddingTop: 28, paddingHorizontal: 22, paddingBottom: 24, gap: 22 },
+  hero: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 34, lineHeight: 38, letterSpacing: -0.7, color: palette.bg },
+  heroLocal: { fontFamily: fonts.body, fontSize: 18, lineHeight: 24, color: '#C4C9D1' },
+  heroChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  heroChip: { fontFamily: fonts.semibold, fontSize: 14, color: palette.bg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(244,245,241,0.1)', borderWidth: 1, borderColor: 'rgba(244,245,241,0.16)' },
+  heroChipOn: { fontFamily: fonts.heading, fontWeight: '800', color: palette.ink, backgroundColor: palette.highlight, borderColor: palette.highlight },
 
   fieldLabel: { fontFamily: fonts.semibold, fontSize: 13, color: palette.neutral[600] },
   hint: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: palette.neutral[600] },
-  input: { minHeight: 54, borderWidth: borders.rule, borderColor: palette.divider, backgroundColor: palette.card, paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 17, color: palette.ink },
+  input: { borderRadius: 18, minHeight: 54, borderWidth: borders.rule, borderColor: 'transparent', backgroundColor: palette.card, paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 17, color: palette.ink },
 
-  langSeg: { flexDirection: 'row', backgroundColor: palette.surface, padding: 4, gap: 4 },
-  langSegCell: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  langSeg: { borderRadius: 18, flexDirection: 'row', backgroundColor: palette.surface, padding: 4, gap: 4 },
+  langSegCell: { borderRadius: 12, flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   langSegCellOn: { backgroundColor: palette.card },
   langSegText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.ink },
   langSegTextOn: { fontFamily: fonts.heading, fontWeight: '800' },
 
-  phoneBox: { minHeight: 60, borderWidth: borders.rule, borderColor: palette.ink, backgroundColor: palette.card, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 },
+  phoneBox: { borderRadius: 18, minHeight: 60, borderWidth: borders.rule, borderColor: 'transparent', backgroundColor: palette.card, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 },
   cc: { fontFamily: fonts.semibold, fontSize: 20, color: palette.neutral[600] },
   ccSmall: { fontFamily: fonts.semibold, fontSize: 16, color: palette.neutral[600] },
   phoneInput: { flex: 1, fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, letterSpacing: 1, color: palette.ink, paddingVertical: 12 },
   phoneInputSmall: { flex: 1, fontFamily: fonts.semibold, fontSize: 17, color: palette.ink, paddingVertical: 12 },
-  otpInput: { minHeight: 68, borderWidth: borders.rule, borderColor: palette.divider, backgroundColor: palette.card, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, letterSpacing: 12, color: palette.ink },
-  inviteInput: { minHeight: 60, borderWidth: borders.rule, borderColor: palette.divider, backgroundColor: palette.card, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, letterSpacing: 8, color: palette.ink },
+  otpInput: { borderRadius: 18, minHeight: 68, borderWidth: borders.rule, borderColor: 'transparent', backgroundColor: palette.card, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, letterSpacing: 12, color: palette.ink },
+  inviteInput: { borderRadius: 18, minHeight: 60, borderWidth: borders.rule, borderColor: 'transparent', backgroundColor: palette.card, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, letterSpacing: 8, color: palette.ink },
 
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   link: { fontFamily: fonts.semibold, fontSize: 15, color: palette.link },
-  linkStrong: { fontFamily: fonts.semibold, fontSize: 15, color: palette.link },
+  linkStrong: { fontFamily: fonts.semibold, fontSize: 15, color: palette.ink },
 
-  optCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: palette.card, padding: 14, minHeight: 64, borderWidth: borders.rule, borderColor: 'transparent' },
-  optCardOn: { borderColor: palette.highlight },
+  optCard: { borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: palette.card, padding: 14, minHeight: 64, borderWidth: borders.rule, borderColor: 'transparent' },
+  optCardOn: { borderColor: palette.ink },
   optTitle: { fontFamily: fonts.semibold, fontSize: 17, color: palette.ink },
   optSub: { fontFamily: fonts.body, fontSize: 13, lineHeight: 17, color: palette.neutral[600], marginTop: 1 },
 
@@ -966,52 +978,52 @@ const styles = StyleSheet.create({
   checkMark: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 15, color: palette.ink },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: palette.card, borderWidth: borders.rule, borderColor: palette.divider },
+  chip: { borderRadius: 12, minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: palette.card, borderWidth: borders.rule, borderColor: 'transparent' },
   chipOn: { backgroundColor: palette.ink, borderColor: palette.ink },
   chipText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.ink },
   chipTextOn: { color: palette.onAccent },
 
-  rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, padding: 10, minHeight: 54, borderWidth: borders.rule, borderColor: 'transparent' },
-  rowCardOn: { borderColor: palette.highlight },
+  rowCard: { borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, padding: 10, minHeight: 54, borderWidth: borders.rule, borderColor: 'transparent' },
+  rowCardOn: { borderColor: palette.ink },
   rowName: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   rowSub: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[600] },
   rowPrice: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
 
-  stockRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: palette.card, padding: 8, paddingLeft: 14 },
-  stepBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bg, borderWidth: borders.rule, borderColor: palette.divider },
+  stockRow: { borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: palette.card, padding: 8, paddingLeft: 14 },
+  stepBtn: { borderRadius: 12, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bg, borderWidth: borders.rule, borderColor: palette.divider },
   stepBtnPlus: { backgroundColor: palette.highlight, borderColor: palette.highlight },
   stepBtnText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.ink },
   stockQty: { minWidth: 44, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 18, color: palette.ink },
 
-  plainCard: { backgroundColor: palette.card, padding: 16, gap: 4 },
+  plainCard: { borderRadius: 18, backgroundColor: palette.card, padding: 16, gap: 4 },
   cardTitle: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 17, color: palette.ink },
   cardBody: { fontFamily: fonts.body, fontSize: 14, lineHeight: 19, color: palette.neutral[600] },
 
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, padding: 8, paddingLeft: 14 },
+  menuRow: { borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, padding: 8, paddingLeft: 14 },
   needsPrice: { fontFamily: fonts.semibold, fontSize: 12, color: palette.accentRamp[600] },
-  priceBox: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 10, backgroundColor: palette.bg },
+  priceBox: { borderRadius: 12, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 10, backgroundColor: palette.bg },
   rupee: { fontFamily: fonts.body, fontSize: 15, color: palette.neutral[600] },
   priceInput: { minWidth: 48, textAlign: 'right', fontFamily: fonts.heading, fontWeight: '800', fontSize: 17, color: palette.ink },
 
-  inkBtn: { minHeight: 52, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  inkBtn: { borderRadius: 18, minHeight: 52, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   inkBtnText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.onAccent },
-  memberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: palette.card, padding: 10, paddingLeft: 14 },
+  memberRow: { borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: palette.card, padding: 10, paddingLeft: 14 },
 
-  doneTick: { width: 60, height: 60, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  doneTick: { borderRadius: 18, width: 60, height: 60, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
   doneTickText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, color: palette.ink },
-  doneRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, padding: 12 },
+  doneRow: { borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, padding: 12 },
   dot: { width: 10, height: 10, borderRadius: 5 },
 
-  footer: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16, gap: 8, backgroundColor: palette.bg, borderTopWidth: borders.rule, borderTopColor: palette.dividerFaint },
+  footer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, gap: 8, backgroundColor: palette.bg },
   errBox: { backgroundColor: palette.accentRamp[100], padding: 12 }, errText: { fontFamily: fonts.semibold, fontSize: 14, color: palette.accentRamp[600] },
-  cta: { minHeight: 60, backgroundColor: palette.highlight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
+  cta: { borderRadius: 18, ...shadow.cta, minHeight: 60, backgroundColor: palette.highlight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
   ctaLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onHighlight },
   ctaLocal: { fontFamily: fonts.body, fontSize: 13, color: palette.onHighlight },
   ctaArrow: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, color: palette.onHighlight },
   skipBtn: { minHeight: 44, justifyContent: 'center' }, skipText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.neutral[600] },
 
-  dialogWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28,27,26,0.45)', justifyContent: 'flex-end' },
-  dialogCard: { backgroundColor: palette.bg, padding: 16, paddingBottom: 24, gap: 12 },
+  dialogWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(16,19,23,0.45)', justifyContent: 'flex-end' },
+  dialogCard: { borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: palette.bg, padding: 16, paddingBottom: 24, gap: 12 },
   dialogTitle: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, color: palette.ink },
   dialogBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: palette.neutral[600] },
 });

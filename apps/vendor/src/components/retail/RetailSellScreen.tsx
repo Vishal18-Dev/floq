@@ -55,7 +55,7 @@ export function RetailSellScreen(props: {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: palette.bg },
   toggle: { flexDirection: 'row', backgroundColor: palette.surface, margin: 12, padding: 4, gap: 4 },
-  seg: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  seg: { borderRadius: 12, flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   segOn: { backgroundColor: palette.card },
   segText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   segTextOn: { fontFamily: fonts.heading, fontWeight: '800', color: palette.ink },

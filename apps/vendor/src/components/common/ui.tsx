@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextStyle, StyleProp } from 'react-native';
-import { palette, fonts, borders } from '../../theme';
+import { View, Text, TouchableOpacity, StyleSheet, TextStyle, StyleProp, ViewStyle } from 'react-native';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { palette, fonts, borders, shadow } from '../../theme';
 import { useT } from '../../i18n';
 import type { StringKey } from '../../i18n/strings';
 import { HapticFeedback } from '../../services/haptics';
@@ -191,6 +192,32 @@ export function PrimaryBar({
   );
 }
 
+/**
+ * v3 hero: ink card with a lime glow top-right and a cobalt glow bottom-left
+ * (welcome, Dues "To collect", Day "Today's sales"). Text on it is mist.
+ */
+export function HeroCard({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[styles.hero, style]}>
+      <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden>
+        <Defs>
+          <RadialGradient id="lime" cx="100" cy="0" rx="120" ry="80" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={palette.highlight} stopOpacity={0.45} />
+            <Stop offset="0.55" stopColor={palette.highlight} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient id="cobalt" cx="0" cy="100" rx="110" ry="90" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={palette.accent} stopOpacity={0.65} />
+            <Stop offset="0.62" stopColor={palette.accent} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100" height="100" fill="url(#lime)" />
+        <Rect width="100" height="100" fill="url(#cobalt)" />
+      </Svg>
+      {children}
+    </View>
+  );
+}
+
 /** Empty-state block: icon-free, honest, no fake data. */
 export function EmptyState({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -225,7 +252,7 @@ const styles = StyleSheet.create({
   dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2 },
   pinPad: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
   pinKey: { width: '32%', minHeight: 60, alignItems: 'center', justifyContent: 'center' },
-  pinKeyDigit: { backgroundColor: palette.card },
+  pinKeyDigit: { borderRadius: 18, backgroundColor: palette.card },
   pinKeyLabel: { fontFamily: fonts.semibold, fontSize: 26, color: palette.ink, fontVariant: ['tabular-nums'] },
   primaryBar: {
     flexDirection: 'row',
@@ -236,6 +263,7 @@ const styles = StyleSheet.create({
   primaryLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, letterSpacing: 0.3 },
   primarySub: { fontFamily: fonts.body, fontSize: 13, opacity: 0.85, marginTop: 1 },
   primaryRight: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, letterSpacing: -0.5 },
+  hero: { borderRadius: 26, padding: 18, gap: 14, backgroundColor: palette.ink, overflow: 'hidden', ...shadow.lg },
   empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 56, paddingHorizontal: 24 },
   emptyTitle: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 17, color: palette.neutral[700], textAlign: 'center' },
   emptySub: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[600], marginTop: 6, textAlign: 'center' },
