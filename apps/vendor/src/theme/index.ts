@@ -1,63 +1,64 @@
 /**
- * FLOQ design tokens — "v3 new skin" (design fb2b0536, Onboarding v3 / Retail v3).
+ * floq design tokens: floq Brand Guidelines v1.0 ("floq Monoline") applied to
+ * the v3 screen designs (Onboarding v3 / Retail v3).
  *
- * Character: cool mist ground (#F4F5F1), ink text (#101317), lime as the
- * signature highlight / primary action (#C9F158, ink text on it), cobalt for
- * links and structure (#2B4BEB, white text on it), green for success (#0E7A55),
- * red reserved for errors (#C2261B). Cool slate neutrals. Rounded cards (18) and
- * chips (12) with a soft lift, Anek typeface.
+ * Character: warm Milk ground (#FFF6E3), Charcoal text (#1C1B1A), Marigold as
+ * the signature highlight / primary action (#FFB42E, charcoal text on it, 9.7:1),
+ * Charcoal for structure / secondary action (Milk text on it), Marigold Deep for
+ * links (#A15C00), Paid green (#1E7A46) and Late red (#B42318) for states, which
+ * always carry a word. Warm stone neutrals. Rounded cards (14) and chips (8),
+ * flat cards (no glows, no gradients), Anek typeface.
  */
 
 export const palette = {
-  bg: '#F4F5F1', // mist
-  surface: '#ECEEE8', // segment / track / inset surface
-  ink: '#101317',
-  accent: '#2B4BEB', // cobalt — structure / secondary action (takes white text)
-  accent2: '#0E7A55', // FLOQ green — positive / success
-  highlight: '#C9F158', // lime — signature highlight / primary CTA (takes ink text)
-  onHighlight: '#101317',
+  bg: '#FFF6E3', // milk
+  surface: '#F2E6CC', // sand: segment / track / inset surface
+  ink: '#1C1B1A', // charcoal
+  accent: '#1C1B1A', // charcoal: structure / secondary action (takes milk text)
+  accent2: '#1E7A46', // paid green: positive / success
+  highlight: '#FFB42E', // marigold: signature highlight / primary CTA (takes charcoal text)
+  onHighlight: '#1C1B1A',
 
-  // divider = ink at alpha (warm)
-  divider: 'rgba(16,19,23,0.22)',
-  dividerFaint: 'rgba(16,19,23,0.08)',
+  // divider = charcoal at alpha
+  divider: 'rgba(28,27,26,0.22)',
+  dividerFaint: 'rgba(28,27,26,0.08)',
 
-  // Cool slate neutral scale
+  // Warm "stone" neutral scale
   neutral: {
-    100: '#F7F8F5',
-    200: '#ECEEE8',
-    300: '#DADDD4',
-    400: '#AEB4BD',
-    500: '#8A919B',
-    600: '#5B626C', // slate
-    700: '#3F454D',
-    800: '#262A30',
-    900: '#101317',
+    100: '#FBF6EA',
+    200: '#EFE6D2',
+    300: '#D9CCB0',
+    400: '#BDB4A4',
+    500: '#8E887E',
+    600: '#6B665E', // stone
+    700: '#4A463F',
+    800: '#322F2A',
+    900: '#1C1B1A',
   },
 
-  // Alert/danger ramp (red #C2261B). Errors, "running late", delete and
+  // Alert/danger ramp (late red #B42318). Errors, "running late", delete and
   // warnings stay red regardless of branding.
   accentRamp: {
-    100: '#FEE6E2',
-    200: '#FBCFC7',
-    300: '#F3A79B',
-    400: '#E8711F',
-    500: '#D9452F',
-    600: '#C2261B', // error
+    100: '#FDECEA',
+    200: '#F8D2CD',
+    300: '#F0ADA4',
+    400: '#E07A6E',
+    500: '#CF4436',
+    600: '#B42318', // error
     700: '#8E1C13',
     800: '#6A160F',
     900: '#45130E',
   },
 
   white: '#ffffff',
-  onAccent: '#ffffff', // text on cobalt
+  onAccent: '#FFF6E3', // milk text on charcoal
 
-  // Retail surfaces. The shop screens sit white cards on the paper ground (per
-  // the floq Retail design), and use a softer green pair for positive states
-  // (stock received, paid, UPI confirmed) than the signature accent2.
+  // Retail surfaces: white cards on the milk ground, and the paid-green pair
+  // for positive states (stock received, paid, UPI confirmed).
   card: '#FFFFFF',
-  success: '#0E7A55',
-  successBg: '#DDF6EA',
-  link: '#2B4BEB', // cobalt link/affordance
+  success: '#1E7A46',
+  successBg: '#E7F4EC',
+  link: '#A15C00', // marigold deep: links / text affordances on light grounds
 } as const;
 
 /**
@@ -100,9 +101,9 @@ export const colors = {
     preparing: palette.ink,
     preparingBg: palette.surface,
     preparingBorder: palette.divider,
-    ready: palette.accent,
-    readyBg: palette.accentRamp[100],
-    readyBorder: palette.accent,
+    ready: palette.onHighlight, // v1.0: Ready = charcoal text on a marigold fill
+    readyBg: palette.highlight,
+    readyBorder: palette.highlight,
     completed: palette.neutral[600],
     completedBg: palette.neutral[100],
     completedBorder: palette.divider,
@@ -122,12 +123,12 @@ export const spacing = {
   xxxl: 32,
 } as const;
 
-// v3 skin: chips/segments 12, cards/buttons/fields 18, sheet tops 28.
+// floq v1.0: chips/segments 8, cards/buttons/fields 14, sheet tops 22.
 export const radius = {
   sm: 4,
-  md: 12,
-  lg: 18,
-  xl: 28,
+  md: 8,
+  lg: 14,
+  xl: 22,
   full: 9999,
 } as const;
 
@@ -141,7 +142,7 @@ export const borders = {
 // Anek Latin is loaded via expo-font (see theme/fonts.ts). Falls back to the
 // platform sans if the face hasn't loaded yet.
 export const fonts = {
-  heading: 'AnekLatin_800ExtraBold',
+  heading: 'AnekLatin_700Bold', // v1.0 headings are Anek Bold 700
   body: 'AnekLatin_400Regular',
   semibold: 'AnekLatin_600SemiBold',
 } as const;
@@ -159,10 +160,11 @@ export const typography = {
   caption: { fontFamily: fonts.body, fontSize: 12, fontWeight: '400' as const, color: palette.neutral[600] },
 } as const;
 
-// v3 lifts cards off the mist ground with a soft shadow.
+// floq v1.0: cards are flat (separated by space, not shadow). Only floating
+// bars, sheets and dialogs lift (sm / md / lg).
 export const shadow = {
-  card: { shadowColor: '#101317', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
-  cta: { shadowColor: '#96BE1E', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.28, shadowRadius: 12, elevation: 4 },
+  card: { shadowColor: '#1C1B1A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
+  cta: { shadowColor: '#1C1B1A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
   sm: { shadowColor: palette.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2, elevation: 1 },
   md: { shadowColor: palette.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
   lg: { shadowColor: palette.ink, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 4 },

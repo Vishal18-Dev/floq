@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   back: { fontFamily: fonts.semibold, fontSize: 14, color: palette.neutral[700], marginBottom: 10 },
   headline: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 24, letterSpacing: -0.6, color: palette.ink, marginTop: 6 },
   plans: { flexDirection: 'row', gap: borders.rule, backgroundColor: palette.divider, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
-  plan: { borderRadius: 18, flex: 1, backgroundColor: palette.bg, paddingVertical: 20, alignItems: 'center' },
+  plan: { borderRadius: 14, flex: 1, backgroundColor: palette.bg, paddingVertical: 20, alignItems: 'center' },
   planActive: { backgroundColor: palette.ink },
   planName: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 13, letterSpacing: 1, color: palette.ink },
   planPrice: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 34, letterSpacing: -1, color: palette.ink, marginTop: 6 },
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   payee: { fontFamily: fonts.semibold, fontSize: 14, color: palette.ink, marginTop: 4 },
   amountLine: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 28, letterSpacing: -0.8, color: palette.accent, marginTop: 2 },
   refBlock: { paddingHorizontal: 16, paddingBottom: 12 },
-  input: { borderRadius: 18, borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 12, fontFamily: fonts.semibold, fontSize: 15, color: palette.ink, backgroundColor: palette.surface },
+  input: { borderRadius: 14, borderWidth: borders.rule, borderColor: palette.divider, paddingHorizontal: 12, paddingVertical: 12, fontFamily: fonts.semibold, fontSize: 15, color: palette.ink, backgroundColor: palette.surface },
   note: { fontFamily: fonts.body, fontSize: 12, color: palette.neutral[600], paddingHorizontal: 16, paddingTop: 12, lineHeight: 18 },
   // pending
   pendingWrap: { flex: 1, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', padding: 30 },

@@ -20,7 +20,7 @@ interface BottomNavProps {
   creditEnabled?: boolean;
 }
 
-// v3: floating ink bar; the active tab fills lime (Retail v3 / Merchant v2).
+// v3 layout, floq v1.0 colours: floating charcoal bar; the active tab fills marigold.
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mode, queueCount, overdueCount = 0, creditEnabled = true }) => {
   const { bi } = useT();
 
@@ -72,6 +72,6 @@ const styles = StyleSheet.create({
   pill: { height: 24, alignItems: 'center', justifyContent: 'center' },
   label: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[400] },
   labelOn: { fontFamily: fonts.heading, fontWeight: '800', color: palette.ink },
-  badge: { position: 'absolute', top: -6, right: -12, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: '#FF5A3C', borderWidth: 2, borderColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: -6, right: -12, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: palette.bg, borderWidth: 2, borderColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
   badgeText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, color: palette.ink },
 });
