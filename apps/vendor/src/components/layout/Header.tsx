@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     borderBottomColor: palette.divider,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 },
-  logoBox: { width: 34, height: 34, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  logoBox: { borderRadius: 8, width: 34, height: 34, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
   logoText: { fontFamily: fonts.heading, fontWeight: "800", fontSize: 22, color: palette.ink },
   names: { marginLeft: 10, flex: 1 },
   storeName: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink, letterSpacing: -0.2 },

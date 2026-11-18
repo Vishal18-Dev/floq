@@ -2,6 +2,7 @@ import {
   useFonts,
   AnekLatin_400Regular,
   AnekLatin_600SemiBold,
+  AnekLatin_700Bold,
   AnekLatin_800ExtraBold,
 } from '@expo-google-fonts/anek-latin';
 import {
@@ -24,6 +25,7 @@ export function useAppFonts(): boolean {
   const [loaded, error] = useFonts({
     AnekLatin_400Regular,
     AnekLatin_600SemiBold,
+    AnekLatin_700Bold,
     AnekLatin_800ExtraBold,
     AnekDevanagari_400Regular,
     AnekDevanagari_600SemiBold,

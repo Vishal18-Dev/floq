@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextStyle, StyleProp } from 'react-native';
-import { palette, fonts, borders } from '../../theme';
+import { View, Text, TouchableOpacity, StyleSheet, TextStyle, StyleProp, ViewStyle } from 'react-native';
+import { palette, fonts, borders, shadow } from '../../theme';
 import { useT } from '../../i18n';
 import type { StringKey } from '../../i18n/strings';
 import { HapticFeedback } from '../../services/haptics';
@@ -166,8 +166,9 @@ export function PrimaryBar({
   disabled?: boolean;
   minHeight?: number;
 }) {
-  const bg = tone === 'accent' ? palette.accent : tone === 'ink' ? palette.ink : palette.bg;
-  const fg = tone === 'outline' ? palette.ink : palette.onAccent;
+  // v1.0: the primary bar is Marigold with Charcoal text; 'ink' is the Charcoal secondary.
+  const bg = tone === 'accent' ? palette.highlight : tone === 'ink' ? palette.ink : palette.bg;
+  const fg = tone === 'accent' ? palette.onHighlight : tone === 'outline' ? palette.ink : palette.onAccent;
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -189,6 +190,15 @@ export function PrimaryBar({
       {right ? <Text style={[styles.primaryRight, { color: fg }]}>{right}</Text> : null}
     </TouchableOpacity>
   );
+}
+
+/**
+ * Hero card (welcome, Dues "To collect", Day "Today's sales"): a flat charcoal
+ * card per floq v1.0 (no glows or gradients). Text on it is milk; marigold
+ * accents are allowed on charcoal.
+ */
+export function HeroCard({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[styles.hero, style]}>{children}</View>;
 }
 
 /** Empty-state block: icon-free, honest, no fake data. */
@@ -225,7 +235,7 @@ const styles = StyleSheet.create({
   dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2 },
   pinPad: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
   pinKey: { width: '32%', minHeight: 60, alignItems: 'center', justifyContent: 'center' },
-  pinKeyDigit: { backgroundColor: palette.card },
+  pinKeyDigit: { borderRadius: 14, backgroundColor: palette.card },
   pinKeyLabel: { fontFamily: fonts.semibold, fontSize: 26, color: palette.ink, fontVariant: ['tabular-nums'] },
   primaryBar: {
     flexDirection: 'row',
@@ -236,6 +246,7 @@ const styles = StyleSheet.create({
   primaryLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 22, letterSpacing: 0.3 },
   primarySub: { fontFamily: fonts.body, fontSize: 13, opacity: 0.85, marginTop: 1 },
   primaryRight: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 30, letterSpacing: -0.5 },
+  hero: { borderRadius: 22, padding: 18, gap: 14, backgroundColor: palette.ink, overflow: 'hidden' },
   empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 56, paddingHorizontal: 24 },
   emptyTitle: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 17, color: palette.neutral[700], textAlign: 'center' },
   emptySub: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[600], marginTop: 6, textAlign: 'center' },

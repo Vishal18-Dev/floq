@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'r
 import { useAuthStore, MAX_UNLOCK_TRIES } from '../../store/useAuthStore';
 import { authStorage } from '../../services/authStorage';
 import { biometricKind, authenticateBiometric, BioKind } from '../../services/biometric';
-import { palette, fonts } from '../../theme';
+import { palette, fonts, shadow } from '../../theme';
 import { PinDots, PinPad } from '../common/ui';
 
 const PIN_LEN = 4;
@@ -131,13 +131,13 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center' },
   greeting: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 26, lineHeight: 30, color: palette.ink, textAlign: 'center' },
   who: { fontFamily: fonts.body, fontSize: 16, color: palette.neutral[600], marginTop: 2, textAlign: 'center' },
-  card: { backgroundColor: palette.card, paddingHorizontal: 14, paddingVertical: 12, fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: palette.ink },
+  card: { borderRadius: 14, backgroundColor: palette.card, paddingHorizontal: 14, paddingVertical: 12, fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: palette.ink },
   label: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   labelErr: { color: palette.accentRamp[600] },
   linkBtn: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   link: { fontFamily: fonts.semibold, fontSize: 16, color: palette.link },
   blockTitle: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 28, lineHeight: 32, color: palette.ink },
   blockBody: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: palette.neutral[600] },
-  cta: { minHeight: 60, backgroundColor: palette.highlight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
+  cta: { borderRadius: 14, ...shadow.cta, minHeight: 60, backgroundColor: palette.highlight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
   ctaLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onHighlight },
 });

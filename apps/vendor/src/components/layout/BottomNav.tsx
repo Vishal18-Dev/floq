@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { palette, fonts } from '../../theme';
+import { palette, fonts, shadow } from '../../theme';
 import { HapticFeedback } from '../../services/haptics';
 import { useT } from '../../i18n';
 import type { StringKey } from '../../i18n/strings';
@@ -20,7 +20,7 @@ interface BottomNavProps {
   creditEnabled?: boolean;
 }
 
-// White bar, icon in a pill that turns Marigold when active (designs 4a / 5a).
+// v3 layout, floq v1.0 colours: floating charcoal bar; the active tab fills marigold.
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mode, queueCount, overdueCount = 0, creditEnabled = true }) => {
   const { bi } = useT();
 
@@ -45,14 +45,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mo
         return (
           <TouchableOpacity
             key={tab.key}
-            style={styles.tab}
+            style={[styles.tab, active && styles.tabOn]}
             activeOpacity={0.7}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             onPress={() => { HapticFeedback.light(); onChangeTab(tab.key); }}
           >
-            <View style={[styles.pill, active && styles.pillOn]}>
-              <Icon name={tab.icon} size={22} color={palette.ink} />
+            <View style={styles.pill}>
+              <Icon name={tab.icon} size={22} color={active ? palette.ink : palette.neutral[400]} />
               {tab.badge ? (
                 <View style={styles.badge}><Text style={styles.badgeText}>{tab.badge}</Text></View>
               ) : null}
@@ -66,12 +66,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, mo
 };
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', backgroundColor: palette.card, borderTopWidth: 1, borderTopColor: palette.surface, paddingTop: 8, paddingHorizontal: 8, paddingBottom: 4 },
-  tab: { flex: 1, alignItems: 'center', gap: 4, minHeight: 56 },
-  pill: { width: 64, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  pillOn: { backgroundColor: palette.highlight },
-  label: { fontFamily: fonts.body, fontSize: 14, color: palette.neutral[600] },
+  container: { flexDirection: 'row', gap: 4, backgroundColor: palette.ink, borderRadius: 30, padding: 6, marginTop: 4, marginHorizontal: 12, marginBottom: 12, ...shadow.lg },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 56, borderRadius: 24 },
+  tabOn: { backgroundColor: palette.highlight },
+  pill: { height: 24, alignItems: 'center', justifyContent: 'center' },
+  label: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[400] },
   labelOn: { fontFamily: fonts.heading, fontWeight: '800', color: palette.ink },
-  badge: { position: 'absolute', top: -4, right: 6, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, color: palette.highlight },
+  badge: { position: 'absolute', top: -6, right: -12, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: palette.bg, borderWidth: 2, borderColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 12, color: palette.ink },
 });

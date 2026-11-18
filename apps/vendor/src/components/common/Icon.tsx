@@ -40,7 +40,7 @@ interface IconProps {
   color?: string;
 }
 
-export const Icon: React.FC<IconProps> = ({ name, size = 20, color = '#0f172a' }) => {
+export const Icon: React.FC<IconProps> = ({ name, size = 20, color = '#1C1B1A' }) => {
   switch (name) {
     case 'shopping-bag':
       return (

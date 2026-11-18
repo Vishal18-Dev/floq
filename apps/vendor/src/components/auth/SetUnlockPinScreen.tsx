@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import { biometricKind, BioKind } from '../../services/biometric';
-import { palette, fonts, borders } from '../../theme';
+import { palette, fonts, borders, shadow } from '../../theme';
 import { PinDots, PinPad } from '../common/ui';
 import { Icon } from '../common/Icon';
 
@@ -114,21 +114,21 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', gap: 12, paddingVertical: 4 },
   label: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   labelErr: { color: palette.accentRamp[600] },
-  doneRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.successBg, paddingHorizontal: 16, paddingVertical: 8, minHeight: 56 },
+  doneRow: { borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.successBg, paddingHorizontal: 16, paddingVertical: 8, minHeight: 56 },
   doneText: { flex: 1, fontFamily: fonts.semibold, fontSize: 16, color: palette.success },
   changeBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   link: { fontFamily: fonts.semibold, fontSize: 16, color: palette.link },
-  bioRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, paddingHorizontal: 14, paddingVertical: 12, minHeight: 64 },
+  bioRow: { borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.card, paddingHorizontal: 14, paddingVertical: 12, minHeight: 64 },
   rowTitle: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
   rowSub: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: palette.neutral[600] },
-  track: { width: 52, height: 32, borderRadius: 16, justifyContent: 'center' },
+  track: { width: 52, height: 32, borderRadius: 14, justifyContent: 'center' },
   trackOn: { backgroundColor: palette.ink },
   trackOff: { backgroundColor: palette.surface, borderWidth: 2, borderColor: palette.neutral[600] },
-  knob: { position: 'absolute', width: 24, height: 24, borderRadius: 12 },
+  knob: { position: 'absolute', width: 24, height: 24, borderRadius: 8 },
   knobOn: { left: 24, backgroundColor: palette.highlight },
   knobOff: { left: 2, backgroundColor: palette.neutral[600] },
   footer: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16, gap: 8, backgroundColor: palette.bg, borderTopWidth: borders.rule, borderTopColor: palette.dividerFaint },
   errText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.accentRamp[600] },
-  cta: { minHeight: 60, backgroundColor: palette.highlight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
+  cta: { borderRadius: 14, ...shadow.cta, minHeight: 60, backgroundColor: palette.highlight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
   ctaLabel: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onHighlight },
 });
