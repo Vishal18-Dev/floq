@@ -9,9 +9,12 @@ interface HeaderProps {
   isOnline: boolean;
   pendingSyncCount: number;
   onOpenSettings: () => void;
+  /** Retail v3: "TODAY ₹…" chip, top-right; taps through to the Day tab. */
+  todayRevenue?: string;
+  onOpenToday?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ storeName, storeNameLocal, isOnline, pendingSyncCount, onOpenSettings }) => {
+export const Header: React.FC<HeaderProps> = ({ storeName, storeNameLocal, isOnline, pendingSyncCount, onOpenSettings, todayRevenue, onOpenToday }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={palette.bg} />
@@ -25,12 +28,28 @@ export const Header: React.FC<HeaderProps> = ({ storeName, storeNameLocal, isOnl
         </View>
       </TouchableOpacity>
 
-      <View style={[styles.pill, isOnline ? styles.pillOnline : styles.pillOffline]}>
-        <View style={[styles.dot, { backgroundColor: isOnline ? palette.ink : palette.accent }]} />
-        <Text style={styles.pillText}>
-          {isOnline ? 'ONLINE' : `OFFLINE${pendingSyncCount > 0 ? ` · ${pendingSyncCount}` : ''}`}
-        </Text>
-      </View>
+      {/* With the Today chip up, only the offline state earns header space. */}
+      {!todayRevenue || !isOnline ? (
+        <View style={[styles.pill, isOnline ? styles.pillOnline : styles.pillOffline]}>
+          <View style={[styles.dot, { backgroundColor: isOnline ? palette.ink : palette.accent }]} />
+          <Text style={styles.pillText}>
+            {isOnline ? 'ONLINE' : `OFFLINE${pendingSyncCount > 0 ? ` · ${pendingSyncCount}` : ''}`}
+          </Text>
+        </View>
+      ) : null}
+
+      {todayRevenue ? (
+        <TouchableOpacity
+          style={styles.today}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`Today's sales ${todayRevenue}. Open Day`}
+          onPress={() => { HapticFeedback.light(); onOpenToday?.(); }}
+        >
+          <Text style={styles.todayLabel}>TODAY</Text>
+          <Text style={styles.todayValue}>{todayRevenue}</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
@@ -57,5 +76,8 @@ const styles = StyleSheet.create({
   pillOnline: { borderColor: palette.divider },
   pillOffline: { borderColor: palette.accent },
   dot: { width: 8, height: 8, borderRadius: 4 },
+  today: { marginLeft: 8, alignItems: 'flex-end', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: palette.ink },
+  todayLabel: { fontFamily: fonts.semibold, fontSize: 12, letterSpacing: 0.5, color: palette.highlight },
+  todayValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.onAccent, fontVariant: ['tabular-nums'] },
   pillText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 10, letterSpacing: 1, color: palette.ink },
 });

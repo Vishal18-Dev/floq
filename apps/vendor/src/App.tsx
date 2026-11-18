@@ -265,6 +265,8 @@ export default function App() {
           isOnline={isOnline}
           pendingSyncCount={pendingSync}
           onOpenSettings={() => setActiveTab('SETTINGS')}
+          todayRevenue={mode === 'RETAIL' && activeTab === 'SELL' ? formatINR(dailySummary?.revenue || 0) : undefined}
+          onOpenToday={() => setActiveTab('DAY')}
         />
 
         <SubscriptionBanner subscription={subscription} onPress={() => setActiveTab('SELL')} />
@@ -283,7 +285,6 @@ export default function App() {
                 categories={categories}
                 settings={settings}
                 customers={customers}
-                todayRevenue={formatINR(dailySummary?.revenue || 0)}
                 onCharge={createRetailSale}
               />
             ) : (

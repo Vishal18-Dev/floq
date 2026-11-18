@@ -18,7 +18,6 @@ export function RetailSellScreen(props: {
   categories: Category[];
   settings: StoreSettings | null;
   customers: CreditCustomer[];
-  todayRevenue: string;
   onCharge: (charge: RetailCharge) => Promise<Order>;
 }) {
   const [mode, setMode] = useState<Mode>('walkin');
@@ -42,7 +41,6 @@ export function RetailSellScreen(props: {
           categories={props.categories}
           settings={props.settings}
           customers={props.customers}
-          todayRevenue={props.todayRevenue}
           onCharge={props.onCharge}
         />
       ) : (
