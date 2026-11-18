@@ -39,14 +39,12 @@ export function CounterBill({
   products,
   categories,
   settings,
-  todayRevenue,
   customers,
   onCharge,
 }: {
   products: Product[];
   categories: Category[];
   settings: StoreSettings | null;
-  todayRevenue: string;
   customers: CreditCustomer[];
   onCharge: (charge: RetailCharge) => Promise<Order>;
 }) {
@@ -119,12 +117,6 @@ export function CounterBill({
 
   return (
     <View style={styles.wrap}>
-      {/* Today strip */}
-      <View style={styles.todayRow}>
-        <Text style={styles.todayLabel}>Today</Text>
-        <Text style={styles.todayValue}>{todayRevenue}</Text>
-      </View>
-
       {/* Search */}
       <View style={styles.searchRow}>
         <TextInput
@@ -579,9 +571,6 @@ function DoneScreen({ receipt, onNewBill }: { receipt: Receipt; onNewBill: () =>
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: palette.bg },
-  todayRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'baseline', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
-  todayLabel: { fontFamily: fonts.body, fontSize: 13, color: palette.neutral[600] },
-  todayValue: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
   searchRow: { paddingHorizontal: 16, paddingTop: 8 },
   search: { borderRadius: 14, minHeight: 48, backgroundColor: palette.card, paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 16, color: palette.ink, borderWidth: 1, borderColor: palette.dividerFaint },
   chips: { maxHeight: 56, flexGrow: 0 },
