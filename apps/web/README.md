@@ -15,16 +15,19 @@ apps/web/
 
 ```bash
 cd apps/web
-npm run dev          # serves on http://localhost:3000
+python3 -m http.server 3000   # or any static file server
 ```
 
-## Deploy on Cloudflare Pages (free)
+## Deploy on Cloudflare Workers (free)
 
-1. Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git → pick this repo.
-2. Build settings: framework preset **None**, build command empty, build output directory **`apps/web`**.
-3. Deploy. You get a `*.pages.dev` preview link.
-4. Custom domains → add `getfloq.in`, then add `floqapp.in` and set it to redirect to `getfloq.in`
-   (Rules → Redirect Rules, or a Bulk Redirect).
+The repo root has a `wrangler.jsonc` that serves this folder as static assets.
+
+1. Cloudflare dashboard → Workers & Pages → Create → Import a repository → pick this repo.
+2. Build command: leave empty. Deploy command: `npx wrangler deploy`. Root directory: `/` (repo root).
+3. Every push to `main` deploys to `floq.<your-subdomain>.workers.dev`.
+4. Settings → Domains & Routes → add `getfloq.in` as a custom domain. Point `floqapp.in` at it with a Redirect Rule.
+
+`.assetsignore` keeps this README out of the deployed site.
 
 ## Before launch (1 Jan 2027)
 
