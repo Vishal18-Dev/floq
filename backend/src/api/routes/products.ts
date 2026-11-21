@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { query, queryOne, execute } from '../../db';
 import { CreateProductSchema, UpdateProductSchema, CreateCategorySchema } from '@floq/validation';
 import crypto from 'crypto';
@@ -82,7 +82,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
 });
 
 // POST /api/products - Create a new product
-router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const input = CreateProductSchema.parse(req.body);
     const id = crypto.randomUUID();
@@ -130,7 +130,7 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
 });
 
 // PATCH /api/products/:id - Update product
-router.patch('/:id', async (req: AuthenticatedRequest, res: Response, next) => {
+router.patch('/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const input = UpdateProductSchema.parse(req.body);
     const productId = req.params.id;
@@ -242,7 +242,7 @@ router.patch('/:id/availability', async (req: AuthenticatedRequest, res: Respons
 });
 
 // DELETE /api/products/:id - Delete product
-router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next) => {
+router.delete('/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const changes = await execute('DELETE FROM products WHERE id = $1 AND store_id = $2', [req.params.id, req.storeId]);
     if (changes === 0) {
@@ -256,7 +256,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next) => 
 });
 
 // POST /api/products/categories - Create category
-router.post('/categories', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/categories', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const input = CreateCategorySchema.parse(req.body);
     const id = crypto.randomUUID();

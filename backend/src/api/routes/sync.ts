@@ -17,8 +17,10 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
       try {
         const storeId = req.storeId || record.storeId || input.storeId;
         const clientOrderId = record.clientOrderId || record.order?.clientOrderId || record.order?.id || record.id;
+        // Only this store's own orders count as already-synced; an id held by
+        // another store falls through to createOrder, which rejects the clash.
         const existing = await queryOne(
-          'SELECT id FROM orders WHERE id = $1 OR (store_id = $2 AND client_order_id = $3)',
+          'SELECT id FROM orders WHERE store_id = $2 AND (id = $1 OR client_order_id = $3)',
           [record.order.id, storeId, clientOrderId]
         );
 

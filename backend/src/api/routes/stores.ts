@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { query, queryOne, transaction } from '../../db';
 import { UpdateStoreSettingsSchema, StoreSeedSchema } from '@floq/validation';
 import { STORE_TEMPLATES } from '@floq/constants';
@@ -75,9 +75,14 @@ router.get('/current', async (req: AuthenticatedRequest, res: Response, next) =>
 });
 
 // PATCH /api/stores/settings - Update store settings (voice, prep time, UPI, etc.)
-router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next) => {
+router.patch('/settings', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const data = UpdateStoreSettingsSchema.parse(req.body);
+    // Where customer money goes is the owner's call alone.
+    if ((data.upiId !== undefined || data.upiName !== undefined) && req.userRole !== 'OWNER') {
+      res.status(403).json({ error: 'FORBIDDEN_ROLE', message: 'Only the owner can change the UPI details' });
+      return;
+    }
 
     const fields: string[] = [];
     const values: any[] = [];
@@ -150,7 +155,7 @@ router.patch('/settings', async (req: AuthenticatedRequest, res: Response, next)
 // (hours, GSTIN, credit on/off + default limit, food service prefs). Called
 // once during self-serve onboarding, after the account is created. Additive:
 // it reuses the starter category and never wipes existing data.
-router.post('/seed', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/seed', requireRole('OWNER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const input = StoreSeedSchema.parse(req.body);
     const store = await queryOne('SELECT id, slug, mode FROM stores WHERE id = $1', [req.storeId]);
@@ -200,7 +205,7 @@ router.post('/seed', async (req: AuthenticatedRequest, res: Response, next) => {
 });
 
 // POST /api/stores/apply-template - Load a template into the store
-router.post('/apply-template', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/apply-template', requireRole('OWNER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const { templateKey } = req.body;
     const template = STORE_TEMPLATES[templateKey];

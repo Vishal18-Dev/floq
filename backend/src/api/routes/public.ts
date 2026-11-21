@@ -100,13 +100,19 @@ router.post('/stores/:slug/orders', async (req: Request, res: Response, next) =>
       source: 'CUSTOMER_QR',
     });
 
+    // A customer can only pick catalogue items: prices always come from the
+    // database, never from the request (no ad-hoc lines, no price modifiers).
+    if (input.items.some((i) => !(i.productId || i.packId) || i.unitPrice !== undefined || i.modifiers?.length)) {
+      res.status(400).json({ error: 'INVALID_ITEMS', message: 'Only menu items can be ordered.' });
+      return;
+    }
+
     const order = await orderEngine.createOrder({
-      id: input.id,
       storeId: store.id,
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       source: 'CUSTOMER_QR',
-      items: input.items,
+      items: input.items.map((i) => ({ productId: i.productId, packId: i.packId, sellUnit: i.sellUnit, quantity: i.quantity })),
       notes: input.notes,
       status: 'NEW',
     });
