@@ -1,0 +1,10 @@
+// Cloudflare Workers config for the floq marketing site (static files in apps/web).
+// Deploy with: npx wrangler deploy
+{
+  "name": "floq",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./apps/web",
+    "html_handling": "auto-trailing-slash"
+  }
+}
