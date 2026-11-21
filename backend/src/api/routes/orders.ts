@@ -50,6 +50,12 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
       storeId: req.storeId,
     });
 
+    // Credit (khata) and wholesale shop orders are manager decisions.
+    if ((input.paymentMethod === 'CREDIT' || input.isWholesale) && req.userRole === 'STAFF') {
+      res.status(403).json({ error: 'FORBIDDEN_ROLE', message: 'Ask the owner or a manager to give credit or make shop orders' });
+      return;
+    }
+
     const order = await orderEngine.createOrder({
       id: input.id,
       storeId: req.storeId!,

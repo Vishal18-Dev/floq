@@ -6,6 +6,8 @@ import { errorHandler } from './api/middleware/errorHandler';
 import { realtimeService } from './services/realtimeService';
 import { authService } from './services/authService';
 import { runMigrations } from './db/migrate';
+import { queryOne } from './db';
+import { createLimits } from './api/middleware/rateLimit';
 
 import authRouter from './api/routes/auth';
 import storesRouter from './api/routes/stores';
@@ -25,6 +27,10 @@ import invitesRouter from './api/routes/invites';
 
 export function createServer() {
   const app = express();
+  // Render terminates TLS at one proxy hop; this makes req.ip the real client IP.
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
+  const limits = createLimits();
 
   app.use(cors({ origin: config.corsOrigin, credentials: true }));
   app.use(express.json());
@@ -43,10 +49,12 @@ export function createServer() {
   // real merchants are provisioned via POST /api/admin/onboard-merchant.
 
   // Public auth routes (Unauthenticated)
+  app.use('/api/auth/login', limits.loginIp, limits.loginPhone);
+  app.use('/api/auth/firebase', limits.otpLogin);
   app.use('/api/auth', authRouter);
 
   // Realtime Server-Sent Events (SSE) stream (Authenticated via query token or Bearer header)
-  app.get('/api/realtime', (req, res) => {
+  app.get('/api/realtime', async (req, res) => {
     const authHeader = req.headers.authorization;
     const queryToken = req.query.token as string;
     let token = queryToken;
@@ -59,12 +67,26 @@ export function createServer() {
       return;
     }
 
+    let payload;
     try {
-      const payload = authService.verifyToken(token);
+      payload = authService.verifyToken(token);
+    } catch {
+      res.status(401).json({ error: 'INVALID_TOKEN', message: 'Realtime token verification failed' });
+      return;
+    }
+
+    try {
       const storeId = (req.query.storeId as string) || (payload.storeIds && payload.storeIds[0]);
 
       if (!storeId) {
         res.status(400).json({ error: 'STORE_REQUIRED', message: 'storeId is required for realtime stream' });
+        return;
+      }
+
+      // Same tenant check as authMiddleware: the stream is only for the caller's own store.
+      const store = await queryOne('SELECT merchant_id FROM stores WHERE id = $1', [storeId]);
+      if (!store || store.merchant_id !== payload.merchantId) {
+        res.status(403).json({ error: 'FORBIDDEN', message: 'Not authorized for this store' });
         return;
       }
 
@@ -74,18 +96,19 @@ export function createServer() {
       res.flushHeaders();
 
       realtimeService.subscribe(storeId, res);
-    } catch {
-      res.status(401).json({ error: 'INVALID_TOKEN', message: 'Realtime token verification failed' });
+    } catch (err) {
+      console.error('[FLOQ realtime]:', err);
+      if (!res.headersSent) res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Could not open realtime stream' });
     }
   });
 
   // Public customer & admin routes
-  app.use('/api/public', publicRouter);
-  app.use('/api/admin', adminRouter);
-  app.use('/api/signup', signupRouter);
+  app.use('/api/public', limits.publicApi, publicRouter);
+  app.use('/api/admin', limits.admin, adminRouter);
+  app.use('/api/signup', limits.signup, signupRouter);
   // Invite lookup + accept is public: the invitee has no session yet, and the
   // accept is gated by an OTP on the invited number.
-  app.use('/api/invites', invitesRouter);
+  app.use('/api/invites', limits.invites, invitesRouter);
 
   // Authenticated Merchant API Routes (with Data Isolation Middleware)
   app.use('/api/stores', authMiddleware, storesRouter);

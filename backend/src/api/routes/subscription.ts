@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { subscriptionService, Plan } from '../../services/subscriptionService';
 
 const router = Router();
@@ -15,7 +15,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
 
 // POST /api/subscription/submit - merchant reports a manual UPI payment.
 // Creates a pending record for an admin to verify; does not activate on its own.
-router.post('/submit', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/submit', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const plan = req.body?.plan as Plan;
     if (plan !== 'monthly' && plan !== 'annual') {

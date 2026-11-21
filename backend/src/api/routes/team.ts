@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import crypto from 'crypto';
 import { CreateInviteSchema } from '@floq/validation';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { query, queryOne } from '../../db';
 
 const router = Router();
@@ -33,9 +33,13 @@ function mapInvite(row: any) {
 }
 
 // POST /api/team/invites — owner/manager invites a helper by mobile + role.
-router.post('/invites', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/invites', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const input = CreateInviteSchema.parse(req.body);
+    if (input.role === 'MANAGER' && req.userRole !== 'OWNER') {
+      res.status(403).json({ error: 'FORBIDDEN_ROLE', message: 'Only the owner can add a manager' });
+      return;
+    }
     const store = await queryOne('SELECT id, merchant_id FROM stores WHERE id = $1', [req.storeId]);
     if (!store) {
       res.status(404).json({ error: 'STORE_NOT_FOUND', message: 'Store not found' });
@@ -113,7 +117,7 @@ router.get('/invites', async (req: AuthenticatedRequest, res: Response, next) =>
 });
 
 // DELETE /api/team/invites/:id — revoke a pending invite.
-router.delete('/invites/:id', async (req: AuthenticatedRequest, res: Response, next) => {
+router.delete('/invites/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     await query("UPDATE staff_invites SET status = 'REVOKED' WHERE id = $1 AND store_id = $2 AND status = 'PENDING'", [
       req.params.id,

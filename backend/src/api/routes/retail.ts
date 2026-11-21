@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { query, queryOne, execute } from '../../db';
 import crypto from 'crypto';
 
@@ -39,7 +39,7 @@ router.get('/customers', async (req: AuthenticatedRequest, res: Response, next) 
 });
 
 // POST /api/retail/customers — add a credit account.
-router.post('/customers', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/customers', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const { name, kind, phone, creditLimit } = req.body || {};
     if (!name || typeof name !== 'string') {
@@ -68,7 +68,7 @@ router.post('/customers', async (req: AuthenticatedRequest, res: Response, next)
 
 // POST /api/retail/customers/:id/paid — record a repayment. Omit amount to
 // settle the whole balance ("Got paid" on the Dues screen).
-router.post('/customers/:id/paid', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/customers/:id/paid', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const cust = await queryOne('SELECT * FROM credit_customers WHERE id = $1 AND store_id = $2', [
       req.params.id,
@@ -104,7 +104,7 @@ router.post('/customers/:id/paid', async (req: AuthenticatedRequest, res: Respon
 });
 
 // POST /api/retail/products — add a product with one pack, or a loose good.
-router.post('/products', async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/products', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const b = req.body || {};
     if (!b.name || !b.categoryId) {

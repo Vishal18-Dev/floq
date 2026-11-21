@@ -1,14 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
+/** An error that carries its own HTTP status and code; its message is safe to show. */
+export class HttpError extends Error {
+  constructor(public status: number, public code: string, message: string) {
+    super(message);
+  }
+}
+
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.code, message: err.message });
+    return;
+  }
+
   console.error('[FLOQ Server Error]:', err);
 
-  if (err instanceof ZodError) {
+  // Match by name too: the validation package can load a separate zod module instance.
+  if (err instanceof ZodError || err?.name === 'ZodError') {
     res.status(400).json({
       error: 'VALIDATION_ERROR',
       message: 'Invalid input provided. Please check the required fields.',
-      details: err.errors.map((e) => ({
+      details: err.errors.map((e: any) => ({
         path: e.path.join('.'),
         message: e.message,
       })),

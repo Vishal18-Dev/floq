@@ -11,6 +11,7 @@ import { ALLOWED_ORDER_TRANSITIONS } from '@floq/constants';
 import { queueEngine } from './queueEngine';
 import { realtimeService } from './realtimeService';
 import { auditLogger } from './auditLogger';
+import { HttpError } from '../api/middleware/errorHandler';
 
 export interface CreateOrderParams {
   id?: string;
@@ -55,10 +56,16 @@ export class OrderEngine {
     const businessDate = now.split('T')[0];
 
     // 1. Check idempotency: If order with clientOrderId or orderId exists, return existing order
+    // Order ids are global, so an id owned by another store is a clash, never a
+    // duplicate to hand back — returning it would leak that store's order.
     const existing = await queryOne(
-      'SELECT id FROM orders WHERE id = $1 OR (store_id = $2 AND client_order_id = $3)',
+      'SELECT id FROM orders WHERE store_id = $2 AND (id = $1 OR client_order_id = $3)',
       [orderId, params.storeId, clientOrderId]
     );
+
+    if (!existing && (await queryOne('SELECT 1 AS taken FROM orders WHERE id = $1', [orderId]))) {
+      throw new HttpError(409, 'ORDER_ID_CONFLICT', 'This order id is already in use. Retry without an id.');
+    }
 
     if (existing) {
       const found = await this.getOrderById(existing.id);

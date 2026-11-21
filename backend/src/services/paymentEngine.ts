@@ -19,7 +19,6 @@ export interface PaymentProvider {
   confirmPayment(paymentId: string, providerReference?: string, actorId?: string): Promise<PaymentResult>;
   failPayment(paymentId: string, reason?: string): Promise<PaymentResult>;
   refundPayment(paymentId: string, actorId?: string): Promise<PaymentResult>;
-  handleWebhook(payload: any, signature?: string): Promise<{ handled: boolean; paymentId?: string }>;
 }
 
 export class MockUPIProvider implements PaymentProvider {
@@ -238,15 +237,6 @@ export class MockUPIProvider implements PaymentProvider {
       isSandbox: true,
     };
   }
-
-  public async handleWebhook(payload: any, signature?: string): Promise<{ handled: boolean; paymentId?: string }> {
-    const paymentId = payload.paymentId || payload.id;
-    if (paymentId && payload.status === 'SUCCESS') {
-      await this.confirmPayment(paymentId, payload.providerReference || 'WEBHOOK_MOCK_REF');
-      return { handled: true, paymentId };
-    }
-    return { handled: false };
-  }
 }
 
 export class ProductionPaymentProvider implements PaymentProvider {
@@ -263,9 +253,6 @@ export class ProductionPaymentProvider implements PaymentProvider {
     throw new Error('Production Payment Provider not configured.');
   }
   public async refundPayment(): Promise<PaymentResult> {
-    throw new Error('Production Payment Provider not configured.');
-  }
-  public async handleWebhook(): Promise<{ handled: boolean; paymentId?: string }> {
     throw new Error('Production Payment Provider not configured.');
   }
 }

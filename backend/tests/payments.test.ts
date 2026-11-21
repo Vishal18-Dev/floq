@@ -81,7 +81,7 @@ describe('P0-2 Payment State Machine & Cash Audit Log Tests (PostgreSQL)', () =>
     expect(confirmRes.status).toBe(500);
   });
 
-  it('3. Webhook endpoint processes valid payment confirmation idempotently', async () => {
+  it('3. Cashier confirms a pending UPI payment with a reference', async () => {
     const storeId = 'store_sharma_01';
     const headers = getTestAuthHeader('merchant_sharma_01', storeId);
     const product = await queryOne('SELECT id FROM products WHERE store_id = $1 LIMIT 1', [storeId]);
@@ -108,16 +108,13 @@ describe('P0-2 Payment State Machine & Cash Audit Log Tests (PostgreSQL)', () =>
 
     const paymentId = payRes.body.payment.id;
 
-    const webhookRes = await request(app)
-      .post('/api/payments/webhook')
-      .send({
-        paymentId,
-        status: 'SUCCESS',
-        providerReference: 'PG_WEBHOOK_TXN_998877',
-      });
+    const confirmRes = await request(app)
+      .post(`/api/payments/${paymentId}/confirm`)
+      .set(headers)
+      .send({ providerReference: 'PG_WEBHOOK_TXN_998877' });
 
-    expect(webhookRes.status).toBe(200);
-    expect(webhookRes.body.handled).toBe(true);
+    expect(confirmRes.status).toBe(200);
+    expect(confirmRes.body.payment.status).toBe('SUCCESS');
 
     const paymentInDb = await queryOne('SELECT * FROM payments WHERE id = $1', [paymentId]);
     expect(paymentInDb!.status).toBe('SUCCESS');

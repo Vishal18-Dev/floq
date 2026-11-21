@@ -67,27 +67,47 @@ export class AuthService {
       throw new Error('This account is not active. Please contact FLOQ support.');
     }
 
-    // Lockout check
+    const lockedMessage = (until: number) => {
+      const mins = Math.max(1, Math.ceil((until - Date.now()) / 60000));
+      return `Too many wrong attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`;
+    };
+
+    // Lockout check. An expired lock starts a fresh window of attempts.
     if (user.pin_locked_until) {
       const until = new Date(user.pin_locked_until).getTime();
-      if (Date.now() < until) {
-        const mins = Math.ceil((until - Date.now()) / 60000);
-        throw new Error(`Too many wrong attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`);
-      }
+      if (Date.now() < until) throw new Error(lockedMessage(until));
+      await query('UPDATE users SET pin_attempts = 0, pin_locked_until = NULL WHERE id = $1 AND pin_locked_until = $2', [
+        user.id,
+        user.pin_locked_until,
+      ]);
     }
 
     if (!user.pin_hash) {
       throw new Error('No PIN set for this account. Please contact FLOQ to complete setup.');
     }
 
+    // Spend an attempt atomically BEFORE checking the PIN, so parallel guesses
+    // can't all read the same count and slip past the lockout.
+    const spent = await queryOne<{ pin_attempts: number }>(
+      'UPDATE users SET pin_attempts = COALESCE(pin_attempts, 0) + 1 WHERE id = $1 RETURNING pin_attempts',
+      [user.id]
+    );
+    const attempts = Number(spent?.pin_attempts || 0);
+    if (attempts > config.pinMaxAttempts) {
+      const lockUntil = Date.now() + config.pinLockoutMinutes * 60000;
+      await query('UPDATE users SET pin_locked_until = $1 WHERE id = $2 AND pin_locked_until IS NULL', [
+        new Date(lockUntil).toISOString(),
+        user.id,
+      ]);
+      throw new Error(lockedMessage(lockUntil));
+    }
+
     if (!verifyPinHash(pin, user.pin_hash)) {
-      const attempts = Number(user.pin_attempts || 0) + 1;
       if (attempts >= config.pinMaxAttempts) {
-        const lockUntil = new Date(Date.now() + config.pinLockoutMinutes * 60000).toISOString();
-        await query('UPDATE users SET pin_attempts = $1, pin_locked_until = $2 WHERE id = $3', [attempts, lockUntil, user.id]);
-        throw new Error(`Too many wrong attempts. Try again in ${config.pinLockoutMinutes} minutes.`);
+        const lockUntil = Date.now() + config.pinLockoutMinutes * 60000;
+        await query('UPDATE users SET pin_locked_until = $1 WHERE id = $2', [new Date(lockUntil).toISOString(), user.id]);
+        throw new Error(lockedMessage(lockUntil));
       }
-      await query('UPDATE users SET pin_attempts = $1 WHERE id = $2', [attempts, user.id]);
       throw new Error(GENERIC);
     }
 

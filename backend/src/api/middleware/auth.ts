@@ -16,10 +16,6 @@ export interface AuthenticatedRequest extends Request {
  * NO SILENT DEFAULT FALLBACKS.
  */
 export async function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-  // Allow public endpoints & webhooks to pass through without JWT check
-  if (req.path === '/webhook' || req.path === '/api/payments/webhook') {
-    return next();
-  }
   // Extract Authorization header or query token
   const authHeader = req.headers.authorization;
   const queryToken = req.query.token as string;

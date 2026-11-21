@@ -73,7 +73,7 @@ export const OrderItemInputSchema = z
       .array(
         z.object({
           name: z.string(),
-          priceDelta: z.number(),
+          priceDelta: z.number().nonnegative(),
         })
       )
       .optional(),
