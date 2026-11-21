@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>floq: billing, UPI and tokens for your counter</title>
+<meta name="description" content="Bill in one tap, take UPI on your own QR, and keep every customer moving. For tea stalls, kirana stores and everything in between. 7 days free, then ₹49 a month.">
+<meta name="theme-color" content="#101317">
+<link rel="canonical" href="https://getfloq.in/">
+<link rel="alternate" hreflang="en" href="https://getfloq.in/">
+<link rel="alternate" hreflang="hi-Latn" href="https://getfloq.in/hi/">
+<link rel="alternate" hreflang="x-default" href="https://getfloq.in/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="floq">
+<meta property="og:title" content="floq: billing, UPI and tokens for your counter">
+<meta property="og:description" content="Bill in one tap, take UPI on your own QR, and keep every customer moving. For tea stalls, kirana stores and everything in between. 7 days free, then ₹49 a month.">
+<meta property="og:url" content="https://getfloq.in/">
+<meta property="og:locale" content="en_IN">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@400;500;600;700&amp;family=Instrument+Serif:ital@1&amp;display=swap">
+<style>
+html{scroll-behavior:smooth}
+body{margin:0;background:#F4F5F1;color:#101317;font-family:'Anek Latin',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2B4BEB}a:hover{color:#101317}
+*:focus-visible{outline:3px solid #C9F158;outline-offset:2px}
+summary{list-style-position:outside}
+@media (max-width: 760px){
+  .nav-pill{display:none !important}
+  .hero-visual{min-height:560px !important}
+}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div style="width: 100%; background: #F4F5F1; color: #101317; font-family: 'Anek Latin', system-ui, sans-serif; overflow: hidden">
+
+<header style="position: relative; background: #101317; color: #F4F5F1; padding: 24px 24px 0; overflow: hidden">
+  <div aria-hidden="true" style="position: absolute; right: -10%; top: -30%; width: 70%; height: 90%; background: radial-gradient(closest-side, rgba(201,241,88,0.28), rgba(201,241,88,0) 70%)"></div>
+  <div aria-hidden="true" style="position: absolute; left: -15%; bottom: -35%; width: 70%; height: 90%; background: radial-gradient(closest-side, rgba(43,75,235,0.45), rgba(43,75,235,0) 70%)"></div>
+
+  <nav aria-label="Main" style="position: relative; max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+    <a href="#top" aria-label="floq home" style="display: flex; align-items: center; color: #F4F5F1">
+      <svg width="76" height="45" viewBox="0 0 186 110" fill="none" stroke="#F4F5F1" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="floq"><path d="M18 74V32A12 12 0 0 1 30 20"></path><path d="M8 36H28"></path><path d="M44 20V74"></path><circle cx="84" cy="54" r="20.6"></circle><circle cx="144" cy="54" r="20.6"></circle><path d="M164.6 34V92A10 10 0 0 0 174.6 102"></path></svg>
+    </a>
+    <div class="nav-pill" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; border-radius: 999px; background: rgba(244,245,241,0.08); border: 1px solid rgba(244,245,241,0.14)">
+      <a href="#how" style="padding: 10px 18px; border-radius: 999px; color: #F4F5F1; font-size: 16px; font-weight: 500; text-decoration: none">How it works</a>
+      <a href="#shops" style="padding: 10px 18px; border-radius: 999px; color: #F4F5F1; font-size: 16px; font-weight: 500; text-decoration: none">For your shop</a>
+      <a href="#pricing" style="padding: 10px 18px; border-radius: 999px; color: #F4F5F1; font-size: 16px; font-weight: 500; text-decoration: none">Pricing</a>
+      <a href="#faq" style="padding: 10px 18px; border-radius: 999px; color: #F4F5F1; font-size: 16px; font-weight: 500; text-decoration: none">FAQ</a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div role="group" aria-label="Language" style="display: flex; padding: 4px; border-radius: 999px; background: rgba(244,245,241,0.08); border: 1px solid rgba(244,245,241,0.14)">
+        <span aria-current="true" style="display: flex; align-items: center; font-size: 14px; font-weight: 600; padding: 8px 14px; min-height: 36px; box-sizing: border-box; border-radius: 999px; background: #F4F5F1; color: #101317">English</span>
+        <a href="hi/" hreflang="hi-Latn" lang="hi-Latn" style="display: flex; align-items: center; font-size: 14px; font-weight: 600; padding: 8px 14px; min-height: 36px; box-sizing: border-box; border-radius: 999px; background: transparent; color: #F4F5F1; text-decoration: none">Hinglish</a>
+      </div>
+      <a href="#get" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; min-height: 44px; box-sizing: border-box; border-radius: 999px; background: #C9F158; color: #101317; font-size: 16px; font-weight: 700; text-decoration: none">Get the app</a>
+    </div>
+  </nav>
+
+  <div id="top" style="position: relative; max-width: 1200px; margin: 0 auto; padding: 72px 0 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 48px">
+    <div style="flex: 1 1 480px; min-width: 0; padding-bottom: clamp(24px, 6vw, 96px); display: flex; flex-direction: column; gap: 28px">
+      <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(244,245,241,0.08); border: 1px solid rgba(244,245,241,0.16); font-size: 14px; font-weight: 600; color: #F4F5F1">
+        <span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 999px; background: #C9F158"></span>
+        On Google Play and Indus Appstore from 1 Jan
+      </span>
+      <h1 style="margin: 0; font-size: clamp(44px, 9vw, 76px); line-height: 0.98; font-weight: 600; letter-spacing: -0.03em; color: #F4F5F1">Run your counter, <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; color: #C9F158">calmly.</span></h1>
+      <p style="margin: 0; max-width: 520px; font-size: 20px; line-height: 30px; color: #C4C9D1">Bill in one tap, take UPI on your own QR, and keep every customer moving. For tea stalls, kirana stores and everything in between.</p>
+      <div id="get" style="display: flex; flex-wrap: wrap; gap: 12px">
+        <a href="#get" aria-label="Get it on Google Play" style="display: flex; align-items: center; gap: 12px; padding: 12px 22px; min-height: 60px; box-sizing: border-box; border-radius: 16px; background: #C9F158; color: #101317; text-decoration: none">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#101317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"></path></svg>
+          <span style="display: flex; flex-direction: column; line-height: 1.1"><span style="font-size: 12px; font-weight: 600">GET IT ON</span><span style="font-size: 20px; font-weight: 700">Google Play</span></span>
+        </a>
+        <a href="#get" aria-label="Get it on Indus Appstore" style="display: flex; align-items: center; gap: 12px; padding: 12px 22px; min-height: 60px; box-sizing: border-box; border-radius: 16px; background: #F4F5F1; color: #101317; text-decoration: none">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#101317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M9 12h6"></path><path d="M12 9v6"></path></svg>
+          <span style="display: flex; flex-direction: column; line-height: 1.1"><span style="font-size: 12px; font-weight: 600">GET IT ON</span><span style="font-size: 20px; font-weight: 700">Indus Appstore</span></span>
+        </a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; font-size: 16px; color: #C4C9D1">
+        <span>7 days free, then ₹49 a month</span>
+        <span aria-hidden="true" style="width: 4px; height: 4px; border-radius: 999px; background: #5B626C"></span>
+        <a href="#setup" style="color: #F4F5F1; font-weight: 600">WhatsApp us for free setup</a>
+      </div>
+    </div>
+
+    <div class="hero-visual" style="flex: 1 1 420px; min-width: 0; position: relative; display: flex; justify-content: center; min-height: 640px">
+      <div style="position: relative; width: 300px; height: 620px; box-sizing: border-box; border-radius: 40px 40px 0 0; border: 10px solid #22262C; border-bottom: 0; background: #F4F5F1; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.5)">
+        <img fetchpriority="high" src="assets/counter-bill.webp" alt="floq counter bill screen with a product list and a Charge button" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top">
+      </div>
+      <div style="position: absolute; left: 0; top: 96px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 18px; background: rgba(255,255,255,0.92); color: #101317; box-shadow: 0 20px 50px rgba(0,0,0,0.3)">
+        <span style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: #C9F158; font-size: 16px; font-weight: 700">147</span>
+        <span style="display: flex; flex-direction: column"><span style="font-size: 16px; font-weight: 700">Token 147 is ready</span><span style="font-size: 13px; color: #5B626C">Announced by voice</span></span>
+      </div>
+      <div style="position: absolute; right: 0; top: 260px; display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; border-radius: 18px; background: rgba(255,255,255,0.92); color: #101317; box-shadow: 0 20px 50px rgba(0,0,0,0.3)">
+        <span style="align-self: flex-start; padding: 2px 10px; border-radius: 999px; background: #DDF6EA; color: #0E7A55; font-size: 13px; font-weight: 700">Paid</span>
+        <span style="font-size: 22px; font-weight: 700">₹240 on UPI</span>
+        <span style="font-size: 13px; color: #5B626C">Straight to your bank</span>
+      </div>
+      <div style="position: absolute; left: 24px; top: 440px; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 18px; background: rgba(16,19,23,0.88); border: 1px solid rgba(244,245,241,0.18); color: #F4F5F1; box-shadow: 0 20px 50px rgba(0,0,0,0.35)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M8.5 16.5a5 5 0 0 1 7 0"></path><path d="M12 20h.01"></path><path d="M5 12.9a10 10 0 0 1 5.2-2.7"></path><path d="M16.8 11.2A10 10 0 0 1 19 12.9"></path></svg>
+        <span style="font-size: 15px; font-weight: 600">Offline. 3 sales will sync.</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section aria-label="Works with UPI apps" style="background: #ECEEE8; padding: 28px 24px">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 40px">
+    <span style="font-size: 15px; font-weight: 600; color: #5B626C">Customers pay with any UPI app</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 40px; font-size: 22px; font-weight: 700; color: #101317">
+      <span>Google Pay</span><span>PhonePe</span><span>Paytm</span><span>BHIM</span><span>Any bank app</span>
+    </div>
+  </div>
+</section>
+
+<section id="shops" style="padding: 112px 24px 96px">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+      <span style="padding: 6px 14px; border-radius: 999px; background: #101317; color: #C9F158; font-size: 13px; font-weight: 700; letter-spacing: 0.06em">BUILT FOR YOUR SHOP</span>
+      <h2 style="margin: 0; max-width: 760px; font-size: clamp(34px, 6.5vw, 52px); line-height: 1.05; font-weight: 600; letter-spacing: -0.025em">One app for every <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400">kind of counter</span></h2>
+      <p style="margin: 0; max-width: 620px; font-size: 19px; line-height: 28px; color: #5B626C">Tell floq what you run on day one. It sets itself up for a busy tea stall or a kirana shelf, and shows only what you need.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #FFFFFF; transform: rotate(-2deg)">
+        <span style="display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: #101317"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><path d="M6 2v2"></path><path d="M10 2v2"></path><path d="M14 2v2"></path></svg></span>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Tea and snacks</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Tokens and voice call-outs keep the morning rush moving.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #FFFFFF; transform: rotate(1.5deg) translateY(12px)">
+        <span style="display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: #101317"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18"></path><path d="M5 11a7 7 0 0 1 14 0"></path><path d="M4 15h16l-1.5 4h-13Z"></path></svg></span>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Tiffin and canteens</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">A live queue so helpers know what to prepare next.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #C9F158; transform: rotate(-1deg)">
+        <span style="display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: #101317"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"></path><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z"></path><path d="M5 14v6h14v-6"></path></svg></span>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Kirana stores</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #101317">Fast bills, stock alerts and a dues book in one place.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #FFFFFF; transform: rotate(2deg) translateY(8px)">
+        <span style="display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: #101317"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"></path><path d="M5 7h14"></path><path d="M5 7l-3 7a3 3 0 0 0 6 0Z"></path><path d="M19 7l-3 7a3 3 0 0 0 6 0Z"></path></svg></span>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Specialty shops</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Sell packs or loose goods by weight, priced right.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #FFFFFF; transform: rotate(-1.5deg)">
+        <span style="display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: #101317"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v10H3Z"></path><path d="M14 10h4l3 3v4h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Distributors</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Shop orders at wholesale prices, with credit tracked.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-label="floq in numbers" style="padding: 0 24px 112px">
+  <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-top: 1px solid #DADDD4; border-bottom: 1px solid #DADDD4">
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 36px 24px; text-align: center"><span style="font-size: clamp(40px, 7vw, 56px); font-weight: 600; letter-spacing: -0.03em">1 tap</span><span style="font-size: 16px; color: #5B626C">from items to a bill</span></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 36px 24px; text-align: center"><span style="font-size: clamp(40px, 7vw, 56px); font-weight: 600; letter-spacing: -0.03em">0</span><span style="font-size: 16px; color: #5B626C">internet needed to sell</span></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 36px 24px; text-align: center"><span style="font-size: clamp(40px, 7vw, 56px); font-weight: 600; letter-spacing: -0.03em">4</span><span style="font-size: 16px; color: #5B626C">languages on your bills</span></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 36px 24px; text-align: center"><span style="font-size: clamp(40px, 7vw, 56px); font-weight: 600; letter-spacing: -0.03em">₹49</span><span style="font-size: 16px; color: #5B626C">a month, after 7 free days</span></div>
+  </div>
+</section>
+
+<section id="how" style="padding: 0 24px 112px">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 16px; max-width: 640px">
+        <span style="align-self: flex-start; padding: 6px 14px; border-radius: 999px; background: #101317; color: #C9F158; font-size: 13px; font-weight: 700; letter-spacing: 0.06em">HOW IT WORKS</span>
+        <h2 style="margin: 0; font-size: clamp(34px, 6.5vw, 52px); line-height: 1.05; font-weight: 600; letter-spacing: -0.025em">Set up in minutes. <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400">Sell all day.</span></h2>
+      </div>
+      <p style="margin: 0; max-width: 380px; font-size: 18px; line-height: 27px; color: #5B626C">Sign up with your phone number. No card, no hardware, no training.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; border-radius: 18px; background: #FFFFFF; overflow: hidden">
+        <div style="padding: 28px 28px 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 15px; font-weight: 700; color: #2B4BEB">Step 1</span>
+          <h3 style="margin: 0; font-size: 26px; font-weight: 700">Sign up with your number</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Pick your language, enter the OTP, choose shop or food counter.</p>
+        </div>
+        <div style="margin: 0 20px 20px; height: 300px; border-radius: 14px; background: #ECEEE8; overflow: hidden">
+          <img loading="lazy" decoding="async" src="assets/welcome.webp" alt="floq welcome screen with language choice and a Get started button" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top">
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; border-radius: 18px; background: #FFFFFF; overflow: hidden">
+        <div style="padding: 28px 28px 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 15px; font-weight: 700; color: #2B4BEB">Step 2</span>
+          <h3 style="margin: 0; font-size: 26px; font-weight: 700">Tap items, take payment</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Cash with change worked out, or UPI on your own QR.</p>
+        </div>
+        <div style="margin: 0 20px 20px; height: 300px; border-radius: 14px; background: #ECEEE8; overflow: hidden">
+          <img loading="lazy" decoding="async" src="assets/counter-bill.webp" alt="floq counter bill screen" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top">
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; border-radius: 18px; background: #101317; color: #F4F5F1; overflow: hidden">
+        <div style="padding: 28px 28px 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 15px; font-weight: 700; color: #C9F158">Step 3</span>
+          <h3 style="margin: 0; font-size: 26px; font-weight: 700">Close the day in one look</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 24px; color: #C4C9D1">Cash, UPI and credit, best sellers, and what to reorder.</p>
+        </div>
+        <div style="margin: 0 20px 20px; height: 300px; border-radius: 14px; background: #22262C; overflow: hidden">
+          <img loading="lazy" decoding="async" src="assets/day.webp" alt="floq day screen showing today's sales of ₹14,860 split into cash, UPI and credit" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="features-title" style="padding: 0 24px 112px">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+      <span style="padding: 6px 14px; border-radius: 999px; background: #101317; color: #C9F158; font-size: 13px; font-weight: 700; letter-spacing: 0.06em">EVERYTHING AT THE COUNTER</span>
+      <h2 id="features-title" style="margin: 0; max-width: 760px; font-size: clamp(34px, 6.5vw, 52px); line-height: 1.05; font-weight: 600; letter-spacing: -0.025em">Less chaos. <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400">More customers served.</span></h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 28px; border-radius: 18px; background: #FFFFFF">
+        <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 10px">
+          <h3 style="margin: 0; font-size: 26px; font-weight: 700">A dues book that collects</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">See who owes what and since when. Send a WhatsApp reminder with a UPI link in one tap.</p>
+        </div>
+        <div style="flex: 1 1 180px; height: 300px; border-radius: 14px; background: #ECEEE8; overflow: hidden">
+          <img loading="lazy" decoding="async" src="assets/dues.webp" alt="floq dues screen listing customers who owe money" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top">
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 28px; border-radius: 18px; background: #FFFFFF">
+        <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 10px">
+          <h3 style="margin: 0; font-size: 26px; font-weight: 700">Stock that warns you first</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">floq tracks what sells and tells you what will run out, days before it does.</p>
+        </div>
+        <div style="flex: 1 1 180px; height: 300px; border-radius: 14px; background: #ECEEE8; overflow: hidden">
+          <img loading="lazy" decoding="async" src="assets/stock.webp" alt="floq stock screen showing items running low" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top">
+        </div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 28px; border-radius: 18px; background: #101317; color: #F4F5F1">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9F158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M19 5a10 10 0 0 1 0 14"></path></svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Tokens, called out loud</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #C4C9D1">"Token 147 is ready," in English, Hindi or Marathi.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 28px; border-radius: 18px; background: #FFFFFF">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#101317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M8.5 16.5a5 5 0 0 1 7 0"></path><path d="M12 20h.01"></path><path d="M5 12.9a10 10 0 0 1 5.2-2.7"></path></svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Works without internet</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Keep selling when the network drops. Sales sync on their own.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 28px; border-radius: 18px; background: #FFFFFF">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#101317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">Staff logins, your rules</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #5B626C">Add helpers with an invite code. Open with fingerprint or PIN.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 28px; border-radius: 18px; background: #C9F158">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#101317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3z"></path><path d="M20 14v7h-6"></path></svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700">UPI on your own QR</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #101317">Money goes straight to your bank. floq never holds it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="background: #ECEEE8; padding: 112px 24px">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+      <span style="padding: 6px 14px; border-radius: 999px; background: #101317; color: #C9F158; font-size: 13px; font-weight: 700; letter-spacing: 0.06em">PRICING</span>
+      <h2 style="margin: 0; font-size: clamp(34px, 6.5vw, 52px); line-height: 1.05; font-weight: 600; letter-spacing: -0.025em">Less than a cup of chai <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400">a day</span></h2>
+      <p style="margin: 0; font-size: 19px; line-height: 28px; color: #5B626C">Every plan starts with 7 days free. Pay by UPI. Cancel any time.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 840px; width: 100%; margin: 0 auto">
+      <div style="display: flex; flex-direction: column; gap: 20px; padding: 36px; border-radius: 18px; background: #FFFFFF">
+        <span style="font-size: 18px; font-weight: 700">Monthly</span>
+        <span style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: clamp(48px, 9vw, 64px); font-weight: 600; letter-spacing: -0.03em">₹49</span><span style="font-size: 18px; color: #5B626C">/ month</span></span>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 16px; color: #101317">
+          <li>Every feature, no limits on bills</li>
+          <li>Staff logins included</li>
+          <li>Support on WhatsApp</li>
+        </ul>
+        <a href="#get" style="display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 999px; background: #101317; color: #F4F5F1; font-size: 17px; font-weight: 700; text-decoration: none">Start 7 days free</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 20px; padding: 36px; border-radius: 18px; background: #101317; color: #F4F5F1">
+        <span style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-size: 18px; font-weight: 700">Yearly</span><span style="padding: 4px 12px; border-radius: 999px; background: #C9F158; color: #101317; font-size: 13px; font-weight: 700">2 months free</span></span>
+        <span style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: clamp(48px, 9vw, 64px); font-weight: 600; letter-spacing: -0.03em">₹499</span><span style="font-size: 18px; color: #C4C9D1">/ year</span></span>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 16px; color: #F4F5F1">
+          <li>Everything in Monthly</li>
+          <li>About ₹42 a month</li>
+          <li>One payment, a whole year</li>
+        </ul>
+        <a href="#get" style="display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 999px; background: #C9F158; color: #101317; font-size: 17px; font-weight: 700; text-decoration: none">Start 7 days free</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding: 112px 24px">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 48px">
+    <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 16px">
+      <span style="align-self: flex-start; padding: 6px 14px; border-radius: 999px; background: #101317; color: #C9F158; font-size: 13px; font-weight: 700; letter-spacing: 0.06em">FAQ</span>
+      <h2 style="margin: 0; font-size: clamp(34px, 6.5vw, 52px); line-height: 1.05; font-weight: 600; letter-spacing: -0.025em">Questions, <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400">answered</span></h2>
+      <p style="margin: 0; font-size: 18px; line-height: 27px; color: #5B626C">Still unsure? <a id="setup" href="#setup" style="font-weight: 600">WhatsApp us</a> and we will set it up with you.</p>
+    </div>
+    <div style="flex: 2 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+      <details open="" style="padding: 22px 24px; border-radius: 18px; background: #FFFFFF">
+        <summary style="font-size: 20px; font-weight: 700; cursor: pointer">Do I need internet all the time?</summary>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; color: #5B626C">No. Cash sales work offline and sync when the network is back. UPI needs the customer's phone to be online.</p>
+      </details>
+      <details style="padding: 22px 24px; border-radius: 18px; background: #FFFFFF">
+        <summary style="font-size: 20px; font-weight: 700; cursor: pointer">Which phones does floq work on?</summary>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; color: #5B626C">Any Android phone or tablet. Get it from Google Play or Indus Appstore.</p>
+      </details>
+      <details style="padding: 22px 24px; border-radius: 18px; background: #FFFFFF">
+        <summary style="font-size: 20px; font-weight: 700; cursor: pointer">Does my money go through floq?</summary>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; color: #5B626C">Never. The QR uses your own UPI ID, so payments go straight to your bank.</p>
+      </details>
+      <details style="padding: 22px 24px; border-radius: 18px; background: #FFFFFF">
+        <summary style="font-size: 20px; font-weight: 700; cursor: pointer">Can my staff use it?</summary>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; color: #5B626C">Yes. Invite helpers with a code. Each person opens floq with their own fingerprint or PIN.</p>
+      </details>
+      <details style="padding: 22px 24px; border-radius: 18px; background: #FFFFFF">
+        <summary style="font-size: 20px; font-weight: 700; cursor: pointer">What happens after the 7 free days?</summary>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; color: #5B626C">Pick monthly or yearly and pay by UPI inside the app. Your bills and stock stay safe either way.</p>
+      </details>
+      <details style="padding: 22px 24px; border-radius: 18px; background: #FFFFFF">
+        <summary style="font-size: 20px; font-weight: 700; cursor: pointer">Can you set it up for me?</summary>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; color: #5B626C">Yes, for free. Send us your menu or product list on WhatsApp and we add it for you.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="cta-title" style="padding: 0 24px 96px">
+  <div style="position: relative; max-width: 1200px; margin: 0 auto; box-sizing: border-box; padding: clamp(40px, 6vw, 72px) clamp(24px, 4vw, 48px); border-radius: 28px; background: #101317; color: #F4F5F1; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 40px">
+    <div aria-hidden="true" style="position: absolute; right: -10%; bottom: -60%; width: 60%; height: 160%; background: radial-gradient(closest-side, rgba(201,241,88,0.25), rgba(201,241,88,0) 70%)"></div>
+    <div style="position: relative; flex: 1 1 420px; display: flex; flex-direction: column; gap: 16px">
+      <h2 id="cta-title" style="margin: 0; font-size: clamp(36px, 7vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -0.03em">Close the day knowing <span style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; color: #C9F158">every rupee.</span></h2>
+      <p style="margin: 0; font-size: 19px; line-height: 28px; color: #C4C9D1">Start free on 1 January. Your first 7 days are on us.</p>
+    </div>
+    <div style="position: relative; display: flex; flex-wrap: wrap; gap: 12px">
+      <a href="#get" style="display: flex; align-items: center; min-height: 60px; padding: 0 26px; border-radius: 16px; background: #C9F158; color: #101317; font-size: 18px; font-weight: 700; text-decoration: none">Get it on Google Play</a>
+      <a href="#get" style="display: flex; align-items: center; min-height: 60px; padding: 0 26px; border-radius: 16px; background: #F4F5F1; color: #101317; font-size: 18px; font-weight: 700; text-decoration: none">Get it on Indus Appstore</a>
+    </div>
+  </div>
+</section>
+
+<footer style="padding: 0 24px 48px">
+  <div style="max-width: 1200px; margin: 0 auto; padding-top: 32px; border-top: 1px solid #DADDD4; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px">
+    <svg width="60" height="36" viewBox="0 0 186 110" fill="none" stroke="#101317" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="floq"><path d="M18 74V32A12 12 0 0 1 30 20"></path><path d="M8 36H28"></path><path d="M44 20V74"></path><circle cx="84" cy="54" r="20.6"></circle><circle cx="144" cy="54" r="20.6"></circle><path d="M164.6 34V92A10 10 0 0 0 174.6 102"></path></svg>
+    <nav aria-label="Footer" style="display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 15px">
+      <a href="#setup" style="color: #101317">WhatsApp</a>
+      <a href="#faq" style="color: #101317">hello@getfloq.in</a>
+      <a href="#top" style="color: #101317">Privacy policy</a>
+      <a href="#top" style="color: #101317">Terms</a>
+      <a href="#top" style="color: #5B626C">Download APK</a>
+    </nav>
+    <span style="font-size: 14px; color: #5B626C">© 2027 floq · getfloq.in</span>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
