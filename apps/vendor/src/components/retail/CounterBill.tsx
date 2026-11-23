@@ -5,6 +5,7 @@ import { palette, fonts } from '../../theme';
 import { useT } from '../../i18n';
 import { HapticFeedback } from '../../services/haptics';
 import { UpiQr } from '../sell/UpiQr';
+import { AddCustomerSheet } from './DuesScreen';
 import {
   INR,
   fmtG,
@@ -507,6 +508,7 @@ function CreditScreen({
   onBack: () => void;
   onPick: (c: CreditCustomer) => void;
 }) {
+  const [adding, setAdding] = useState(false);
   const sorted = [...customers].sort((a, b) => Number(a.kind === 'SHOP') - Number(b.kind === 'SHOP'));
   return (
     <View style={styles.fullSheet}>
@@ -515,7 +517,7 @@ function CreditScreen({
       <Text style={styles.fullSub}>{INR(total)} goes on their account. They get the bill on WhatsApp.</Text>
       <ScrollView style={{ flex: 1, marginTop: 8 }} contentContainerStyle={{ gap: 8 }}>
         {sorted.length === 0 ? (
-          <Text style={styles.emptyShelf}>No credit customers yet. Add one from the Dues tab.</Text>
+          <Text style={styles.emptyShelf}>No credit customers yet.</Text>
         ) : (
           sorted.map((c) => (
             <TouchableOpacity key={c.id} style={styles.custRow} onPress={() => onPick(c)}>
@@ -530,7 +532,12 @@ function CreditScreen({
             </TouchableOpacity>
           ))
         )}
+        <TouchableOpacity style={styles.custRow} onPress={() => setAdding(true)}>
+          <Text style={styles.custName}>+ New customer</Text>
+        </TouchableOpacity>
       </ScrollView>
+      {/* New account goes straight onto this bill. */}
+      {adding ? <AddCustomerSheet onClose={() => setAdding(false)} onAdded={onPick} /> : null}
     </View>
   );
 }
