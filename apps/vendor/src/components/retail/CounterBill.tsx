@@ -76,6 +76,7 @@ export function CounterBill({
   const q = search.trim().toLowerCase();
   const activeCatId = categories.find((c) => c.name === cat)?.id;
   const shelf = products.filter((p) => {
+    if (!p.isLoose && !p.packs?.length) return false; // no pack = no price; can't be sold
     const inCat = cat === 'All' || p.categoryId === activeCatId;
     const inSearch = !q || p.name.toLowerCase().includes(q) || (p.nameLocal || '').toLowerCase().includes(q);
     return inCat && inSearch;

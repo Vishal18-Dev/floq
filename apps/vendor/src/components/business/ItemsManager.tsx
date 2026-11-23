@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView } from 'react-native';
+import { View, Text, Modal, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, StatusBar, Platform } from 'react-native';
 import { Product } from '@floq/types';
 import { formatINR } from '@floq/utils';
 import { palette, fonts, borders } from '../../theme';
 import { useCatalogStore } from '../../store/useCatalogStore';
+import { useStoreStore } from '../../store/useStoreStore';
 
 export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { products, categories, saveProduct, deleteProduct, toggleAvailability } = useCatalogStore();
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
   const [saving, setSaving] = useState(false);
+  // Retail sells by pack (Stock tab creates those); product.price is the menu price and unused.
+  const retail = useStoreStore((s) => s.store?.mode === 'RETAIL');
+  const retailPrice = (p: Product) =>
+    p.isLoose ? `${formatINR(p.perKg ?? 0)}/kg` : p.packs?.length ? formatINR(Math.min(...p.packs.map((k) => k.price))) : null;
 
   const blank = (): Partial<Product> => ({ name: '', nameLocal: '', price: 0, categoryId: categories[0]?.id, station: 'GENERAL', isAvailable: true });
 
@@ -35,7 +40,7 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
           <ScrollView style={styles.form} contentContainerStyle={{ padding: 16, gap: 14 }}>
             <Field label="NAME (ENGLISH)"><TextInput style={styles.input} value={editing.name} onChangeText={(v) => setEditing({ ...editing, name: v })} placeholder="e.g. Masala Dosa" placeholderTextColor={palette.neutral[500]} /></Field>
             <Field label="NAME (LOCAL)"><TextInput style={styles.input} value={editing.nameLocal} onChangeText={(v) => setEditing({ ...editing, nameLocal: v })} placeholder="e.g. மசாலா தோசை" placeholderTextColor={palette.neutral[500]} /></Field>
-            <Field label="PRICE (₹)"><TextInput style={styles.input} value={editing.price ? String(editing.price) : ''} onChangeText={(v) => setEditing({ ...editing, price: parseInt(v.replace(/\D/g, '') || '0', 10) })} keyboardType="number-pad" placeholder="0" placeholderTextColor={palette.neutral[500]} /></Field>
+            {retail ? null : <Field label="PRICE (₹)"><TextInput style={styles.input} value={editing.price ? String(editing.price) : ''} onChangeText={(v) => setEditing({ ...editing, price: parseInt(v.replace(/\D/g, '') || '0', 10) })} keyboardType="number-pad" placeholder="0" placeholderTextColor={palette.neutral[500]} /></Field>}
             <Field label="CATEGORY">
               <View style={styles.catRow}>
                 {categories.map((c) => (
@@ -65,7 +70,11 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
                 <View key={p.id} style={styles.itemRow}>
                   <TouchableOpacity style={{ flex: 1 }} onPress={() => setEditing(p)}>
                     <Text style={styles.itemName}>{p.name}{p.nameLocal ? `  ·  ${p.nameLocal}` : ''}</Text>
-                    <Text style={styles.itemPrice}>{formatINR(p.price)}</Text>
+                    {retail && !retailPrice(p) ? (
+                      <Text style={styles.itemWarn}>Not on sale (no pack). Delete it and add it again from the Stock tab.</Text>
+                    ) : (
+                      <Text style={styles.itemPrice}>{retail ? retailPrice(p) : formatINR(p.price)}</Text>
+                    )}
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.availBtn, !p.isAvailable && styles.availBtnOff]} onPress={() => toggleAvailability(p.id, !p.isAvailable)}>
                     <Text style={[styles.availText, !p.isAvailable && styles.availTextOff]}>{p.isAvailable ? 'ON' : 'SOLD OUT'}</Text>
@@ -73,9 +82,13 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
                 </View>
               ))
             )}
-            <TouchableOpacity style={styles.addBtn} onPress={() => setEditing(blank())}>
-              <Text style={styles.addText}>+ ADD ITEM</Text>
-            </TouchableOpacity>
+            {retail ? (
+              <Text style={styles.empty}>To add a product, use Stock → New product.</Text>
+            ) : (
+              <TouchableOpacity style={styles.addBtn} onPress={() => setEditing(blank())}>
+                <Text style={styles.addText}>+ ADD ITEM</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         )}
       </SafeAreaView>
@@ -88,7 +101,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.bg },
+  screen: { flex: 1, backgroundColor: palette.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: borders.rule, borderBottomColor: palette.divider },
   title: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.ink },
   close: { fontFamily: fonts.semibold, fontSize: 15, color: palette.accent },
@@ -112,6 +125,7 @@ const styles = StyleSheet.create({
   availBtnOff: { backgroundColor: palette.ink, borderColor: palette.ink },
   availText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 11, color: palette.ink },
   availTextOff: { color: palette.onAccent },
+  itemWarn: { fontFamily: fonts.body, fontSize: 13, color: palette.accentRamp[700], marginTop: 2 },
   addBtn: { margin: 16, borderWidth: borders.rule, borderColor: palette.accent, paddingVertical: 16, alignItems: 'center' },
   addText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.accent },
 });
