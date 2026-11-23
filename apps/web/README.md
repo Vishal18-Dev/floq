@@ -6,6 +6,8 @@ The public landing page for floq, in English (`/`) and Hinglish (`/hi/`). Plain 
 apps/web/
 ├── index.html        English page
 ├── hi/index.html     Hinglish page
+├── privacy/          Privacy policy (DRAFT, see below)
+├── terms/            Terms of service (DRAFT, see below)
 ├── assets/           App screens (WebP), exported from the Onboarding v3 and Retail v3 designs
 ├── favicon.svg
 └── _headers          Cache and security headers (Cloudflare Pages format)
@@ -33,8 +35,8 @@ The repo root has a `wrangler.jsonc` that serves this folder as static assets.
 
 - [ ] Replace the two store buttons with the official Google Play and Indus Appstore badges and real listing links (search for `href="#get"`).
 - [ ] Point the WhatsApp links (`href="#setup"`) at `https://wa.me/<number>?text=...`.
-- [ ] Set up `hello@getfloq.in` and link it with `mailto:`.
-- [ ] Add privacy policy and terms pages (also required by Google Play) and link them in the footer.
+- [ ] Set up `hello@getfloq.in` and `privacy@getfloq.in` (Cloudflare Email Routing can forward both).
+- [ ] Privacy policy and terms are drafts written from the codebase, not legal advice. Fill every `[BRACKETED]` placeholder (legal entity, address, grievance officer, city, refund choice, GST), resolve each `[CONFIRM ...]`, and have a lawyer review them against the DPDP Act, 2023. Use `https://getfloq.in/privacy/` as the privacy policy URL in Google Play and Indus.
 - [ ] Link the "Download APK" footer item to the hosted APK, or remove it.
 - [ ] Add an Open Graph share image (`og:image`).
 - [ ] Add testimonials once there are 2 or 3 real merchant quotes.
