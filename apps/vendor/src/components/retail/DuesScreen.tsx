@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert, TextInput } from 'react-native';
 import { CreditCustomer } from '@floq/types';
 import { palette, fonts } from '../../theme';
 import { useT } from '../../i18n';
@@ -12,6 +12,7 @@ export function DuesScreen({ customers, storeName }: { customers: CreditCustomer
   const markPaid = useCustomersStore((s) => s.markPaid);
   const [openId, setOpenId] = useState<string | null>(null);
   const [remind, setRemind] = useState<CreditCustomer | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const owing = customers.filter((c) => c.owes > 0);
   const overdue = owing.filter(isOverdue).sort((a, b) => b.owes - a.owes);
@@ -35,10 +36,19 @@ export function DuesScreen({ customers, storeName }: { customers: CreditCustomer
     ]);
   };
 
+  const addBtn = (
+    <TouchableOpacity style={styles.addBtn} onPress={() => setAdding(true)} activeOpacity={0.85}>
+      <Text style={styles.addText}>+ Add customer</Text>
+    </TouchableOpacity>
+  );
+  const addSheet = adding ? <AddCustomerSheet onClose={() => setAdding(false)} /> : null;
+
   if (customers.length === 0) {
     return (
       <View style={styles.wrap}>
-        <EmptyState title="No credit accounts yet" subtitle="When you charge a bill ‘On credit’, the account shows up here." />
+        <EmptyState title="No credit accounts yet" subtitle="Add a regular customer or shop, then charge their bills ‘On credit’." />
+        <View style={{ paddingHorizontal: 16 }}>{addBtn}</View>
+        {addSheet}
       </View>
     );
   }
@@ -63,6 +73,7 @@ export function DuesScreen({ customers, storeName }: { customers: CreditCustomer
             </Text>
           </View>
         ) : null}
+        {addBtn}
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 24 }}>
@@ -108,7 +119,52 @@ export function DuesScreen({ customers, storeName }: { customers: CreditCustomer
         })}
       </ScrollView>
 
+      {addSheet}
       {remind ? <RemindSheet customer={remind} storeName={storeName} onClose={() => setRemind(null)} /> : null}
+    </View>
+  );
+}
+
+/** Add a credit account. Used from Dues and from the bill's "Whose account?" picker. */
+export function AddCustomerSheet({ onClose, onAdded }: { onClose: () => void; onAdded?: (c: CreditCustomer) => void }) {
+  const addCustomer = useCustomersStore((s) => s.addCustomer);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [kind, setKind] = useState<'REGULAR' | 'SHOP'>('REGULAR');
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    if (!name.trim() || busy) return;
+    setBusy(true);
+    try {
+      const c = await addCustomer({ name: name.trim(), kind, phone: phone.trim() || undefined });
+      onClose();
+      onAdded?.(c);
+    } catch (e: any) {
+      Alert.alert('Could not add customer', e?.message || 'Try again.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <View style={styles.overlay}>
+      <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+      <View style={styles.sheet}>
+        <View style={styles.sheetGrip} />
+        <Text style={styles.sheetTitle}>New credit customer</Text>
+        <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} autoFocus placeholderTextColor={palette.neutral[600]} />
+        <TextInput style={styles.input} placeholder="WhatsApp number (optional)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholderTextColor={palette.neutral[600]} />
+        <View style={styles.actions}>
+          {(['REGULAR', 'SHOP'] as const).map((k) => (
+            <TouchableOpacity key={k} style={[styles.kindBtn, kind === k && styles.kindOn]} onPress={() => setKind(k)}>
+              <Text style={[styles.kindText, kind === k && styles.kindTextOn]}>{k === 'SHOP' ? 'Shop' : 'Regular customer'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={[styles.sendBtn, (!name.trim() || busy) && { opacity: 0.5 }]} onPress={save} disabled={!name.trim() || busy} activeOpacity={0.85}>
+          <Text style={styles.sendText}>{busy ? '…' : 'Add'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -179,5 +235,12 @@ const styles = StyleSheet.create({
   msgBox: { borderRadius: 14, backgroundColor: palette.card, padding: 14 },
   msgText: { fontFamily: fonts.body, fontSize: 16, color: palette.ink, lineHeight: 24 },
   sendBtn: { borderRadius: 14, minHeight: 64, backgroundColor: palette.highlight, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { borderRadius: 14, minHeight: 48, backgroundColor: palette.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: palette.dividerFaint },
+  addText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink },
+  input: { borderRadius: 14, minHeight: 52, backgroundColor: palette.card, paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 16, color: palette.ink, borderWidth: 1, borderColor: palette.dividerFaint },
+  kindBtn: { borderRadius: 14, flex: 1, minHeight: 48, backgroundColor: palette.card, alignItems: 'center', justifyContent: 'center' },
+  kindOn: { backgroundColor: palette.ink },
+  kindText: { fontFamily: fonts.semibold, fontSize: 15, color: palette.ink },
+  kindTextOn: { color: palette.bg },
   sendText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 20, color: palette.onHighlight },
 });
