@@ -95,4 +95,29 @@ describe('Retail order path — stock, credit dues and wholesale invoices', () =
     const prod = await queryOne('SELECT stock_grams FROM products WHERE id = $1', ['nprod_tur']);
     expect(Number(prod.stock_grams)).toBe(7000); // 7500 − 500
   });
+
+  it('edits a pack price, and the next sale uses it', async () => {
+    const bad = await request(app).patch('/api/retail/packs/nprod_vco_0').set(headers).send({ price: 0 });
+    expect(bad.status).toBe(400);
+    const missing = await request(app).patch('/api/retail/packs/nope').set(headers).send({ price: 10 });
+    expect(missing.status).toBe(404);
+
+    const res = await request(app).patch('/api/retail/packs/nprod_vco_0').set(headers).send({ price: 350, wholesalePrice: 300 });
+    expect(res.status).toBe(200);
+    expect(res.body.pack).toMatchObject({ price: 350, wholesalePrice: 300 });
+
+    const sale = await request(app)
+      .post('/api/orders')
+      .set(headers)
+      .send({ source: 'STAFF_POS', paymentMethod: 'CASH', immediatePayment: true, items: [{ packId: 'nprod_vco_0', sellUnit: 'UNIT', quantity: 1 }] });
+    expect(sale.body.order.total).toBe(350);
+  });
+
+  it('saving a retail product as the editor sends it (with packs) is accepted', async () => {
+    const list = await request(app).get('/api/products').set(headers);
+    const vco = list.body.products.find((p: any) => p.packs?.some((k: any) => k.id === 'nprod_vco_0'));
+    const res = await request(app).patch(`/api/products/${vco.id}`).set(headers).send({ ...vco, name: 'VCO renamed' });
+    expect(res.status).toBe(200);
+    expect(res.body.product.name).toBe('VCO renamed');
+  });
 });

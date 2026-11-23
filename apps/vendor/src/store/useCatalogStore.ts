@@ -94,7 +94,8 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   saveProduct: async (data: Partial<Product>) => {
     if (data.id) {
       const res = await api.updateProduct(data.id, data);
-      set((s) => ({ products: s.products.map((p) => (p.id === data.id ? res.product : p)) }));
+      // The response has no packs/loose fields, so merge rather than replace.
+      set((s) => ({ products: s.products.map((p) => (p.id === data.id ? { ...p, ...data, ...res.product } : p)) }));
     } else {
       const res = await api.createProduct(data);
       set((s) => ({ products: [...s.products, res.product] }));
