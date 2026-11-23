@@ -5,6 +5,7 @@ import { formatINR } from '@floq/utils';
 import { palette, fonts, borders } from '../../theme';
 import { useCatalogStore } from '../../store/useCatalogStore';
 import { useStoreStore } from '../../store/useStoreStore';
+import { api } from '../../services/api';
 
 export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { products, categories, saveProduct, deleteProduct, toggleAvailability } = useCatalogStore();
@@ -20,8 +21,18 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
   const save = async () => {
     if (!editing?.name?.trim()) { Alert.alert('Name needed', 'Enter an item name.'); return; }
     if (!editing.categoryId) { Alert.alert('Category needed', 'This store has no category yet.'); return; }
+    const packs = editing.packs ?? [];
+    if (packs.some((k) => !(k.price > 0))) { Alert.alert('Price needed', 'Every pack needs a selling price.'); return; }
     setSaving(true);
-    try { await saveProduct(editing); setEditing(null); }
+    try {
+      const before = products.find((p) => p.id === editing.id)?.packs ?? [];
+      for (const k of packs) {
+        const old = before.find((o) => o.id === k.id);
+        if (old && (old.price !== k.price || old.wholesalePrice !== k.wholesalePrice)) await api.updatePackPrice(k.id, k.price, k.wholesalePrice);
+      }
+      await saveProduct(editing);
+      setEditing(null);
+    }
     catch (e: any) { Alert.alert('Could not save', e?.message || 'Try again.'); }
     finally { setSaving(false); }
   };
@@ -40,6 +51,20 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
           <ScrollView style={styles.form} contentContainerStyle={{ padding: 16, gap: 14 }}>
             <Field label="NAME (ENGLISH)"><TextInput style={styles.input} value={editing.name} onChangeText={(v) => setEditing({ ...editing, name: v })} placeholder="e.g. Masala Dosa" placeholderTextColor={palette.neutral[500]} /></Field>
             <Field label="NAME (LOCAL)"><TextInput style={styles.input} value={editing.nameLocal} onChangeText={(v) => setEditing({ ...editing, nameLocal: v })} placeholder="e.g. மசாலா தோசை" placeholderTextColor={palette.neutral[500]} /></Field>
+            {retail && editing.packs?.length ? editing.packs.map((k, i) => {
+              const setPack = (patch: Partial<typeof k>) => setEditing({ ...editing, packs: editing.packs!.map((o, j) => (j === i ? { ...o, ...patch } : o)) });
+              const num = (v: string) => parseInt(v.replace(/\D/g, '') || '0', 10);
+              return (
+                <View key={k.id} style={styles.packRow}>
+                  <View style={{ flex: 1 }}>
+                    <Field label={`${k.size.toUpperCase()} · PRICE (₹)`}><TextInput style={styles.input} value={k.price ? String(k.price) : ''} onChangeText={(v) => setPack({ price: num(v) })} keyboardType="number-pad" placeholder="0" placeholderTextColor={palette.neutral[500]} /></Field>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Field label="WHOLESALE (₹)"><TextInput style={styles.input} value={k.wholesalePrice ? String(k.wholesalePrice) : ''} onChangeText={(v) => setPack({ wholesalePrice: num(v) || undefined })} keyboardType="number-pad" placeholder="Optional" placeholderTextColor={palette.neutral[500]} /></Field>
+                  </View>
+                </View>
+              );
+            }) : null}
             {retail ? null : <Field label="PRICE (₹)"><TextInput style={styles.input} value={editing.price ? String(editing.price) : ''} onChangeText={(v) => setEditing({ ...editing, price: parseInt(v.replace(/\D/g, '') || '0', 10) })} keyboardType="number-pad" placeholder="0" placeholderTextColor={palette.neutral[500]} /></Field>}
             <Field label="CATEGORY">
               <View style={styles.catRow}>
@@ -83,7 +108,7 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
               ))
             )}
             {retail ? (
-              <Text style={styles.empty}>To add a product, use Stock → New product.</Text>
+              <Text style={styles.empty}>Tap a product to change its pack prices. To add a product, use Stock → New product.</Text>
             ) : (
               <TouchableOpacity style={styles.addBtn} onPress={() => setEditing(blank())}>
                 <Text style={styles.addText}>+ ADD ITEM</Text>
@@ -125,6 +150,7 @@ const styles = StyleSheet.create({
   availBtnOff: { backgroundColor: palette.ink, borderColor: palette.ink },
   availText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 11, color: palette.ink },
   availTextOff: { color: palette.onAccent },
+  packRow: { flexDirection: 'row', gap: 10 },
   itemWarn: { fontFamily: fonts.body, fontSize: 13, color: palette.accentRamp[700], marginTop: 2 },
   addBtn: { margin: 16, borderWidth: borders.rule, borderColor: palette.accent, paddingVertical: 16, alignItems: 'center' },
   addText: { fontFamily: fonts.heading, fontWeight: '800', fontSize: 14, letterSpacing: 0.5, color: palette.accent },

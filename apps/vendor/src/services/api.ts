@@ -338,6 +338,10 @@ class NativeApiClient {
     });
   }
 
+  public async updatePackPrice(id: string, price: number, wholesalePrice?: number): Promise<{ pack: { id: string; price: number; wholesalePrice?: number } }> {
+    return this.request(`/retail/packs/${id}`, { method: 'PATCH', body: JSON.stringify({ price, wholesalePrice: wholesalePrice ?? null }) });
+  }
+
   public async updateProduct(id: string, updates: Partial<Product>): Promise<{ product: Product }> {
     return this.request(`/products/${id}`, {
       method: 'PATCH',

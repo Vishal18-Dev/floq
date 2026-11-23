@@ -141,6 +141,33 @@ router.post('/products', requireRole('OWNER', 'MANAGER'), async (req: Authentica
   }
 });
 
+// PATCH /api/retail/packs/:id — change a pack's selling / wholesale price.
+router.patch('/packs/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const { price, wholesalePrice } = req.body || {};
+    if (typeof price !== 'number' || !(price > 0)) {
+      res.status(400).json({ error: 'price must be a positive number' });
+      return;
+    }
+    if (wholesalePrice != null && (typeof wholesalePrice !== 'number' || !(wholesalePrice > 0))) {
+      res.status(400).json({ error: 'wholesalePrice must be a positive number' });
+      return;
+    }
+    const changes = await execute(
+      'UPDATE product_packs SET price = $1, wholesale_price = $2 WHERE id = $3 AND store_id = $4',
+      [price, wholesalePrice ?? null, req.params.id, req.storeId]
+    );
+    if (changes === 0) {
+      res.status(404).json({ error: 'Pack not found' });
+      return;
+    }
+    const k = await queryOne('SELECT price, wholesale_price FROM product_packs WHERE id = $1', [req.params.id]);
+    res.json({ pack: { id: req.params.id, price: Number(k.price), wholesalePrice: k.wholesale_price != null ? Number(k.wholesale_price) : undefined } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/retail/stock/receive — add received stock to packs / loose goods,
 // updating the cost price when the supplier bill gives a new one.
 router.post('/stock/receive', async (req: AuthenticatedRequest, res: Response, next) => {
