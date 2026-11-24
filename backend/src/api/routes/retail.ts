@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { businessDate as istBusinessDate } from '@floq/utils';
 import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { query, queryOne, execute } from '../../db';
 import crypto from 'crypto';
@@ -85,7 +86,7 @@ router.post('/customers/:id/paid', requireRole('OWNER', 'MANAGER'), async (req: 
       return;
     }
     const now = new Date().toISOString();
-    const businessDate = now.split('T')[0];
+    const businessDate = istBusinessDate();
     await query(
       `INSERT INTO dues_entries (id, store_id, customer_id, kind, amount, note, business_date, created_at)
        VALUES ($1, $2, $3, 'PAYMENT', $4, $5, $6, $7)`,

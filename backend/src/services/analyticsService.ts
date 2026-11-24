@@ -1,12 +1,12 @@
 import { query, queryOne } from '../db';
+import { businessDate, businessDayRange, businessHour } from '@floq/utils';
 import { DailySalesSummary, HourlyMetric, TopProductMetric } from '@floq/types';
 
 export class AnalyticsService {
   public async getDailySummary(storeId: string, dateStr?: string): Promise<DailySalesSummary> {
-    const date = dateStr || new Date().toISOString().split('T')[0];
+    const date = dateStr || businessDate();
 
-    const startOfDay = `${date}T00:00:00.000Z`;
-    const endOfDay = `${date}T23:59:59.999Z`;
+    const { start: startOfDay, end: endOfDay } = businessDayRange(date);
 
     // 1. Basic counts & totals for non-cancelled orders today
     const summaryRow = await queryOne(
@@ -124,7 +124,7 @@ export class AnalyticsService {
     }
 
     for (const ot of orderTimes) {
-      const h = new Date(ot.created_at).getHours();
+      const h = businessHour(new Date(ot.created_at).toISOString());
       if (hourlyMap[h]) {
         hourlyMap[h].count += 1;
         hourlyMap[h].revenue += Number(ot.total);

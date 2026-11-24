@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { businessDate as istBusinessDate } from '@floq/utils';
 import { query, queryOne, transaction } from '../db';
 import {
   Order,
@@ -53,7 +54,7 @@ export class OrderEngine {
     const orderId = params.id || crypto.randomUUID();
     const clientOrderId = params.clientOrderId || orderId;
     const now = new Date().toISOString();
-    const businessDate = now.split('T')[0];
+    const businessDate = istBusinessDate();
 
     // 1. Check idempotency: If order with clientOrderId or orderId exists, return existing order
     // Order ids are global, so an id owned by another store is a clash, never a

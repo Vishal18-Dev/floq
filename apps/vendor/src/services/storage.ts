@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { businessDate } from '@floq/utils';
 import { Category, Order, Product, StoreSettings } from '@floq/types';
 
 export interface PendingSyncItem {
@@ -51,7 +52,7 @@ export class NativeStorageService {
 
   // Offline Ticket Sequence Generator (Deterministic & Customer-Visible)
   public static async getNextOfflineTicketNumber(): Promise<string> {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = businessDate();
     const raw = await AsyncStorage.getItem(KEYS.OFFLINE_TICKET_SEQ);
     let data = raw ? JSON.parse(raw) : { date: today, seq: 100 };
 

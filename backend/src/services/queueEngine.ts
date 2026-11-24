@@ -1,6 +1,6 @@
 import { query, queryOne } from '../db';
 import { Order, QueueTicket } from '@floq/types';
-import { formatTicketNumber, getElapsedMinutes } from '@floq/utils';
+import { formatTicketNumber, getElapsedMinutes, businessDate as istBusinessDate } from '@floq/utils';
 
 export interface QueueItem {
   ticket: QueueTicket;
@@ -36,7 +36,7 @@ export class QueueEngine {
     customBusinessDate?: string,
     client?: any
   ): Promise<{ ticketNumber: string; seq: number; businessDate: string }> {
-    const businessDate = customBusinessDate || new Date().toISOString().split('T')[0];
+    const businessDate = customBusinessDate || istBusinessDate();
 
     const execQuery = async (sql: string, params: any[]) => {
       if (client) {
