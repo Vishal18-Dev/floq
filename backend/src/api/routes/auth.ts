@@ -4,6 +4,7 @@ import { verifyFirebaseIdToken } from '../../services/firebaseAuth';
 import { PinLoginSchema } from '@floq/validation';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
 import { queryOne } from '../../db';
+import { deleteAccount } from '../../services/accountService';
 
 const router = Router();
 
@@ -87,6 +88,21 @@ router.get('/me', authMiddleware, async (req: AuthenticatedRequest, res: Respons
       storeIds,
       role: user.role,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/auth/me (Authenticated) — delete the caller's account.
+// OWNER deletes the whole shop and every team login; others delete only themselves.
+router.delete('/me', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    if (req.body?.confirm !== 'DELETE') {
+      res.status(400).json({ error: 'CONFIRMATION_REQUIRED', message: 'Send { "confirm": "DELETE" } to delete this account.' });
+      return;
+    }
+    const result = await deleteAccount(req.userId!);
+    res.json({ success: true, ...result });
   } catch (err) {
     next(err);
   }
