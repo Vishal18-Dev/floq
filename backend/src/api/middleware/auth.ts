@@ -49,6 +49,13 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
       return;
     }
 
+    // A deleted or disabled login must stop working now, not when its token expires.
+    const user = await queryOne('SELECT status FROM users WHERE id = $1', [payload.userId]);
+    if (!user || (user.status && user.status !== 'ACTIVE')) {
+      res.status(401).json({ error: 'ACCOUNT_INACTIVE', message: 'This account no longer exists or has been disabled.' });
+      return;
+    }
+
     // Verify store exists and belongs to token's merchant
     const store = await queryOne('SELECT id, merchant_id FROM stores WHERE id = $1', [requestedStoreId]);
 

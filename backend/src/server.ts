@@ -85,7 +85,8 @@ export function createServer() {
 
       // Same tenant check as authMiddleware: the stream is only for the caller's own store.
       const store = await queryOne('SELECT merchant_id FROM stores WHERE id = $1', [storeId]);
-      if (!store || store.merchant_id !== payload.merchantId) {
+      const user = await queryOne('SELECT status FROM users WHERE id = $1', [payload.userId]);
+      if (!store || store.merchant_id !== payload.merchantId || !user || (user.status && user.status !== 'ACTIVE')) {
         res.status(403).json({ error: 'FORBIDDEN', message: 'Not authorized for this store' });
         return;
       }

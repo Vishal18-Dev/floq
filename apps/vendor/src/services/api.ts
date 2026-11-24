@@ -264,6 +264,11 @@ class NativeApiClient {
     return this.request('/auth/set-pin', { method: 'POST', body: JSON.stringify({ pin }) });
   }
 
+  /** Permanently delete this login (OWNER: the whole shop and team). */
+  public async deleteAccount(): Promise<{ success: boolean; scope: 'MERCHANT' | 'USER' }> {
+    return this.request('/auth/me', { method: 'DELETE', body: JSON.stringify({ confirm: 'DELETE' }) });
+  }
+
   // Team invites (owner).
   public async createInvite(data: { phone: string; role: 'MANAGER' | 'STAFF'; title?: string }): Promise<{ invite: StaffInviteDTO }> {
     return this.request('/team/invites', { method: 'POST', body: JSON.stringify(data) });

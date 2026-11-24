@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, Linking } from 'react-native';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { palette, fonts } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
 import { useCatalogStore } from '../../store/useCatalogStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { SubscriptionStatus } from '../../services/api';
 import { voiceService } from '../../services/voice';
 import { INR, entries, daysLeft, retailPrefs } from '../../services/retail';
@@ -207,9 +208,60 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
           >
             <Text style={styles.logoutText}>Log out of this phone</Text>
           </TouchableOpacity>
+          <View style={styles.legal}>
+            <Text style={styles.link} onPress={() => Linking.openURL('https://getfloq.in/privacy/')}>Privacy policy</Text>
+            <Text style={styles.link} onPress={() => Linking.openURL('https://getfloq.in/terms/')}>Terms of service</Text>
+          </View>
+          <DeleteAccount />
           <Text style={styles.foot}>Bills on this phone are synced. {buildLine()}</Text>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+// Play Store + DPDP: in-app account deletion. Typing DELETE guards against a stray tap.
+function DeleteAccount() {
+  const { session, deleteAccount } = useAuthStore();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const owner = session?.role === 'OWNER';
+  const what = owner
+    ? 'This permanently deletes your shop and everything in it: items, prices, stock, bills, credit customers and dues. Everyone on your team loses access. This cannot be undone.'
+    : 'This permanently deletes your login. The shop and its records stay with the owner. This cannot be undone.';
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      await deleteAccount();
+    } catch (e: any) {
+      setBusy(false);
+      Alert.alert('Could not delete account', e?.message || 'Check your internet connection and try again.');
+    }
+  };
+
+  if (!open) {
+    return (
+      <TouchableOpacity style={styles.logout} onPress={() => setOpen(true)}>
+        <Text style={styles.deleteText}>Delete account</Text>
+      </TouchableOpacity>
+    );
+  }
+  return (
+    <View style={[styles.card, { padding: 14, gap: 10 }]}>
+      <Text style={styles.rowTitle}>{owner ? 'Delete shop and account?' : 'Delete your account?'}</Text>
+      <Text style={styles.sub}>{what}</Text>
+      <Text style={styles.sub}>Type DELETE to confirm.</Text>
+      <TextInput style={styles.deleteInput} value={typed} onChangeText={setTyped} autoCapitalize="characters" autoCorrect={false} placeholder="DELETE" placeholderTextColor={palette.neutral[500]} />
+      <View style={{ flexDirection: 'row', gap: 16 }}>
+        <TouchableOpacity style={styles.logout} onPress={() => { setOpen(false); setTyped(''); }} disabled={busy}>
+          <Text style={styles.link}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.logout} onPress={run} disabled={busy || typed.trim() !== 'DELETE'}>
+          <Text style={[styles.deleteText, (busy || typed.trim() !== 'DELETE') && { opacity: 0.4 }]}>{busy ? 'Deleting…' : 'Delete permanently'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -337,5 +389,9 @@ const styles = StyleSheet.create({
   stepVal: { minWidth: 56, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
   logout: { alignSelf: 'flex-start', minHeight: 48, justifyContent: 'center', paddingHorizontal: 4 },
   logoutText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },
+  legal: { flexDirection: 'row', gap: 20, paddingHorizontal: 4, minHeight: 48, alignItems: 'center' },
+  link: { fontFamily: fonts.semibold, fontSize: 15, color: palette.link },
+  deleteText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },
+  deleteInput: { borderWidth: 1, borderColor: palette.neutral[300], borderRadius: 10, paddingHorizontal: 12, minHeight: 48, fontFamily: fonts.body, fontSize: 16, color: palette.ink },
   foot: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: palette.neutral[600], paddingHorizontal: 4 },
 });

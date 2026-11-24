@@ -570,6 +570,13 @@ function PhoneStep({ s, set }: StepProps) {
         />
       </View>
       <Text style={styles.hint}>We’ll send a 6-digit code by SMS. This number becomes your login and the owner of the store.</Text>
+      {/* DPDP notice: shown before any personal data leaves the phone. */}
+      <Text style={styles.hint}>
+        By continuing you agree to the{' '}
+        <Text style={styles.linkStrong} onPress={() => Linking.openURL('https://getfloq.in/terms/')}>Terms</Text>
+        {' '}and consent to floq using your data as set out in the{' '}
+        <Text style={styles.linkStrong} onPress={() => Linking.openURL('https://getfloq.in/privacy/')}>Privacy policy</Text>.
+      </Text>
     </View>
   );
 }
