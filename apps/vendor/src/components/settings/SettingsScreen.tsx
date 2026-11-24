@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, Linking } from 'react-native';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
+import { IS_PLAY_BUILD } from '../../services/storeBuild';
 import { palette, fonts } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
 import { useCatalogStore } from '../../store/useCatalogStore';
@@ -195,10 +196,10 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
 
         {/* Account */}
         <Section label="TEAM AND ACCOUNT">
-          {subscription ? (
+          {subscription && !IS_PLAY_BUILD ? (
             <NavRow first title={`Subscription · ${subLabel(subscription)}`} sub={subDetail(subscription)} onPress={onManageSubscription} />
           ) : null}
-          <NavRow first={!subscription} title={retail ? 'Products and prices' : 'Menu and prices'} sub="Add, edit or remove items" onPress={onManageItems} />
+          <NavRow first={!subscription || IS_PLAY_BUILD} title={retail ? 'Products and prices' : 'Menu and prices'} sub="Add, edit or remove items" onPress={onManageItems} />
         </Section>
 
         <TeamSection />

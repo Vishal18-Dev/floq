@@ -12,7 +12,8 @@ import { DayScreenRetail } from './components/retail/DayScreenRetail';
 import { LiveQueueScreen } from './components/queue/LiveQueueScreen';
 import { DayScreen } from './components/day/DayScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
-import { SubscribeScreen } from './components/subscription/SubscribeScreen';
+import { SubscribeScreen, SubscriptionInactive } from './components/subscription/SubscribeScreen';
+import { IS_PLAY_BUILD } from './services/storeBuild';
 import { ItemsManager } from './components/business/ItemsManager';
 import { OnboardingFlow } from './components/auth/OnboardingFlow';
 import { LockScreen } from './components/auth/LockScreen';
@@ -34,6 +35,8 @@ import { useOrdersStore } from './store/useOrdersStore';
 import { useCatalogStore } from './store/useCatalogStore';
 import { useCustomersStore } from './store/useCustomersStore';
 import { RetailCharge, isOverdue } from './services/retail';
+
+const PLAY_402_MESSAGE = 'Subscription ended. New sales are paused.';
 import { formatINR } from '@floq/utils';
 
 export default function App() {
@@ -132,7 +135,10 @@ export default function App() {
         } catch (e: any) {
           // Subscription lapsed mid-session: refresh status so the Sell tab
           // flips to the paywall, and surface a clear message.
-          if (e?.status === 402) loadSubscription();
+          if (e?.status === 402) {
+            loadSubscription();
+            if (IS_PLAY_BUILD) e.message = PLAY_402_MESSAGE; // the server's text says "Subscribe"
+          }
           throw e;
         }
         upsertOrder(res.order);
@@ -207,7 +213,10 @@ export default function App() {
           cashTendered: charge.cashTendered,
         });
       } catch (e: any) {
-        if (e?.status === 402) loadSubscription();
+        if (e?.status === 402) {
+          loadSubscription();
+          if (IS_PLAY_BUILD) e.message = PLAY_402_MESSAGE; // the server's text says "Subscribe"
+        }
         throw e;
       }
       upsertOrder(res.order);
@@ -269,16 +278,16 @@ export default function App() {
           onOpenToday={() => setActiveTab('DAY')}
         />
 
-        <SubscriptionBanner subscription={subscription} onPress={() => setActiveTab('SELL')} />
+        {IS_PLAY_BUILD ? null : <SubscriptionBanner subscription={subscription} onPress={() => setActiveTab('SELL')} />}
 
         <View style={styles.main}>
-          {showSubscribe && subscription ? (
+          {showSubscribe && subscription && !IS_PLAY_BUILD ? (
             <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} onClose={() => setShowSubscribe(false)} />
           ) : (
           <>
           {activeTab === 'SELL' && (
             subscription && !subscription.canSell ? (
-              <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} />
+              IS_PLAY_BUILD ? <SubscriptionInactive /> : <SubscribeScreen subscription={subscription} onSubmitted={loadSubscription} />
             ) : mode === 'RETAIL' ? (
               <RetailSellScreen
                 products={products}
