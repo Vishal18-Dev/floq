@@ -34,7 +34,7 @@ function subDetail(s: SubscriptionStatus): string {
     if (s.plan === 'exempt' || !s.currentPeriodEnd) return 'Thanks for being an early floq merchant';
     const d = new Date(s.currentPeriodEnd);
     const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    return `${s.plan === 'annual' ? 'Yearly' : 'Monthly'} · renews ${date}`;
+    return `${s.plan === 'annual' ? 'Yearly' : 'Monthly'} · ends ${date}`;
   }
   return 'Subscribe to keep making sales';
 }
