@@ -22,9 +22,14 @@
         "EXPO_PUBLIC_API_URL": "https://floq.onrender.com"
       },
       "channel": "production"
+    },
+    "play": {
+      "extends": "production",
+      "channel": "play"
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "play": {}
   }
 }

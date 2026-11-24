@@ -9,6 +9,18 @@ import { UpiQr, buildUpiUri } from '../sell/UpiQr';
 
 type Plan = 'monthly' | 'annual';
 
+/** Play build only: the shop's subscription has lapsed. No price, QR, link or
+ *  "how to renew" text — Play's anti-steering rule. Other tabs stay usable. */
+export function SubscriptionInactive() {
+  const { t } = useT();
+  return (
+    <View style={styles.pendingWrap}>
+      <Text style={styles.pendingTitle}>{t('subEndedShort')}</Text>
+      <Text style={styles.pendingSub}>{t('subInactiveBody')}</Text>
+    </View>
+  );
+}
+
 export function SubscribeScreen({
   subscription,
   onSubmitted,
