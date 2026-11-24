@@ -338,6 +338,10 @@ class NativeApiClient {
     });
   }
 
+  public async updatePerKg(productId: string, perKg: number): Promise<{ product: { id: string; perKg: number } }> {
+    return this.request(`/retail/products/${productId}/per-kg`, { method: 'PATCH', body: JSON.stringify({ perKg }) });
+  }
+
   public async updatePackPrice(id: string, price: number, wholesalePrice?: number): Promise<{ pack: { id: string; price: number; wholesalePrice?: number } }> {
     return this.request(`/retail/packs/${id}`, { method: 'PATCH', body: JSON.stringify({ price, wholesalePrice: wholesalePrice ?? null }) });
   }

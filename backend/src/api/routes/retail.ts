@@ -141,6 +141,29 @@ router.post('/products', requireRole('OWNER', 'MANAGER'), async (req: Authentica
   }
 });
 
+// PATCH /api/retail/products/:id/per-kg — change a loose good's price per kg.
+router.patch('/products/:id/per-kg', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const perKg = req.body?.perKg;
+    if (typeof perKg !== 'number' || !(perKg > 0)) {
+      res.status(400).json({ error: 'perKg must be a positive number' });
+      return;
+    }
+    // price mirrors per_kg for loose goods (set that way on create).
+    const changes = await execute(
+      'UPDATE products SET per_kg = $1, price = $1, updated_at = $2 WHERE id = $3 AND store_id = $4 AND is_loose = true',
+      [perKg, new Date().toISOString(), req.params.id, req.storeId]
+    );
+    if (changes === 0) {
+      res.status(404).json({ error: 'Loose product not found' });
+      return;
+    }
+    res.json({ product: { id: req.params.id, perKg } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/retail/packs/:id — change a pack's selling / wholesale price.
 router.patch('/packs/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
