@@ -40,6 +40,7 @@
       ]
     ],
     "extra": {
+      "sentryDsn": "",
       "eas": {
         "projectId": "ce188eb0-9d67-4f78-9925-268ba75e44a2"
       }

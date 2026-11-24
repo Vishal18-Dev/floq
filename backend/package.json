@@ -18,6 +18,7 @@
     "@floq/types": "*",
     "@floq/utils": "*",
     "@floq/validation": "*",
+    "@sentry/node": "^11.17.0",
     "@types/cors": "2.8.17",
     "@types/express": "4.17.21",
     "@types/jsonwebtoken": "9.0.6",
