@@ -36,7 +36,7 @@ router.post('/firebase', async (req, res, next) => {
     }
     res.json(session);
   } catch (err: any) {
-    res.status(401).json({ error: 'AUTH_FAILED', message: err?.message || 'Login failed' });
+    next(err);
   }
 });
 

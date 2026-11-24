@@ -9,7 +9,7 @@ import { config } from '../src/config';
 const ADMIN = config.adminKey;
 
 async function newStore(app: any) {
-  const ob = await request(app).post(`/api/admin/onboard-merchant?key=${ADMIN}`).send({
+  const ob = await request(app).post(`/api/admin/onboard-merchant`).set('x-admin-key', ADMIN).send({
     phone: '9333300000',
     pin: '4321',
     storeName: 'Paywall Test Store',
@@ -73,7 +73,7 @@ describe('Subscription paywall', () => {
     const paymentId = submit.body.payment.id;
 
     const verify = await request(app)
-      .post(`/api/admin/verify-subscription?key=${ADMIN}`)
+      .post(`/api/admin/verify-subscription`).set('x-admin-key', ADMIN)
       .send({ paymentId });
     expect(verify.status).toBe(200);
     expect(verify.body.success).toBe(true);

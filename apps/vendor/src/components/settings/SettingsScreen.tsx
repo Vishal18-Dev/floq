@@ -6,7 +6,7 @@ import { palette, fonts } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
 import { useCatalogStore } from '../../store/useCatalogStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { SubscriptionStatus } from '../../services/api';
+import { api, SubscriptionStatus } from '../../services/api';
 import { voiceService } from '../../services/voice';
 import { INR, entries, daysLeft, retailPrefs } from '../../services/retail';
 import type { SecondaryLanguage } from '../../i18n/strings';
@@ -201,6 +201,8 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
           <NavRow first={!subscription} title={retail ? 'Products and prices' : 'Menu and prices'} sub="Add, edit or remove items" onPress={onManageItems} />
         </Section>
 
+        <TeamSection />
+
         <View style={{ gap: 2 }}>
           <TouchableOpacity
             style={styles.logout}
@@ -217,6 +219,45 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
         </View>
       </ScrollView>
     </View>
+  );
+}
+
+// Owner-only: who can log in to this shop, and removing someone who has left.
+type Member = { id: string; phone: string; name: string | null; role: 'OWNER' | 'MANAGER' | 'STAFF' };
+function TeamSection() {
+  const session = useAuthStore((st) => st.session);
+  const [members, setMembers] = useState<Member[]>([]);
+  const owner = session?.role === 'OWNER';
+  useEffect(() => {
+    if (owner) api.getMembers().then((r) => setMembers(r.members)).catch(() => {});
+  }, [owner]);
+  const others = members.filter((m) => m.role !== 'OWNER');
+  if (!owner || !others.length) return null;
+
+  const remove = (m: Member) =>
+    Alert.alert(`Remove ${m.name || m.phone}?`, 'They will be logged out and can no longer open this shop.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () =>
+          api.removeMember(m.id)
+            .then(() => setMembers((list) => list.filter((x) => x.id !== m.id)))
+            .catch((e) => Alert.alert('Could not remove', e?.message || 'Try again.')),
+      },
+    ]);
+
+  return (
+    <Section label="TEAM">
+      {others.map((m, i) => (
+        <View key={m.id} style={[styles.memberRow, i > 0 && styles.memberDivider]}>
+          <RowText title={m.name || m.phone} sub={`${m.role === 'MANAGER' ? 'Manager' : 'Staff'} · ${m.phone}`} />
+          <TouchableOpacity onPress={() => remove(m)} style={styles.memberRemove}>
+            <Text style={styles.deleteText}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+    </Section>
   );
 }
 
@@ -389,6 +430,9 @@ const styles = StyleSheet.create({
   stepVal: { minWidth: 56, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
   logout: { alignSelf: 'flex-start', minHeight: 48, justifyContent: 'center', paddingHorizontal: 4 },
   logoutText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },
+  memberRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, minHeight: 56 },
+  memberDivider: { borderTopWidth: 1, borderTopColor: palette.neutral[200] },
+  memberRemove: { minHeight: 48, justifyContent: 'center', paddingLeft: 12 },
   legal: { flexDirection: 'row', gap: 20, paddingHorizontal: 4, minHeight: 48, alignItems: 'center' },
   link: { fontFamily: fonts.semibold, fontSize: 15, color: palette.link },
   deleteText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },

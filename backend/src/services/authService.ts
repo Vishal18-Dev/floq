@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { query, queryOne } from '../db';
 import { config } from '../config';
 import { JWTPayload, StaffRole, UserSession } from '@floq/types';
+import { HttpError } from '../api/middleware/errorHandler';
 
 /**
  * PIN authentication. Merchants are provisioned by FLOQ (white-glove) with a
@@ -121,7 +122,7 @@ export class AuthService {
    *  the caller can route a new user into onboarding. */
   public async loginWithVerifiedPhone(rawPhone: string): Promise<UserSession | null> {
     const phone = normalizePhone(rawPhone);
-    if (phone.length < 10) throw new Error('Enter a valid 10-digit mobile number');
+    if (phone.length < 10) throw new HttpError(400, 'INVALID_PHONE', 'Enter a valid 10-digit mobile number');
     const user = await queryOne('SELECT * FROM users WHERE phone = $1 OR phone = $2 OR phone LIKE $3', [
       phone,
       `+91${phone}`,
@@ -129,7 +130,7 @@ export class AuthService {
     ]);
     if (!user) return null;
     if (user.status && user.status !== 'ACTIVE') {
-      throw new Error('This account is not active. Please contact FLOQ support.');
+      throw new HttpError(403, 'ACCOUNT_INACTIVE', 'This account is not active. Please contact FLOQ support.');
     }
     await query('UPDATE users SET pin_attempts = 0, pin_locked_until = NULL WHERE id = $1', [user.id]);
     return this.buildSession(user);

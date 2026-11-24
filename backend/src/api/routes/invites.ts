@@ -118,7 +118,8 @@ router.post('/:code/accept', async (req: Request, res: Response) => {
       res.status(400).json({ error: 'INVALID_INPUT', message: err.errors?.[0]?.message || 'Invalid input' });
       return;
     }
-    res.status(500).json({ error: 'ACCEPT_FAILED', message: err?.message || 'Could not join the store' });
+    console.error('[FLOQ invites] accept failed:', err);
+    res.status(500).json({ error: 'ACCEPT_FAILED', message: 'Could not join the store. Please try again.' });
   }
 });
 

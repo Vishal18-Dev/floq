@@ -282,6 +282,14 @@ class NativeApiClient {
     return this.request(`/team/invites/${id}`, { method: 'DELETE' });
   }
 
+  public async getMembers(): Promise<{ members: { id: string; phone: string; name: string | null; role: 'OWNER' | 'MANAGER' | 'STAFF' }[] }> {
+    return this.request('/team/members');
+  }
+
+  public async removeMember(id: string): Promise<{ success: boolean }> {
+    return this.request(`/team/members/${id}`, { method: 'DELETE' });
+  }
+
   // Join a team (public — no session yet).
   public async lookupInvite(code: string): Promise<InviteInfo> {
     return this.request(`/invites/${encodeURIComponent(code)}`, { timeoutMs: 30000 });

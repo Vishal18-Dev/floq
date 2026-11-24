@@ -10,7 +10,7 @@ const router = Router();
 router.get('/', async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     const status = req.query.status as any;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit), 10) || 50, 1), 200);
     const orders = await orderEngine.listOrders(req.storeId!, { status, limit });
     res.json({ orders });
   } catch (err) {

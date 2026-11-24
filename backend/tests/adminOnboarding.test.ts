@@ -35,7 +35,7 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
   it('2. Successfully onboards a new merchant, provisions store, user & category, and enables login', async () => {
     // 1. Onboard Merchant via Admin API (mode + language + PIN + UPI + catalogue)
     const onboardRes = await request(app)
-      .post(`/api/admin/onboard-merchant?key=${ADMIN}`)
+      .post(`/api/admin/onboard-merchant`).set('x-admin-key', ADMIN)
       .send({
         merchantName: 'Vikram Singh',
         phone: '9123456789',
@@ -100,7 +100,7 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
 
   it('3. Idempotent onboarding for existing phone number returns existing merchant details without errors', async () => {
     const res = await request(app)
-      .post(`/api/admin/onboard-merchant?key=${ADMIN}`)
+      .post(`/api/admin/onboard-merchant`).set('x-admin-key', ADMIN)
       .send({
         merchantName: 'Ramesh Sharma',
         phone: '9876543210',
@@ -116,7 +116,7 @@ describe('White-Glove Merchant Onboarding & Self-Service Menu Workflow (PostgreS
 
   it('4. Onboards a RETAIL merchant with packs, a loose good, a supplier and an opening khata', async () => {
     const onboardRes = await request(app)
-      .post(`/api/admin/onboard-merchant?key=${ADMIN}`)
+      .post(`/api/admin/onboard-merchant`).set('x-admin-key', ADMIN)
       .send({
         phone: '9000011122',
         pin: '2468',
