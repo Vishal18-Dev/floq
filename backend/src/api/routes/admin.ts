@@ -10,9 +10,11 @@ const router = Router();
 
 // Middleware to protect admin routes using the configured ADMIN_KEY.
 export function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
-  const key = (req.headers['x-admin-key'] as string) || (req.query.key as string);
+  const key = String(req.headers['x-admin-key'] || '');
+  const a = Buffer.from(key);
+  const b = Buffer.from(config.adminKey);
 
-  if (!key || key !== config.adminKey) {
+  if (!key || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
     res.status(403).json({ error: 'FORBIDDEN', message: 'Invalid or missing admin security key' });
     return;
   }

@@ -33,7 +33,7 @@ export function createServer() {
   const limits = createLimits();
 
   app.use(cors({ origin: config.corsOrigin, credentials: true }));
-  app.use(express.json());
+  app.use(express.json({ limit: '200kb' }));
 
   // Health check
   app.get('/api/health', (req, res) => {
@@ -56,11 +56,8 @@ export function createServer() {
   // Realtime Server-Sent Events (SSE) stream (Authenticated via query token or Bearer header)
   app.get('/api/realtime', async (req, res) => {
     const authHeader = req.headers.authorization;
-    const queryToken = req.query.token as string;
-    let token = queryToken;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
+    // ponytail: ?token= kept only for phones still on the pre-header OTA; delete once every beta phone has updated.
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : (req.query.token as string);
 
     if (!token) {
       res.status(401).json({ error: 'UNAUTHORIZED', message: 'Realtime SSE requires authentication token' });

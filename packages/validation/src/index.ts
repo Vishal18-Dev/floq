@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+// Every string is capped so one request can't carry megabytes of text.
+const str = () => z.string().max(500);
+
 export const StoreTypeEnum = z.enum([
   'TEA_STALL',
   'BREAKFAST',
@@ -61,21 +64,22 @@ export const DeviceRoleEnum = z.enum(['VENDOR', 'KITCHEN', 'DISPLAY']);
 // (name + unitPrice) used by the quick-charge amount pad.
 export const OrderItemInputSchema = z
   .object({
-    productId: z.string().optional(),
+    productId: str().optional(),
     // Retail: a specific pack SKU, and the unit it was sold in. GRAM lines
     // (loose goods) carry quantity in grams; UNIT lines carry a count.
-    packId: z.string().optional(),
+    packId: str().optional(),
     sellUnit: z.enum(['UNIT', 'GRAM']).optional(),
-    name: z.string().optional(),
+    name: str().optional(),
     unitPrice: z.number().nonnegative().optional(),
     quantity: z.number().positive('Quantity must be at least 1'),
     modifiers: z
       .array(
         z.object({
-          name: z.string(),
+          name: str(),
           priceDelta: z.number().nonnegative(),
         })
       )
+      .max(20)
       .optional(),
   })
   .refine((v) => !!v.productId || !!v.packId || (!!v.name && v.unitPrice !== undefined), {
@@ -84,22 +88,22 @@ export const OrderItemInputSchema = z
 
 // Create Order Schema (Unified for STAFF_POS & CUSTOMER_QR)
 export const CreateOrderSchema = z.object({
-  id: z.string().optional(), // Client-generated UUID for offline-first support
-  clientOrderId: z.string().optional(),
-  storeId: z.string().min(1, 'Store ID is required'),
-  customerId: z.string().optional().nullable(),
-  customerName: z.string().optional(),
-  customerPhone: z.string().optional(),
+  id: str().optional(), // Client-generated UUID for offline-first support
+  clientOrderId: str().optional(),
+  storeId: str().min(1, 'Store ID is required'),
+  customerId: str().optional().nullable(),
+  customerName: str().optional(),
+  customerPhone: str().optional(),
   source: OrderSourceEnum.default('STAFF_POS'),
-  items: z.array(OrderItemInputSchema).min(1, 'At least one item is required'),
+  items: z.array(OrderItemInputSchema).min(1, 'At least one item is required').max(200),
   discount: z.number().nonnegative().default(0),
-  notes: z.string().optional(),
+  notes: str().optional(),
   paymentMethod: PaymentMethodEnum.optional(),
   immediatePayment: z.boolean().default(false),
   status: OrderStatusEnum.optional(),
   // Retail counter bill / shop order extras.
   isWholesale: z.boolean().optional(),
-  creditCustomerId: z.string().optional().nullable(),
+  creditCustomerId: str().optional().nullable(),
   cashTendered: z.number().nonnegative().optional(),
 });
 
@@ -108,25 +112,25 @@ export type CreateOrderInput = z.input<typeof CreateOrderSchema>;
 // Update Order Status Schema
 export const UpdateOrderStatusSchema = z.object({
   status: OrderStatusEnum,
-  reason: z.string().optional(),
+  reason: str().optional(),
 });
 
 export type UpdateOrderStatusInput = z.input<typeof UpdateOrderStatusSchema>;
 
 // Payment Schemas
 export const CreatePaymentSchema = z.object({
-  orderId: z.string().min(1, 'Order ID is required'),
+  orderId: str().min(1, 'Order ID is required'),
   method: PaymentMethodEnum,
   amount: z.number().positive('Amount must be positive'),
-  provider: z.string().default('FLOQ_MOCK_PAYMENT'),
-  providerReference: z.string().optional(),
+  provider: str().default('FLOQ_MOCK_PAYMENT'),
+  providerReference: str().optional(),
 });
 
 export type CreatePaymentInput = z.input<typeof CreatePaymentSchema>;
 
 export const ConfirmPaymentSchema = z.object({
-  paymentId: z.string().min(1, 'Payment ID is required'),
-  providerReference: z.string().optional(),
+  paymentId: str().min(1, 'Payment ID is required'),
+  providerReference: str().optional(),
   status: PaymentStatusEnum.default('SUCCESS'),
 });
 
@@ -134,12 +138,12 @@ export type ConfirmPaymentInput = z.input<typeof ConfirmPaymentSchema>;
 
 // Product Schemas
 export const CreateProductSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
-  nameLocal: z.string().optional(),
-  categoryId: z.string().min(1, 'Category ID is required'),
+  name: str().min(1, 'Product name is required'),
+  nameLocal: str().optional(),
+  categoryId: str().min(1, 'Category ID is required'),
   price: z.number().nonnegative('Price cannot be negative'),
-  description: z.string().optional(),
-  imageUrl: z.string().optional(),
+  description: str().optional(),
+  imageUrl: str().optional(),
   isAvailable: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
   station: ProductStationEnum.default('GENERAL'),
@@ -152,8 +156,8 @@ export type UpdateProductInput = z.input<typeof UpdateProductSchema>;
 
 // Category Schemas
 export const CreateCategorySchema = z.object({
-  name: z.string().min(1, 'Category name is required'),
-  nameLocal: z.string().optional(),
+  name: str().min(1, 'Category name is required'),
+  nameLocal: str().optional(),
   sortOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
 });
@@ -162,13 +166,13 @@ export type CreateCategoryInput = z.input<typeof CreateCategorySchema>;
 
 // Store & Settings Schemas
 export const CreateStoreSchema = z.object({
-  merchantId: z.string().min(1, 'Merchant ID is required'),
-  name: z.string().min(1, 'Store name is required'),
-  slug: z.string().min(1, 'Store slug is required'),
+  merchantId: str().min(1, 'Merchant ID is required'),
+  name: str().min(1, 'Store name is required'),
+  slug: str().min(1, 'Store slug is required'),
   storeType: StoreTypeEnum.default('TEA_STALL'),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  template: z.string().optional(),
+  address: str().optional(),
+  phone: str().optional(),
+  template: str().optional(),
 });
 
 export type CreateStoreInput = z.input<typeof CreateStoreSchema>;
@@ -177,8 +181,8 @@ export type CreateStoreInput = z.input<typeof CreateStoreSchema>;
 export const ServicePrefsSchema = z.object({
   payFirst: z.boolean().optional(),
   callBy: z.enum(['number', 'name']).optional(),
-  service: z.array(z.string()).optional(),
-  closedDays: z.array(z.string()).optional(),
+  service: z.array(str()).max(20).optional(),
+  closedDays: z.array(str()).max(7).optional(),
   /** Retail: warn when an item has under this many days of stock left. */
   lowStockDays: z.number().int().min(2).max(14).optional(),
   /** Retail: credit is overdue after this many days. */
@@ -192,10 +196,10 @@ export const UpdateStoreSettingsSchema = z.object({
   voiceLanguage: VoiceLanguageEnum.optional(),
   voiceVerbosity: VoiceVerbosityEnum.optional(),
   typicalPrepTimeMinutes: z.number().int().positive().optional(),
-  ticketPrefix: z.string().optional(),
+  ticketPrefix: str().optional(),
   autoAcceptQrOrders: z.boolean().optional(),
-  upiId: z.string().optional(),
-  upiName: z.string().optional(),
+  upiId: str().optional(),
+  upiName: str().optional(),
   creditEnabled: z.boolean().optional(),
   defaultCreditLimit: z.number().int().nonnegative().optional(),
   servicePrefs: ServicePrefsSchema.optional(),
@@ -205,24 +209,50 @@ export type UpdateStoreSettingsInput = z.input<typeof UpdateStoreSettingsSchema>
 
 // Auth Schemas — phone + fixed PIN (no SMS OTP)
 export const PinLoginSchema = z.object({
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6, 'PIN must be 4 to 6 digits').regex(/^\d+$/, 'PIN must be digits only'),
+  phone: str().min(10, 'Phone number must be at least 10 digits'),
+  pin: str().min(4, 'PIN must be 4 to 6 digits').max(6, 'PIN must be 4 to 6 digits').regex(/^\d+$/, 'PIN must be digits only'),
 });
 export type PinLoginInput = z.input<typeof PinLoginSchema>;
 
-// Offline Sync Schema
+// Offline Sync Schema. Only the fields sync actually reads are typed; extra
+// client fields pass through untouched.
+export const SyncOrderSchema = z
+  .object({
+    id: str(),
+    clientOrderId: str().optional(),
+    source: OrderSourceEnum.optional(),
+    status: OrderStatusEnum.optional(),
+    ticketNumber: z.union([str(), z.number()]).transform(String).optional(),
+    discount: z.number().nonnegative().optional(),
+    notes: str().optional(),
+    items: z
+      .array(
+        z
+          .object({
+            productId: str().optional(),
+            product_id: str().optional(),
+            quantity: z.number().positive(),
+            modifiers: z.array(z.object({ name: str(), priceDelta: z.number().nonnegative() })).max(20).optional(),
+          })
+          .passthrough()
+      )
+      .max(200)
+      .optional(),
+  })
+  .passthrough();
+
 export const SyncRecordSchema = z.object({
-  id: z.string(),
-  clientOrderId: z.string().optional(),
-  storeId: z.string(),
-  order: z.any(),
-  payment: z.any().optional(),
-  clientTimestamp: z.string(),
+  id: str(),
+  clientOrderId: str().optional(),
+  storeId: str(),
+  order: SyncOrderSchema,
+  payment: z.object({ method: PaymentMethodEnum.optional() }).passthrough().optional(),
+  clientTimestamp: str(),
 });
 
 export const SyncPayloadSchema = z.object({
-  storeId: z.string(),
-  records: z.array(SyncRecordSchema),
+  storeId: str(),
+  records: z.array(SyncRecordSchema).max(100),
 });
 
 export type SyncPayloadInput = z.input<typeof SyncPayloadSchema>;
@@ -230,27 +260,27 @@ export type SyncPayloadInput = z.input<typeof SyncPayloadSchema>;
 // A single catalogue item supplied at onboarding time (bilingual).
 // A pack size within a retail item (prices in rupees, stock in units).
 export const OnboardPackSchema = z.object({
-  size: z.string().min(1, 'Pack size is required'),
+  size: str().min(1, 'Pack size is required'),
   price: z.number().nonnegative(),
   wholesalePrice: z.number().nonnegative().optional(),
   costPrice: z.number().nonnegative().optional(),
   stock: z.number().int().nonnegative().default(0),
   caseQty: z.number().int().positive().optional(),
   dailyRate: z.number().nonnegative().optional(),
-  expiryNote: z.string().optional(),
+  expiryNote: str().optional(),
 });
 export type OnboardPackInput = z.input<typeof OnboardPackSchema>;
 
 export const OnboardItemSchema = z.object({
-  name: z.string().min(1, 'Item name is required'),
-  nameLocal: z.string().optional(),
+  name: str().min(1, 'Item name is required'),
+  nameLocal: str().optional(),
   // Flat price for a simple/FOOD item. Packed retail items leave this 0 and
   // carry their prices on each pack instead.
   price: z.number().nonnegative('Price cannot be negative').default(0),
-  category: z.string().optional(),
+  category: str().optional(),
   station: ProductStationEnum.optional(),
   // Retail pack sizes. Omit for a flat item or a loose good.
-  packs: z.array(OnboardPackSchema).optional(),
+  packs: z.array(OnboardPackSchema).max(20).optional(),
   // Retail loose good (sold by weight). stockKg/dailyKg convert to grams.
   isLoose: z.boolean().optional(),
   perKg: z.number().nonnegative().optional(),
@@ -262,9 +292,9 @@ export type OnboardItemInput = z.input<typeof OnboardItemSchema>;
 // A credit account to seed at onboarding (an existing khata), with an optional
 // opening balance aged by oldestDueDays.
 export const OnboardCustomerSchema = z.object({
-  name: z.string().min(1, 'Customer name is required'),
+  name: str().min(1, 'Customer name is required'),
   kind: z.enum(['SHOP', 'REGULAR']).default('REGULAR'),
-  phone: z.string().optional(),
+  phone: str().optional(),
   creditLimit: z.number().nonnegative().default(0),
   owes: z.number().nonnegative().default(0),
   oldestDueDays: z.number().int().nonnegative().optional(),
@@ -276,24 +306,24 @@ export const OnboardMerchantSchema = z.object({
   // Optional: the app only ever displays the store/org name. When omitted the
   // owner record and UPI payee both fall back to storeName, so onboarding never
   // needs a separate person name.
-  merchantName: z.string().min(1).optional(),
-  phone: z.string().min(10, '10-digit mobile number required'),
-  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only'),
-  email: z.string().email().optional().nullable(),
-  storeName: z.string().min(1, 'Store name is required'),
-  storeNameLocal: z.string().optional(),
+  merchantName: str().min(1).optional(),
+  phone: str().min(10, '10-digit mobile number required'),
+  pin: str().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only'),
+  email: str().email().optional().nullable(),
+  storeName: str().min(1, 'Store name is required'),
+  storeNameLocal: str().optional(),
   storeType: StoreTypeEnum.default('TEA_STALL'),
   mode: StoreModeEnum.default('FOOD'),
   secondaryLanguage: SecondaryLanguageEnum.default('hi'),
-  address: z.string().optional(),
-  upiId: z.string().optional(),
-  upiName: z.string().optional(),
+  address: str().optional(),
+  upiId: str().optional(),
+  upiName: str().optional(),
   typicalPrepTimeMinutes: z.number().int().positive().optional(),
-  initialCategoryName: z.string().default('General'),
-  items: z.array(OnboardItemSchema).optional(),
+  initialCategoryName: str().default('General'),
+  items: z.array(OnboardItemSchema).max(1000).optional(),
   // Retail: default reorder supplier per category name, and the opening credit book.
-  suppliers: z.record(z.string()).optional(),
-  customers: z.array(OnboardCustomerSchema).optional(),
+  suppliers: z.record(str()).optional(),
+  customers: z.array(OnboardCustomerSchema).max(2000).optional(),
 });
 
 export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
@@ -304,17 +334,17 @@ export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
 // wizard runs while authenticated). The PIN is set after onboarding as the
 // device quick-unlock, so it is optional here.
 export const SelfSignupSchema = z.object({
-  idToken: z.string().min(1, 'OTP token is required'),
-  storeName: z.string().min(1, 'Store name is required'),
-  storeNameLocal: z.string().optional(),
-  ownerName: z.string().min(1).optional(),
+  idToken: str().min(1, 'OTP token is required'),
+  storeName: str().min(1, 'Store name is required'),
+  storeNameLocal: str().optional(),
+  ownerName: str().min(1).optional(),
   storeType: StoreTypeEnum.default('GROCERY'),
   mode: StoreModeEnum.default('RETAIL'),
   secondaryLanguage: SecondaryLanguageEnum.default('hi'),
-  city: z.string().optional(),
-  upiId: z.string().optional(),
-  imageUrl: z.string().url().optional(),
-  pin: z.string().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only').optional(),
+  city: str().optional(),
+  upiId: str().optional(),
+  imageUrl: str().url().optional(),
+  pin: str().min(4, 'PIN must be 4 to 6 digits').max(6).regex(/^\d+$/, 'PIN must be digits only').optional(),
 });
 
 export type SelfSignupInput = z.input<typeof SelfSignupSchema>;
@@ -323,14 +353,14 @@ export type SelfSignupInput = z.input<typeof SelfSignupSchema>;
 // Reuses the onboarding item/customer shapes. The store is derived from the
 // session, never the body.
 export const StoreSeedSchema = z.object({
-  items: z.array(OnboardItemSchema).optional(),
-  customers: z.array(OnboardCustomerSchema).optional(),
-  suppliers: z.record(z.string()).optional(),
-  initialCategoryName: z.string().optional(),
+  items: z.array(OnboardItemSchema).max(1000).optional(),
+  customers: z.array(OnboardCustomerSchema).max(2000).optional(),
+  suppliers: z.record(str()).optional(),
+  initialCategoryName: str().optional(),
   // Store-level answers captured in the wizard.
-  gstin: z.string().optional(),
-  openingTime: z.string().optional(),
-  closingTime: z.string().optional(),
+  gstin: str().optional(),
+  openingTime: str().optional(),
+  closingTime: str().optional(),
   creditEnabled: z.boolean().optional(),
   defaultCreditLimit: z.number().int().nonnegative().optional(),
   servicePrefs: ServicePrefsSchema.optional(),
@@ -339,15 +369,15 @@ export type StoreSeedInput = z.input<typeof StoreSeedSchema>;
 
 // Owner creates a staff invite for a mobile number + role.
 export const CreateInviteSchema = z.object({
-  phone: z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
+  phone: str().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
   role: z.enum(['MANAGER', 'STAFF']).default('STAFF'),
-  title: z.string().max(40).optional(),
+  title: str().max(40).optional(),
 });
 export type CreateInviteInput = z.input<typeof CreateInviteSchema>;
 
 // Invitee accepts an invite: verified by OTP for the invited number.
 export const AcceptInviteSchema = z.object({
-  idToken: z.string().min(1, 'OTP token is required'),
-  name: z.string().min(1).optional(),
+  idToken: str().min(1, 'OTP token is required'),
+  name: str().min(1).optional(),
 });
 export type AcceptInviteInput = z.input<typeof AcceptInviteSchema>;

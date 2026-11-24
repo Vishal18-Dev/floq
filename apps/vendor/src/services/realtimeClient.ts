@@ -32,10 +32,10 @@ export class ResilientRealtimeClient {
     if (!token || !storeId) return;
 
     this.abortController = new AbortController();
-    const streamUrl = `${baseUrl}/realtime?storeId=${encodeURIComponent(storeId)}&token=${encodeURIComponent(token)}`;
+    const streamUrl = `${baseUrl}/realtime?storeId=${encodeURIComponent(storeId)}`;
 
     fetch(streamUrl, {
-      headers: { Accept: 'text/event-stream' },
+      headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` },
       signal: this.abortController.signal,
     })
       .then((res) => {

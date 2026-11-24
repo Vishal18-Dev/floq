@@ -45,9 +45,9 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     return;
   }
 
-  // Graceful fallback error response
+  // Never echo internal error text (SQL, ids, stack details) to the client; it's logged above.
   res.status(500).json({
     error: 'INTERNAL_ERROR',
-    message: err.message || 'An unexpected issue occurred while processing your request. Please try again.',
+    message: 'Something went wrong on our side. Please try again.',
   });
 }

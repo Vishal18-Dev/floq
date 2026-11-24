@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { queryOne } from '../../db';
 import { orderEngine } from '../../services/orderEngine';
 import { SyncPayloadSchema } from '@floq/validation';
+import { subscriptionService } from '../../services/subscriptionService';
 
 const router = Router();
 
@@ -13,7 +14,21 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
     const syncedOrderIds: string[] = [];
     const failedOrderIds: { id: string; reason: string }[] = [];
 
+    // Paywall: sales made offline while access was still on still sync; sales
+    // stamped after the trial or plan ended don't.
+    // ponytail: clientTimestamp is phone-supplied, so a backdated clock slips through; fine for a ₹49 plan.
+    let accessEnd: string | null = null;
+    const canSell = await subscriptionService.canSell(req.storeId!);
+    if (!canSell) {
+      const sub = await subscriptionService.getStatus(req.storeId!);
+      accessEnd = [sub.trialEndsAt, sub.currentPeriodEnd].filter(Boolean).sort().pop() || '';
+    }
+
     for (const record of input.records) {
+      if (!canSell && !(record.clientTimestamp <= (accessEnd as string))) {
+        failedOrderIds.push({ id: record.order.id, reason: 'SUBSCRIPTION_REQUIRED' });
+        continue;
+      }
       try {
         const storeId = req.storeId || record.storeId || input.storeId;
         const clientOrderId = record.clientOrderId || record.order?.clientOrderId || record.order?.id || record.id;
