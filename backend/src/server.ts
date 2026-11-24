@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import * as Sentry from '@sentry/node';
 import { config } from './config';
 import { authMiddleware } from './api/middleware/auth';
 import { errorHandler } from './api/middleware/errorHandler';
@@ -129,6 +130,25 @@ export function createServer() {
 }
 
 if (require.main === module) {
+  // Error reports only, no tracing.
+  // Collect nothing personal: request bodies, headers, query values, DB params and
+  // local variables would carry customer phone numbers and khata amounts.
+  if (config.sentryDsn) {
+    Sentry.init({
+      dsn: config.sentryDsn,
+      environment: config.nodeEnv,
+      tracesSampleRate: 0,
+      dataCollection: {
+        userInfo: false,
+        cookies: false,
+        httpHeaders: false,
+        httpBodies: [],
+        urlQueryParams: false,
+        databaseQueryData: false,
+        stackFrameVariables: false,
+      },
+    });
+  }
   // Run schema migrations on boot, then start. Never seed automatically —
   // migrations are additive and safe; seeding is destructive and manual.
   runMigrations()

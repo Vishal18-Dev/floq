@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import * as Sentry from '@sentry/node';
 
 /** An error that carries its own HTTP status and code; its message is safe to show. */
 export class HttpError extends Error {
@@ -45,7 +46,8 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     return;
   }
 
-  // Graceful fallback error response
+  // Graceful fallback error response. Only real 500s go to Sentry (a no-op until SENTRY_DSN is set).
+  Sentry.captureException(err);
   res.status(500).json({
     error: 'INTERNAL_ERROR',
     message: err.message || 'An unexpected issue occurred while processing your request. Please try again.',
