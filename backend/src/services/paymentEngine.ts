@@ -5,6 +5,7 @@ import { ALLOWED_PAYMENT_TRANSITIONS } from '@floq/constants';
 import { realtimeService } from './realtimeService';
 import { auditLogger } from './auditLogger';
 import { config } from '../config';
+import { HttpError } from '../api/middleware/errorHandler';
 
 export interface PaymentResult {
   payment: Payment;
@@ -35,9 +36,13 @@ export class MockUPIProvider implements PaymentProvider {
       throw new Error(`Order not found for payment: ${orderId}`);
     }
 
-    const upiId = order.upi_id || 'sharma.stall@okhdfcbank';
-    const upiName = order.upi_name || 'Sharma Breakfast Corner';
-    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${amount.toFixed(2)}&cu=INR&tr=${txnRef}&tn=${encodeURIComponent(`FLOQ-${order.ticket_number}`)}`;
+    // Never fall back to another VPA: a missing UPI ID must block UPI, not pay a stranger.
+    if (method === 'UPI' && !order.upi_id) {
+      throw new HttpError(400, 'UPI_NOT_SET', 'Add your UPI ID in Settings before taking UPI payments.');
+    }
+    const upiUri = order.upi_id
+      ? `upi://pay?pa=${encodeURIComponent(order.upi_id)}&pn=${encodeURIComponent(order.upi_name || '')}&am=${amount.toFixed(2)}&cu=INR&tr=${txnRef}&tn=${encodeURIComponent(`FLOQ-${order.ticket_number}`)}`
+      : undefined;
 
     const initialStatus: PaymentStatus = method === 'CASH' ? 'SUCCESS' : 'PENDING';
 

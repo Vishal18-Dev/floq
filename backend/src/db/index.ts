@@ -28,7 +28,10 @@ export function getPool(): any {
   }
 
   const connectionString = config.databaseUrl || 'postgresql://floq:floq_dev_password_2026@localhost:5432/floq_db';
-  const ssl = config.isProduction ? { rejectUnauthorized: false } : false;
+  // Verify the DB certificate when its CA is supplied (DATABASE_CA_CERT = PEM text).
+  // ponytail: without it TLS still encrypts but doesn't verify the server; set the CA to close that.
+  const ca = process.env.DATABASE_CA_CERT;
+  const ssl = !config.isProduction ? false : ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false };
 
   pool = new PgPool({
     connectionString,

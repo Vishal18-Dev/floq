@@ -142,4 +142,26 @@ router.get('/members', async (req: AuthenticatedRequest, res: Response, next) =>
   }
 });
 
+// DELETE /api/team/members/:id — owner removes someone from the team. Their
+// login is deleted, so their token stops working on the next request.
+router.delete('/members/:id', requireRole('OWNER'), async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    if (req.params.id === req.userId) {
+      res.status(400).json({ error: 'CANNOT_REMOVE_SELF', message: 'Use Delete account in Settings to remove your own login.' });
+      return;
+    }
+    const removed = await query(
+      "DELETE FROM users WHERE id = $1 AND merchant_id = $2 AND role <> 'OWNER' RETURNING id",
+      [req.params.id, req.merchantId]
+    );
+    if (!removed.length) {
+      res.status(404).json({ error: 'MEMBER_NOT_FOUND', message: 'No such team member.' });
+      return;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

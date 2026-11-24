@@ -8,7 +8,7 @@ import { config } from '../src/config';
 const ADMIN = config.adminKey;
 
 async function onboard(app: any, body: any) {
-  return request(app).post(`/api/admin/onboard-merchant?key=${ADMIN}`).send(body);
+  return request(app).post(`/api/admin/onboard-merchant`).set('x-admin-key', ADMIN).send(body);
 }
 async function login(app: any, phone: string, pin: string) {
   const res = await request(app).post('/api/auth/login').send({ phone, pin });

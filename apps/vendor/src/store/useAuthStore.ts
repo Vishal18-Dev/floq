@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth } from '@react-native-firebase/auth';
 import { UserSession } from '@floq/types';
 import { api } from '../services/api';
 import { authStorage } from '../services/authStorage';
@@ -29,6 +31,8 @@ interface AuthState {
   unlockBiometric: () => void;
   setUnlockPin: (pin: string, bioOn?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  /** Delete the account on the server, wipe this phone's local data, sign out. */
+  deleteAccount: () => Promise<void>;
   restoreSession: () => Promise<void>;
   clearError: () => void;
 }
@@ -154,6 +158,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await authStorage.clearSession();
     api.setAuthToken(null);
     set({ session: null, isAuthenticated: false, isLocked: false, needsPinSetup: false, isLoading: false, error: null });
+  },
+
+  deleteAccount: async () => {
+    await api.deleteAccount();
+    await AsyncStorage.clear().catch(() => {});
+    await getAuth().signOut().catch(() => {});
+    await get().logout();
   },
 
   clearError: () => set({ error: null }),

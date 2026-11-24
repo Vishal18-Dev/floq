@@ -1,0 +1,61 @@
+{
+  "_comment": "Demo shop for Play / Indus app reviewers. phone = the Firebase test number (no country code), pin = any 4-6 digits. Leave upiId empty: never put a real or made-up VPA here. Steps: docs/store-review-setup.md",
+  "phone": "REPLACE_WITH_FIREBASE_TEST_NUMBER",
+  "pin": "REPLACE_WITH_PIN",
+  "storeName": "floq Demo Kirana",
+  "storeNameLocal": "फ्लोक डेमो किराना",
+  "storeType": "GROCERY",
+  "mode": "RETAIL",
+  "secondaryLanguage": "hi",
+  "address": "Demo account for app review",
+  "upiId": "",
+  "typicalPrepTimeMinutes": 1,
+  "initialCategoryName": "Biscuits",
+  "suppliers": {
+    "Biscuits": "Demo Distributor",
+    "Staples": "Demo Distributor",
+    "Loose": "Demo Mandi"
+  },
+  "items": [
+    {
+      "name": "Parle-G",
+      "nameLocal": "पारले-जी",
+      "category": "Biscuits",
+      "packs": [
+        { "size": "100 g", "price": 10, "wholesalePrice": 9, "costPrice": 8, "stock": 120, "caseQty": 48, "dailyRate": 10 },
+        { "size": "800 g", "price": 80, "wholesalePrice": 72, "costPrice": 65, "stock": 20, "caseQty": 12, "dailyRate": 2 }
+      ]
+    },
+    {
+      "name": "Good Day Cashew",
+      "nameLocal": "गुड डे",
+      "category": "Biscuits",
+      "packs": [{ "size": "75 g", "price": 20, "wholesalePrice": 18, "costPrice": 16, "stock": 60, "caseQty": 36, "dailyRate": 5 }]
+    },
+    {
+      "name": "Toor dal",
+      "nameLocal": "तूर दाल",
+      "category": "Staples",
+      "packs": [{ "size": "1 kg", "price": 160, "wholesalePrice": 148, "costPrice": 135, "stock": 30, "caseQty": 10, "dailyRate": 3 }]
+    },
+    {
+      "name": "Sunflower oil",
+      "nameLocal": "सूरजमुखी तेल",
+      "category": "Staples",
+      "packs": [{ "size": "1 L", "price": 150, "wholesalePrice": 138, "costPrice": 125, "stock": 24, "caseQty": 12, "dailyRate": 2 }]
+    },
+    {
+      "name": "Sona masoori rice (loose)",
+      "nameLocal": "चावल",
+      "category": "Loose",
+      "isLoose": true,
+      "perKg": 62,
+      "stockKg": 50,
+      "dailyKg": 5
+    }
+  ],
+  "customers": [
+    { "name": "Demo Customer A", "kind": "REGULAR", "creditLimit": 2000, "owes": 450, "oldestDueDays": 6 },
+    { "name": "Demo Tea Stall", "kind": "SHOP", "creditLimit": 5000, "owes": 1200, "oldestDueDays": 12 }
+  ]
+}

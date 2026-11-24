@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { businessDate } from '@floq/utils';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { analyticsService } from '../../services/analyticsService';
 import { query, queryOne, execute } from '../../db';
@@ -20,7 +21,7 @@ router.get('/daily', async (req: AuthenticatedRequest, res: Response, next) => {
 // GET /api/analytics/day-status - open tokens carried over from previous days + close state
 router.get('/day-status', async (req: AuthenticatedRequest, res: Response, next) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = businessDate();
     const carriedRow = await queryOne(
       `SELECT COUNT(*) as count FROM orders
        WHERE store_id = $1 AND business_date < $2
@@ -67,7 +68,7 @@ router.get('/history', async (req: AuthenticatedRequest, res: Response, next) =>
 // POST /api/analytics/close-day - snapshot today's totals; open tokens carry over
 router.post('/close-day', async (req: AuthenticatedRequest, res: Response, next) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = businessDate();
     const summary = await analyticsService.getDailySummary(req.storeId!, today);
 
     const existing = await queryOne('SELECT id FROM day_closures WHERE store_id = $1 AND business_date = $2', [

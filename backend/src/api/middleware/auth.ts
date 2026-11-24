@@ -16,16 +16,9 @@ export interface AuthenticatedRequest extends Request {
  * NO SILENT DEFAULT FALLBACKS.
  */
 export async function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-  // Extract Authorization header or query token
+  // Bearer header only: tokens in URLs end up in proxy and server logs.
   const authHeader = req.headers.authorization;
-  const queryToken = req.query.token as string;
-  let token: string | null = null;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  } else if (queryToken) {
-    token = queryToken;
-  }
+  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
   if (!token) {
     res.status(401).json({
@@ -46,6 +39,13 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
         error: 'STORE_CONTEXT_REQUIRED',
         message: 'No active store context specified for request.',
       });
+      return;
+    }
+
+    // A deleted or disabled login must stop working now, not when its token expires.
+    const user = await queryOne('SELECT status FROM users WHERE id = $1', [payload.userId]);
+    if (!user || (user.status && user.status !== 'ACTIVE')) {
+      res.status(401).json({ error: 'ACCOUNT_INACTIVE', message: 'This account no longer exists or has been disabled.' });
       return;
     }
 

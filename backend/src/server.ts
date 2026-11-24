@@ -34,7 +34,7 @@ export function createServer() {
   const limits = createLimits();
 
   app.use(cors({ origin: config.corsOrigin, credentials: true }));
-  app.use(express.json());
+  app.use(express.json({ limit: '200kb' }));
 
   // Health check
   app.get('/api/health', (req, res) => {
@@ -57,11 +57,8 @@ export function createServer() {
   // Realtime Server-Sent Events (SSE) stream (Authenticated via query token or Bearer header)
   app.get('/api/realtime', async (req, res) => {
     const authHeader = req.headers.authorization;
-    const queryToken = req.query.token as string;
-    let token = queryToken;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
+    // ponytail: ?token= kept only for phones still on the pre-header OTA; delete once every beta phone has updated.
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : (req.query.token as string);
 
     if (!token) {
       res.status(401).json({ error: 'UNAUTHORIZED', message: 'Realtime SSE requires authentication token' });
@@ -86,7 +83,8 @@ export function createServer() {
 
       // Same tenant check as authMiddleware: the stream is only for the caller's own store.
       const store = await queryOne('SELECT merchant_id FROM stores WHERE id = $1', [storeId]);
-      if (!store || store.merchant_id !== payload.merchantId) {
+      const user = await queryOne('SELECT status FROM users WHERE id = $1', [payload.userId]);
+      if (!store || store.merchant_id !== payload.merchantId || !user || (user.status && user.status !== 'ACTIVE')) {
         res.status(403).json({ error: 'FORBIDDEN', message: 'Not authorized for this store' });
         return;
       }

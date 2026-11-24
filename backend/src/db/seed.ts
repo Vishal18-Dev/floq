@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { businessDate } from '@floq/utils';
 import { transaction } from './index';
 import { runMigrations } from './migrate';
 import { STORE_TEMPLATES } from '@floq/constants';
@@ -45,7 +46,7 @@ export async function seedDatabase(force: boolean = false): Promise<void> {
     }
 
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = businessDate(now);
 
     // ==========================================
     // 1. MERCHANT 1: Sharma Breakfast Corner

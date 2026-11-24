@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, Linking } from 'react-native';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
+import { IS_PLAY_BUILD } from '../../services/storeBuild';
 import { palette, fonts } from '../../theme';
 import { useStoreStore } from '../../store/useStoreStore';
 import { useCatalogStore } from '../../store/useCatalogStore';
-import { SubscriptionStatus } from '../../services/api';
+import { useAuthStore } from '../../store/useAuthStore';
+import { api, SubscriptionStatus } from '../../services/api';
 import { voiceService } from '../../services/voice';
 import { INR, entries, daysLeft, retailPrefs } from '../../services/retail';
 import type { SecondaryLanguage } from '../../i18n/strings';
@@ -194,11 +196,13 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
 
         {/* Account */}
         <Section label="TEAM AND ACCOUNT">
-          {subscription ? (
+          {subscription && !IS_PLAY_BUILD ? (
             <NavRow first title={`Subscription · ${subLabel(subscription)}`} sub={subDetail(subscription)} onPress={onManageSubscription} />
           ) : null}
-          <NavRow first={!subscription} title={retail ? 'Products and prices' : 'Menu and prices'} sub="Add, edit or remove items" onPress={onManageItems} />
+          <NavRow first={!subscription || IS_PLAY_BUILD} title={retail ? 'Products and prices' : 'Menu and prices'} sub="Add, edit or remove items" onPress={onManageItems} />
         </Section>
+
+        <TeamSection />
 
         <View style={{ gap: 2 }}>
           <TouchableOpacity
@@ -207,9 +211,99 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
           >
             <Text style={styles.logoutText}>Log out of this phone</Text>
           </TouchableOpacity>
+          <View style={styles.legal}>
+            <Text style={styles.link} onPress={() => Linking.openURL('https://getfloq.in/privacy/')}>Privacy policy</Text>
+            <Text style={styles.link} onPress={() => Linking.openURL('https://getfloq.in/terms/')}>Terms of service</Text>
+          </View>
+          <DeleteAccount />
           <Text style={styles.foot}>Bills on this phone are synced. {buildLine()}</Text>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+// Owner-only: who can log in to this shop, and removing someone who has left.
+type Member = { id: string; phone: string; name: string | null; role: 'OWNER' | 'MANAGER' | 'STAFF' };
+function TeamSection() {
+  const session = useAuthStore((st) => st.session);
+  const [members, setMembers] = useState<Member[]>([]);
+  const owner = session?.role === 'OWNER';
+  useEffect(() => {
+    if (owner) api.getMembers().then((r) => setMembers(r.members)).catch(() => {});
+  }, [owner]);
+  const others = members.filter((m) => m.role !== 'OWNER');
+  if (!owner || !others.length) return null;
+
+  const remove = (m: Member) =>
+    Alert.alert(`Remove ${m.name || m.phone}?`, 'They will be logged out and can no longer open this shop.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () =>
+          api.removeMember(m.id)
+            .then(() => setMembers((list) => list.filter((x) => x.id !== m.id)))
+            .catch((e) => Alert.alert('Could not remove', e?.message || 'Try again.')),
+      },
+    ]);
+
+  return (
+    <Section label="TEAM">
+      {others.map((m, i) => (
+        <View key={m.id} style={[styles.memberRow, i > 0 && styles.memberDivider]}>
+          <RowText title={m.name || m.phone} sub={`${m.role === 'MANAGER' ? 'Manager' : 'Staff'} · ${m.phone}`} />
+          <TouchableOpacity onPress={() => remove(m)} style={styles.memberRemove}>
+            <Text style={styles.deleteText}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+    </Section>
+  );
+}
+
+// Play Store + DPDP: in-app account deletion. Typing DELETE guards against a stray tap.
+function DeleteAccount() {
+  const { session, deleteAccount } = useAuthStore();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const owner = session?.role === 'OWNER';
+  const what = owner
+    ? 'This permanently deletes your shop and everything in it: items, prices, stock, bills, credit customers and dues. Everyone on your team loses access. This cannot be undone.'
+    : 'This permanently deletes your login. The shop and its records stay with the owner. This cannot be undone.';
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      await deleteAccount();
+    } catch (e: any) {
+      setBusy(false);
+      Alert.alert('Could not delete account', e?.message || 'Check your internet connection and try again.');
+    }
+  };
+
+  if (!open) {
+    return (
+      <TouchableOpacity style={styles.logout} onPress={() => setOpen(true)}>
+        <Text style={styles.deleteText}>Delete account</Text>
+      </TouchableOpacity>
+    );
+  }
+  return (
+    <View style={[styles.card, { padding: 14, gap: 10 }]}>
+      <Text style={styles.rowTitle}>{owner ? 'Delete shop and account?' : 'Delete your account?'}</Text>
+      <Text style={styles.sub}>{what}</Text>
+      <Text style={styles.sub}>Type DELETE to confirm.</Text>
+      <TextInput style={styles.deleteInput} value={typed} onChangeText={setTyped} autoCapitalize="characters" autoCorrect={false} placeholder="DELETE" placeholderTextColor={palette.neutral[500]} />
+      <View style={{ flexDirection: 'row', gap: 16 }}>
+        <TouchableOpacity style={styles.logout} onPress={() => { setOpen(false); setTyped(''); }} disabled={busy}>
+          <Text style={styles.link}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.logout} onPress={run} disabled={busy || typed.trim() !== 'DELETE'}>
+          <Text style={[styles.deleteText, (busy || typed.trim() !== 'DELETE') && { opacity: 0.4 }]}>{busy ? 'Deleting…' : 'Delete permanently'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -337,5 +431,12 @@ const styles = StyleSheet.create({
   stepVal: { minWidth: 56, textAlign: 'center', fontFamily: fonts.heading, fontWeight: '800', fontSize: 16, color: palette.ink },
   logout: { alignSelf: 'flex-start', minHeight: 48, justifyContent: 'center', paddingHorizontal: 4 },
   logoutText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },
+  memberRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, minHeight: 56 },
+  memberDivider: { borderTopWidth: 1, borderTopColor: palette.neutral[200] },
+  memberRemove: { minHeight: 48, justifyContent: 'center', paddingLeft: 12 },
+  legal: { flexDirection: 'row', gap: 20, paddingHorizontal: 4, minHeight: 48, alignItems: 'center' },
+  link: { fontFamily: fonts.semibold, fontSize: 15, color: palette.link },
+  deleteText: { fontFamily: fonts.semibold, fontSize: 16, color: palette.accentRamp[600] },
+  deleteInput: { borderWidth: 1, borderColor: palette.neutral[300], borderRadius: 10, paddingHorizontal: 12, minHeight: 48, fontFamily: fonts.body, fontSize: 16, color: palette.ink },
   foot: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: palette.neutral[600], paddingHorizontal: 4 },
 });

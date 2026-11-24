@@ -19,7 +19,7 @@ describe('P0-3 Authenticated Realtime SSE Server Tests (PostgreSQL)', () => {
 
   it('2. Authenticated /api/realtime connection connects and emits CONNECTED event with eventId', async () => {
     const token = jwt.sign(
-      { userId: 'user_sharma_01', merchantId: 'merchant_sharma_01', storeIds: ['store_sharma_01'], role: 'OWNER' },
+      { userId: 'user_sharma_owner', merchantId: 'merchant_sharma_01', storeIds: ['store_sharma_01'], role: 'OWNER' },
       config.jwtSecret
     );
 
