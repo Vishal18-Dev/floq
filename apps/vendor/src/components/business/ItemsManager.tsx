@@ -23,14 +23,19 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
     if (!editing.categoryId) { Alert.alert('Category needed', 'This store has no category yet.'); return; }
     const packs = editing.packs ?? [];
     if (packs.some((k) => !(k.price > 0))) { Alert.alert('Price needed', 'Every pack needs a selling price.'); return; }
+    if (retail && editing.isLoose && !((editing.perKg ?? 0) > 0)) { Alert.alert('Price needed', 'Enter a price per kg.'); return; }
     setSaving(true);
     try {
-      const before = products.find((p) => p.id === editing.id)?.packs ?? [];
+      const orig = products.find((p) => p.id === editing.id);
+      if (retail && editing.isLoose && editing.id && editing.perKg !== orig?.perKg) await api.updatePerKg(editing.id, editing.perKg!);
+      const before = orig?.packs ?? [];
       for (const k of packs) {
         const old = before.find((o) => o.id === k.id);
         if (old && (old.price !== k.price || old.wholesalePrice !== k.wholesalePrice)) await api.updatePackPrice(k.id, k.price, k.wholesalePrice);
       }
-      await saveProduct(editing);
+      // Retail doesn't edit product.price (packs/per-kg above own it); don't overwrite it.
+      const { price, ...rest } = editing;
+      await saveProduct(retail ? rest : editing);
       setEditing(null);
     }
     catch (e: any) { Alert.alert('Could not save', e?.message || 'Try again.'); }
@@ -65,6 +70,9 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
                 </View>
               );
             }) : null}
+            {retail && editing.isLoose ? (
+              <Field label="PRICE PER KG (₹)"><TextInput style={styles.input} value={editing.perKg ? String(editing.perKg) : ''} onChangeText={(v) => setEditing({ ...editing, perKg: parseInt(v.replace(/\D/g, '') || '0', 10) })} keyboardType="number-pad" placeholder="0" placeholderTextColor={palette.neutral[500]} /></Field>
+            ) : null}
             {retail ? null : <Field label="PRICE (₹)"><TextInput style={styles.input} value={editing.price ? String(editing.price) : ''} onChangeText={(v) => setEditing({ ...editing, price: parseInt(v.replace(/\D/g, '') || '0', 10) })} keyboardType="number-pad" placeholder="0" placeholderTextColor={palette.neutral[500]} /></Field>}
             <Field label="CATEGORY">
               <View style={styles.catRow}>
@@ -108,7 +116,7 @@ export function ItemsManager({ visible, onClose }: { visible: boolean; onClose: 
               ))
             )}
             {retail ? (
-              <Text style={styles.empty}>Tap a product to change its pack prices. To add a product, use Stock → New product.</Text>
+              <Text style={styles.empty}>Tap a product to change its prices. To add a product, use Stock → New product.</Text>
             ) : (
               <TouchableOpacity style={styles.addBtn} onPress={() => setEditing(blank())}>
                 <Text style={styles.addText}>+ ADD ITEM</Text>

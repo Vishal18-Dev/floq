@@ -120,4 +120,20 @@ describe('Retail order path — stock, credit dues and wholesale invoices', () =
     expect(res.status).toBe(200);
     expect(res.body.product.name).toBe('VCO renamed');
   });
+
+  it('edits a loose good\'s per-kg price, and the next sale uses it', async () => {
+    const bad = await request(app).patch('/api/retail/products/nprod_tur/per-kg').set(headers).send({ perKg: -5 });
+    expect(bad.status).toBe(400);
+    const packed = await request(app).patch('/api/retail/products/nprod_vco/per-kg').set(headers).send({ perKg: 100 });
+    expect(packed.status).toBe(404); // packed products are priced per pack
+
+    const res = await request(app).patch('/api/retail/products/nprod_tur/per-kg').set(headers).send({ perKg: 300 });
+    expect(res.status).toBe(200);
+
+    const sale = await request(app)
+      .post('/api/orders')
+      .set(headers)
+      .send({ source: 'STAFF_POS', paymentMethod: 'CASH', immediatePayment: true, items: [{ productId: 'nprod_tur', sellUnit: 'GRAM', quantity: 500 }] });
+    expect(sale.body.order.total).toBe(150); // 300/kg × 0.5 kg
+  });
 });
