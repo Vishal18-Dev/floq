@@ -15,7 +15,6 @@ module.exports = () => {
     plugins: [
       ...(expo.plugins || []),
       '@react-native-firebase/app',
-      'expo-image-picker',
       ['expo-local-authentication', { faceIDPermission: 'Unlock FLOQ with Face ID' }],
       // Pin Kotlin to the 2.1.x family Expo 54 is built for: RNFirebase 27 would
       // default to 2.4.0 (KSP can't resolve it) and 2.2.x breaks Expo's gradle
