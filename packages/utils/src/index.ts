@@ -191,3 +191,25 @@ export class WebAudioSynthesizer {
     }
   }
 }
+
+// Business day = the shop's local calendar day (India, UTC+5:30, no DST), so
+// "today" rolls over at midnight IST, not 05:30 IST.
+// ponytail: fixed IST offset; every store is Asia/Kolkata. Read stores.timezone if we ever leave India.
+const IST_OFFSET_MS = 330 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** YYYY-MM-DD of the IST calendar day containing `d`. */
+export function businessDate(d: Date = new Date()): string {
+  return new Date(d.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** UTC ISO bounds [start, end] of an IST business day, for created_at comparisons. */
+export function businessDayRange(date: string): { start: string; end: string } {
+  const start = Date.parse(`${date}T00:00:00.000Z`) - IST_OFFSET_MS;
+  return { start: new Date(start).toISOString(), end: new Date(start + DAY_MS - 1).toISOString() };
+}
+
+/** IST hour (0-23) of an ISO timestamp. */
+export function businessHour(iso: string): number {
+  return new Date(Date.parse(iso) + IST_OFFSET_MS).getUTCHours();
+}
