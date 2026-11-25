@@ -23,6 +23,12 @@
       },
       "channel": "production"
     },
+    "phonepe": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "play": {
       "extends": "production",
       "channel": "play"
@@ -30,6 +36,7 @@
   },
   "submit": {
     "production": {},
-    "play": {}
+    "play": {},
+    "phonepe": {}
   }
 }

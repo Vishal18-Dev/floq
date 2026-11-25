@@ -33,10 +33,10 @@ The repo root has a `wrangler.jsonc` that serves this folder as static assets.
 
 ## Before launch (1 Jan 2027)
 
-- [ ] Replace the two store buttons with the official Google Play and Indus Appstore badges and real listing links (search for `href="#get"`).
+- [ ] Replace the two store buttons with the official Google Play and PhonePe Appstore badges and real listing links (search for `href="#get"`).
 - [ ] Point the WhatsApp links (`href="#setup"`) at `https://wa.me/<number>?text=...`.
 - [ ] Set up `hello@getfloq.in` and `privacy@getfloq.in` (Cloudflare Email Routing can forward both).
-- [x] Privacy policy and terms filled in (individual operator, Bengaluru, no refunds, no GST). Not lawyer-reviewed. Use `https://getfloq.in/privacy/` as the privacy policy URL in Google Play and Indus. Add Cloudinary back to the privacy policy if product photo upload is ever built.
+- [x] Privacy policy and terms filled in (individual operator, Bengaluru, no refunds, no GST). Not lawyer-reviewed. Use `https://getfloq.in/privacy/` as the privacy policy URL in Google Play and PhonePe Appstore. Add Cloudinary back to the privacy policy if product photo upload is ever built.
 - [ ] Link the "Download APK" footer item to the hosted APK, or remove it.
 - [ ] Add an Open Graph share image (`og:image`).
 - [ ] Add testimonials once there are 2 or 3 real merchant quotes.

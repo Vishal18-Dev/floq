@@ -137,9 +137,11 @@ floq किराना दुकान, चाय की टपरी और �
 आपका डेटा आपका है। floq में विज्ञापन नहीं हैं, हम आपका डेटा नहीं बेचते, और आप Settings से कभी भी अपना अकाउंट हटा सकते हैं।
 ```
 
-## 4. Indus Appstore listing
+## 4. PhonePe Appstore listing (formerly Indus Appstore)
 
-Use the same English and Hindi text as above. Indus allows the in-app UPI subscription, so you can add this line at the end of the full description:
+Full launch steps, the 200-character short description and asset specs are in `docs/phonepe-appstore.md`.
+
+Use the same English and Hindi text as above. PhonePe Appstore allows the in-app UPI subscription, so you can add this line at the end of the full description:
 ```
 7 days free, then ₹49 a month or ₹499 a year. Pay by UPI inside the app.
 ```
@@ -147,7 +149,7 @@ Hindi:
 ```
 7 दिन मुफ़्त, फिर ₹49 महीना या ₹499 साल। ऐप में ही UPI से भुगतान।
 ```
-Indus pushes regional-language listings *(verify which languages it accepts)*. Tamil and Marathi match the app's languages. Get them translated by a native speaker, not machine-translated.
+PhonePe Appstore auto-translates the listing into 12 Indian languages; paste the Hindi text above over its Hindi translation. Tamil and Marathi match the app's languages. Get them translated by a native speaker, not machine-translated.
 
 ## 5. Graphics checklist
 
