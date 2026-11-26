@@ -17,8 +17,8 @@ PhonePe renamed Indus Appstore to **PhonePe Appstore** on 28 Oct 2026. The devel
 | Short description | Up to **200** characters | Below |
 | Long description | Up to 4,000 characters | Below |
 | Languages | Auto-translates the listing into 12 Indian languages; you review and edit each one | Paste our Hindi text over the auto-translation; check Tamil and Marathi with a native speaker |
-| Privacy policy | Mandatory, must be reachable | `https://floqapp.in/privacy/` (switch to `getfloq.in` once that domain is attached to the Worker) |
-| Support | Support email and contact details | `hello@getfloq.in`. Confirm it receives mail first |
+| Privacy policy | Mandatory, must be reachable | `https://floqapp.in/privacy/` |
+| Support | Support email and contact details | `hello@floqapp.in`. Confirm it receives mail first |
 | Reviewer login | Test credentials if sign-in is needed | Text in `docs/store-review-setup.md` §1e |
 | Billing | Zero commission; any third-party payment method is allowed | The in-app UPI subscription stays in this build |
 | Review time | Usually 24–72 hours; blocked until KYC is done | |
@@ -35,6 +35,16 @@ The `phonepe` profile is `production` with an APK instead of an AAB. It uses the
 ```bash
 eas update --channel production --message "..."
 ```
+
+### The console's upload checklist
+
+| Console asks | floq's APK |
+|---|---|
+| Target SDK 34 or higher | Expo SDK 54 targets API 36 |
+| 64-bit and 32-bit | The release APK holds arm64-v8a, armeabi-v7a, x86 and x86_64 (no `abiFilters` set) |
+| APK, AAB or APKS | APK from the `phonepe` profile |
+| Unencrypted files | EAS output is a plain signed APK |
+| Lineage and new signature | "Lineage" only matters after a signing-key rotation. floq has never rotated its EAS key, so the normal v2/v3 signature is all there is |
 
 Before each new store upload, bump `android.versionCode` in `app.json`. The store refuses a version code it has already seen, and Android refuses to update to a lower one.
 
@@ -70,13 +80,13 @@ Fast billing, stock and khata (credit book) for kirana shops, tea stalls and foo
 
 **Long description:** the English and Hindi full descriptions in `docs/store-listing.md` §3, plus the pricing line from §4 at the end. PhonePe allows the price and the in-app UPI payment to be mentioned.
 
-**App website:** `https://floqapp.in` (later `https://getfloq.in`).
+**App website:** `https://floqapp.in`
 
 ## Steps only Vishal can do
 
 1. **Register** at `developer.phonepeappstore.com` → Register Free, and verify the email.
 2. **Verify identity:** Manage Profile → Start Verification, with mobile number, PAN and date of birth. Do this first; review can't finish without it.
-3. **Confirm `hello@getfloq.in` receives mail** (Cloudflare Email Routing), because it's the support address on the listing. If getfloq.in isn't set up yet, use an address that works today.
+3. **Confirm `hello@floqapp.in` receives mail** (Cloudflare Email Routing), because it is the support address on the listing.
 4. **Reviewer account:** add the Firebase test number and seed the demo shop (`docs/store-review-setup.md` §1a–1c), if not done already.
 5. **Build:** `eas build -p android --profile phonepe` and download the APK. Install it on your own phone over the beta APK once, to check it updates in place and signs in.
 6. **Screenshots:** take them as listed above.

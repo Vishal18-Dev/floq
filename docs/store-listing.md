@@ -1,13 +1,13 @@
 # Store listing and Play Console answers
 
-Copy-paste material for Google Play Console and the Indus Developer Platform, written from what the app actually does (Nov 2026). Console wording changes, so match each answer to the closest question you see. Items marked *(verify)* depend on a console detail I couldn't check.
+Copy-paste material for Google Play Console and the PhonePe Appstore (formerly Indus) developer console, written from what the app actually does (Nov 2026). Console wording changes, so match each answer to the closest question you see. Items marked *(verify)* depend on a console detail I couldn't check.
 
 ## 1. Play Data safety form
 
 **Overview answers**
 - Does your app collect or share any of the required user data types? **Yes**
 - Is all user data encrypted in transit? **Yes** (HTTPS only)
-- Do you provide a way for users to request that their data is deleted? **Yes**: in the app (Settings → Delete account) and at `https://getfloq.in/delete-account/`
+- Do you provide a way for users to request that their data is deleted? **Yes**: in the app (Settings → Delete account) and at `https://floqapp.in/delete-account/`
 
 **Data types.** For every row: **Collected: yes, Shared: no.** Firebase, Render and Sentry process data on floq's behalf; Play counts service providers as "not shared". Nothing is used for ads or marketing. Nothing is sold.
 
@@ -41,9 +41,9 @@ Copy-paste material for Google Play Console and the Indus Developer Platform, wr
 | **Health apps** | No |
 | **Financial features** | The app is a business tool for shopkeepers. It does **not** offer loans, credit to consumers, payments processing, money transfer, wallets, crypto or investments. Pick "My app doesn't provide any financial features" if offered *(verify)*. The khata is bookkeeping: a record of what the merchant's customers owe them. Explain this in the notes if asked |
 | **Data safety** | Section 1 above |
-| **Privacy policy URL** | `https://getfloq.in/privacy/` |
+| **Privacy policy URL** | `https://floqapp.in/privacy/` |
 | **App category** | Business |
-| **Contact details** | Email `hello@getfloq.in`, website `https://getfloq.in`. A phone number is optional |
+| **Contact details** | Email `hello@floqapp.in`, website `https://floqapp.in`. A phone number is optional |
 
 ## 3. Google Play listing
 
@@ -149,6 +149,15 @@ Hindi:
 ```
 7 दिन मुफ़्त, फिर ₹49 महीना या ₹499 साल। ऐप में ही UPI से भुगतान।
 ```
+**PhonePe Appstore submission checklist** (from the developer policy, Nov 2026)
+- Account: verify mobile and email, then identity verification with proof of identity and proof of address. Register as an individual.
+- Upload the APK from the `phonepe` profile (`docs/phonepe-appstore.md`). An AAB would make you upload the keystore with every release. Never upload the `play` build here: it hides the subscription.
+- Declare target group (adults, 18+) and content rating before listing.
+- Subscription disclosure (policy §6): price, billing period, what happens when the trial ends, and how to cancel. The subscribe screen and the pricing line above cover this. It's manual UPI with no auto-renewal, so there is nothing to cancel.
+- Privacy policy: the app links to `https://floqapp.in/privacy/` and `/terms/` from signup and Settings, so the domain must be live before review.
+- Icon: `brand/floq-brand-assets/02_app-icon/android/play-store-icon-512.png`. Screenshots: see section 5.
+- Reviewer login: `docs/store-review-setup.md` §1.
+
 PhonePe Appstore auto-translates the listing into 12 Indian languages; paste the Hindi text above over its Hindi translation. Tamil and Marathi match the app's languages. Get them translated by a native speaker, not machine-translated.
 
 ## 5. Graphics checklist

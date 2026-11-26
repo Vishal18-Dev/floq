@@ -161,6 +161,9 @@ export function SubscribeScreen({
       <Text style={styles.note}>
         Pay the exact amount, then tap “{bi('iHavePaid').primary}”. We verify manually and activate your account, usually within a few hours.
       </Text>
+      <Text style={styles.note}>
+        No auto-renewal: floq never charges you on its own. When your plan or free trial ends, new sales pause until you pay again. Nothing to cancel.
+      </Text>
     </ScrollView>
   );
 }

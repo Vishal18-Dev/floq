@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, SafeAreaView, StatusBar, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, SafeAreaView, StatusBar, StyleSheet, Platform, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { Order, OrderStatus, PaymentMethod } from '@floq/types';
 
 import { Header } from './components/layout/Header';
@@ -70,7 +70,11 @@ export default function App() {
   useEffect(() => {
     // Wake a possibly-sleeping backend (free-tier spin-down) up front, so the
     // first login/sale isn't the request that eats the ~50s cold start.
-    api.warmup();
+    api.warmup().then((wasAsleep) => {
+      // The first loads raced a cold start and fell back to cache or empty;
+      // reload once now that the server is up.
+      if (wasAsleep && useAuthStore.getState().isAuthenticated) loadAllRef.current(true);
+    });
     restoreSession();
   }, [restoreSession]);
 
@@ -89,14 +93,17 @@ export default function App() {
     return () => { unsub && unsub(); };
   }, []);
 
-  const loadAll = useCallback(async () => {
+  // silent: refresh in place without putting the splash back over the counter.
+  const loadAll = useCallback(async (silent = false) => {
     if (!isAuthenticated) return;
-    setDataLoading(true);
+    if (!silent) setDataLoading(true);
     await Promise.all([loadStore(), loadCatalog(), loadOrders(), loadAnalytics(), loadDayStatus(), loadSubscription(), loadCustomers()]);
-    setDataLoading(false);
+    if (!silent) setDataLoading(false);
   }, [isAuthenticated, loadStore, loadCatalog, loadOrders, loadAnalytics, loadDayStatus, loadSubscription, loadCustomers]);
 
   useEffect(() => { if (isAuthenticated) loadAll(); }, [isAuthenticated, loadAll]);
+  const loadAllRef = React.useRef(loadAll);
+  loadAllRef.current = loadAll;
 
   // Configure voice from store settings.
   useEffect(() => {
@@ -108,7 +115,7 @@ export default function App() {
   // Realtime order events.
   useEffect(() => {
     if (!isAuthenticated) return;
-    realtimeClient.setReconnectedCallback(() => loadAll());
+    realtimeClient.setReconnectedCallback(() => loadAll(true));
     const unsub = realtimeClient.subscribe((event) => {
       if ((event.type === 'ORDER_CREATED' || event.type === 'ORDER_UPDATED') && event.order) {
         upsertOrder(event.order);
@@ -248,15 +255,19 @@ export default function App() {
   if (!fontsReady || authLoading) {
     return <Splash />;
   }
-  if (!isAuthenticated) {
-    return <OnboardingFlow />;
-  }
-  // Authenticated but needs a quick-unlock PIN set, or must unlock this open.
-  if (needsPinSetup) {
-    return <SetUnlockPinScreen />;
-  }
-  if (isLocked) {
-    return <LockScreen storeName={store?.name} />;
+  // Auth screens render outside the main shell; RN's SafeAreaView is iOS-only,
+  // so pad Android's edge-to-edge status bar here (same approach as Header).
+  const authGate = !isAuthenticated ? <OnboardingFlow />
+    : needsPinSetup ? <SetUnlockPinScreen />
+    : isLocked ? <LockScreen storeName={store?.name} />
+    : null;
+  if (authGate) {
+    return (
+      <View style={styles.authShell}>
+        <StatusBar barStyle="dark-content" backgroundColor={palette.bg} />
+        {authGate}
+      </View>
+    );
   }
   if (showSplash || dataLoading) {
     return <Splash storeName={store?.name} carryOver={useCatalogStore.getState().carriedOverTokens} />;
@@ -403,6 +414,7 @@ function Splash({ storeName, carryOver }: { storeName?: string; carryOver?: numb
 
 const styles = StyleSheet.create({
   app: { flex: 1, backgroundColor: palette.bg },
+  authShell: { flex: 1, backgroundColor: palette.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 0 },
   main: { flex: 1, backgroundColor: palette.bg },
   splash: { flex: 1, backgroundColor: palette.highlight, justifyContent: 'space-between', padding: 30, paddingTop: 60, paddingBottom: 50 },
   splashStore: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink, opacity: 0.8 },

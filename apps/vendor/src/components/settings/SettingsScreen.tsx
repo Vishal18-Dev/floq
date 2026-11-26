@@ -212,8 +212,8 @@ export function SettingsScreen({ onManageItems, onManageSubscription, onLogout, 
             <Text style={styles.logoutText}>Log out of this phone</Text>
           </TouchableOpacity>
           <View style={styles.legal}>
-            <Text style={styles.link} onPress={() => Linking.openURL('https://getfloq.in/privacy/')}>Privacy policy</Text>
-            <Text style={styles.link} onPress={() => Linking.openURL('https://getfloq.in/terms/')}>Terms of service</Text>
+            <Text style={styles.link} onPress={() => Linking.openURL('https://floqapp.in/privacy/')}>Privacy policy</Text>
+            <Text style={styles.link} onPress={() => Linking.openURL('https://floqapp.in/terms/')}>Terms of service</Text>
           </View>
           <DeleteAccount />
           <Text style={styles.foot}>Bills on this phone are synced. {buildLine()}</Text>

@@ -3,6 +3,11 @@
 {
   "name": "floq",
   "compatibility_date": "2026-11-01",
+  // Serve the whole domain from this Worker (not just "/"), so /privacy/ etc. never fall through to the GoDaddy parking page.
+  "routes": [
+    { "pattern": "floqapp.in", "custom_domain": true },
+    { "pattern": "www.floqapp.in", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./apps/web",
     "html_handling": "auto-trailing-slash"
