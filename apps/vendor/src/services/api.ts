@@ -156,9 +156,12 @@ class NativeApiClient {
    * login/sale. Fire-and-forget; swallows errors. Uses a long timeout because
    * a cold start can take ~50s.
    */
-  public async warmup(timeoutMs: number = 60000): Promise<void> {
+  /** Resolves true if the backend was asleep (the wake took long enough that
+   *  the app's normal 15s requests will have timed out meanwhile). */
+  public async warmup(timeoutMs: number = 60000): Promise<boolean> {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
+    const started = Date.now();
     try {
       await fetch(`${this.baseUrl}/health`, { signal: controller.signal });
     } catch {
@@ -166,6 +169,7 @@ class NativeApiClient {
     } finally {
       clearTimeout(id);
     }
+    return Date.now() - started > 10000;
   }
 
   private async request<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
@@ -323,7 +327,9 @@ class NativeApiClient {
     staff: any[];
     devices: any[];
   }> {
-    return this.request('/stores/current');
+    // Long timeout: this decides the whole UI (mode, name), and the first open
+    // of the day can hit a free-tier cold start. The cached copy covers the wait.
+    return this.request('/stores/current', { timeoutMs: 55000 });
   }
 
   public async updateStoreSettings(settings: Partial<StoreSettings>): Promise<{ settings: StoreSettings }> {

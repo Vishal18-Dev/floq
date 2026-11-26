@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { businessDate } from '@floq/utils';
-import { Category, Order, Product, StoreSettings } from '@floq/types';
+import { Category, Order, Product, Store, StoreSettings } from '@floq/types';
 
 export interface PendingSyncItem {
   id: string;
@@ -14,12 +14,23 @@ const KEYS = {
   PRODUCTS: '@floq/products',
   CATEGORIES: '@floq/categories',
   SETTINGS: '@floq/settings',
+  STORE: '@floq/store',
   PENDING_SYNC: '@floq/pending_sync',
   CACHED_ORDERS: '@floq/cached_orders',
   OFFLINE_TICKET_SEQ: '@floq/offline_ticket_seq',
 };
 
 export class NativeStorageService {
+  /** Last good store + settings, so a cold launch never renders a guessed mode. */
+  public static async saveStore(data: { store: Store; settings: StoreSettings | null }): Promise<void> {
+    await AsyncStorage.setItem(KEYS.STORE, JSON.stringify(data));
+  }
+
+  public static async getStore(): Promise<{ store: Store; settings: StoreSettings | null } | null> {
+    const raw = await AsyncStorage.getItem(KEYS.STORE);
+    return raw ? JSON.parse(raw) : null;
+  }
+
   // Products Cache
   public static async saveProducts(products: Product[]): Promise<void> {
     await AsyncStorage.setItem(KEYS.PRODUCTS, JSON.stringify(products));

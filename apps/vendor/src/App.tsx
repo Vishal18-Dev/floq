@@ -70,7 +70,11 @@ export default function App() {
   useEffect(() => {
     // Wake a possibly-sleeping backend (free-tier spin-down) up front, so the
     // first login/sale isn't the request that eats the ~50s cold start.
-    api.warmup();
+    api.warmup().then((wasAsleep) => {
+      // The first loads raced a cold start and fell back to cache or empty;
+      // reload once now that the server is up.
+      if (wasAsleep && useAuthStore.getState().isAuthenticated) loadAllRef.current(true);
+    });
     restoreSession();
   }, [restoreSession]);
 
@@ -89,14 +93,17 @@ export default function App() {
     return () => { unsub && unsub(); };
   }, []);
 
-  const loadAll = useCallback(async () => {
+  // silent: refresh in place without putting the splash back over the counter.
+  const loadAll = useCallback(async (silent = false) => {
     if (!isAuthenticated) return;
-    setDataLoading(true);
+    if (!silent) setDataLoading(true);
     await Promise.all([loadStore(), loadCatalog(), loadOrders(), loadAnalytics(), loadDayStatus(), loadSubscription(), loadCustomers()]);
-    setDataLoading(false);
+    if (!silent) setDataLoading(false);
   }, [isAuthenticated, loadStore, loadCatalog, loadOrders, loadAnalytics, loadDayStatus, loadSubscription, loadCustomers]);
 
   useEffect(() => { if (isAuthenticated) loadAll(); }, [isAuthenticated, loadAll]);
+  const loadAllRef = React.useRef(loadAll);
+  loadAllRef.current = loadAll;
 
   // Configure voice from store settings.
   useEffect(() => {
@@ -108,7 +115,7 @@ export default function App() {
   // Realtime order events.
   useEffect(() => {
     if (!isAuthenticated) return;
-    realtimeClient.setReconnectedCallback(() => loadAll());
+    realtimeClient.setReconnectedCallback(() => loadAll(true));
     const unsub = realtimeClient.subscribe((event) => {
       if ((event.type === 'ORDER_CREATED' || event.type === 'ORDER_UPDATED') && event.order) {
         upsertOrder(event.order);
