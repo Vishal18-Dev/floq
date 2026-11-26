@@ -1,6 +1,6 @@
 # Store listing and Play Console answers
 
-Copy-paste material for Google Play Console and the Indus Developer Platform, written from what the app actually does (Nov 2026). Console wording changes, so match each answer to the closest question you see. Items marked *(verify)* depend on a console detail I couldn't check.
+Copy-paste material for Google Play Console and the PhonePe Appstore (formerly Indus) developer console, written from what the app actually does (Nov 2026). Console wording changes, so match each answer to the closest question you see. Items marked *(verify)* depend on a console detail I couldn't check.
 
 ## 1. Play Data safety form
 
@@ -137,9 +137,11 @@ floq किराना दुकान, चाय की टपरी और �
 आपका डेटा आपका है। floq में विज्ञापन नहीं हैं, हम आपका डेटा नहीं बेचते, और आप Settings से कभी भी अपना अकाउंट हटा सकते हैं।
 ```
 
-## 4. Indus Appstore listing
+## 4. PhonePe Appstore listing (formerly Indus Appstore)
 
-Use the same English and Hindi text as above. Indus allows the in-app UPI subscription, so you can add this line at the end of the full description:
+Full launch steps, the 200-character short description and asset specs are in `docs/phonepe-appstore.md`.
+
+Use the same English and Hindi text as above. PhonePe Appstore allows the in-app UPI subscription, so you can add this line at the end of the full description:
 ```
 7 days free, then ₹49 a month or ₹499 a year. Pay by UPI inside the app.
 ```
@@ -147,16 +149,16 @@ Hindi:
 ```
 7 दिन मुफ़्त, फिर ₹49 महीना या ₹499 साल। ऐप में ही UPI से भुगतान।
 ```
-**Indus submission checklist** (from the Indus/PhonePe Appstore developer policy, Nov 2026; the console form itself is behind login)
+**PhonePe Appstore submission checklist** (from the developer policy, Nov 2026)
 - Account: verify mobile and email, then identity verification with proof of identity and proof of address. Register as an individual.
-- Upload the `production` profile AAB (Indus accepts .apk/.aab). Never upload the `play` AAB to Indus: it hides the subscription.
+- Upload the APK from the `phonepe` profile (`docs/phonepe-appstore.md`). An AAB would make you upload the keystore with every release. Never upload the `play` build here: it hides the subscription.
 - Declare target group (adults, 18+) and content rating before listing.
 - Subscription disclosure (policy §6): price, billing period, what happens when the trial ends, and how to cancel. The subscribe screen and the pricing line above cover this. It's manual UPI with no auto-renewal, so there is nothing to cancel.
 - Privacy policy: the app links to `https://floqapp.in/privacy/` and `/terms/` from signup and Settings, so the domain must be live before review.
 - Icon: `brand/floq-brand-assets/02_app-icon/android/play-store-icon-512.png`. Screenshots: see section 5.
 - Reviewer login: `docs/store-review-setup.md` §1.
 
-Indus pushes regional-language listings *(verify which languages it accepts)*. Tamil and Marathi match the app's languages. Get them translated by a native speaker, not machine-translated.
+PhonePe Appstore auto-translates the listing into 12 Indian languages; paste the Hindi text above over its Hindi translation. Tamil and Marathi match the app's languages. Get them translated by a native speaker, not machine-translated.
 
 ## 5. Graphics checklist
 
