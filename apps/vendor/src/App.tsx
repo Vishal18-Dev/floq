@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, SafeAreaView, StatusBar, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, SafeAreaView, StatusBar, StyleSheet, Platform, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { Order, OrderStatus, PaymentMethod } from '@floq/types';
 
 import { Header } from './components/layout/Header';
@@ -248,15 +248,19 @@ export default function App() {
   if (!fontsReady || authLoading) {
     return <Splash />;
   }
-  if (!isAuthenticated) {
-    return <OnboardingFlow />;
-  }
-  // Authenticated but needs a quick-unlock PIN set, or must unlock this open.
-  if (needsPinSetup) {
-    return <SetUnlockPinScreen />;
-  }
-  if (isLocked) {
-    return <LockScreen storeName={store?.name} />;
+  // Auth screens render outside the main shell; RN's SafeAreaView is iOS-only,
+  // so pad Android's edge-to-edge status bar here (same approach as Header).
+  const authGate = !isAuthenticated ? <OnboardingFlow />
+    : needsPinSetup ? <SetUnlockPinScreen />
+    : isLocked ? <LockScreen storeName={store?.name} />
+    : null;
+  if (authGate) {
+    return (
+      <View style={styles.authShell}>
+        <StatusBar barStyle="dark-content" backgroundColor={palette.bg} />
+        {authGate}
+      </View>
+    );
   }
   if (showSplash || dataLoading) {
     return <Splash storeName={store?.name} carryOver={useCatalogStore.getState().carriedOverTokens} />;
@@ -403,6 +407,7 @@ function Splash({ storeName, carryOver }: { storeName?: string; carryOver?: numb
 
 const styles = StyleSheet.create({
   app: { flex: 1, backgroundColor: palette.bg },
+  authShell: { flex: 1, backgroundColor: palette.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 0 },
   main: { flex: 1, backgroundColor: palette.bg },
   splash: { flex: 1, backgroundColor: palette.highlight, justifyContent: 'space-between', padding: 30, paddingTop: 60, paddingBottom: 50 },
   splashStore: { fontFamily: fonts.semibold, fontSize: 16, color: palette.ink, opacity: 0.8 },
