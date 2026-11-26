@@ -27,7 +27,7 @@ The repo root has a `wrangler.jsonc` that serves this folder as static assets.
 1. Cloudflare dashboard → Workers & Pages → Create → Import a repository → pick this repo.
 2. Build command: leave empty. Deploy command: `npx wrangler deploy`. Root directory: `/` (repo root).
 3. Every push to `main` deploys to `floq.<your-subdomain>.workers.dev`.
-4. Settings → Domains & Routes → add `getfloq.in` as a custom domain. Point `floqapp.in` at it with a Redirect Rule.
+4. Custom domains `floqapp.in` and `www.floqapp.in` are declared in `wrangler.jsonc` `routes`, so `wrangler deploy` attaches both.
 
 `.assetsignore` keeps this README out of the deployed site.
 
@@ -35,8 +35,8 @@ The repo root has a `wrangler.jsonc` that serves this folder as static assets.
 
 - [ ] Replace the two store buttons with the official Google Play and Indus Appstore badges and real listing links (search for `href="#get"`).
 - [ ] Point the WhatsApp links (`href="#setup"`) at `https://wa.me/<number>?text=...`.
-- [ ] Set up `hello@getfloq.in` and `privacy@getfloq.in` (Cloudflare Email Routing can forward both).
-- [x] Privacy policy and terms filled in (individual operator, Bengaluru, no refunds, no GST). Not lawyer-reviewed. Use `https://getfloq.in/privacy/` as the privacy policy URL in Google Play and Indus. Add Cloudinary back to the privacy policy if product photo upload is ever built.
+- [ ] Set up `hello@floqapp.in` and `privacy@floqapp.in` (Cloudflare Email Routing can forward both).
+- [x] Privacy policy and terms filled in (individual operator, Bengaluru, no refunds, no GST). Not lawyer-reviewed. Use `https://floqapp.in/privacy/` as the privacy policy URL in Google Play and Indus. Add Cloudinary back to the privacy policy if product photo upload is ever built.
 - [ ] Link the "Download APK" footer item to the hosted APK, or remove it.
 - [ ] Add an Open Graph share image (`og:image`).
 - [ ] Add testimonials once there are 2 or 3 real merchant quotes.
