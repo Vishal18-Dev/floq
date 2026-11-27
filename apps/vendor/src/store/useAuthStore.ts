@@ -111,7 +111,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginWithPin: async (phone: string, pin: string) => {
     try {
-      set({ isLoading: true, error: null });
+      // Not isLoading: App shows the splash on it, which would unmount the
+      // onboarding wizard mid-flow (a new number lost its OTP and fell back to
+      // the welcome screen). The caller shows its own busy state.
+      set({ error: null });
       const session = await api.login(phone, pin);
       await authStorage.saveSession(session);
 
@@ -130,7 +133,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginWithOtp: async (idToken: string, phone: string) => {
     try {
-      set({ isLoading: true, error: null });
+      // Not isLoading: App shows the splash on it, which would unmount the
+      // onboarding wizard mid-flow (a new number lost its OTP and fell back to
+      // the welcome screen). The caller shows its own busy state.
+      set({ error: null });
       const session = await api.loginWithFirebase(idToken);
       await applySession(set, get, session);
       // Returning user with no local PIN yet → have them set one.
