@@ -12,7 +12,7 @@
         "backgroundColor": "#FFB42E"
       },
       "package": "in.floq.merchant",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "VIBRATE",
         "INTERNET",
