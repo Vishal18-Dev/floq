@@ -46,11 +46,14 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next) => {
         }
 
         // Insert new order via order engine preserving offline ticket number and clientOrderId
-        const items = (record.order.items || []).map((it: any) => ({
-          productId: it.productId || it.product_id,
-          quantity: it.quantity,
-          modifiers: it.modifiers,
-        }));
+        // Offline quick-charge lines are queued as productId 'CUSTOM'; replay them
+        // as ad-hoc lines from their name/price snapshot.
+        const items = (record.order.items || []).map((it: any) => {
+          const productId = it.productId || it.product_id;
+          return !productId || productId === 'CUSTOM'
+            ? { name: it.productNameSnapshot || it.name, unitPrice: Number(it.unitPriceSnapshot ?? it.unitPrice), quantity: it.quantity }
+            : { productId, quantity: it.quantity, modifiers: it.modifiers };
+        });
 
         await orderEngine.createOrder({
           id: record.order.id,

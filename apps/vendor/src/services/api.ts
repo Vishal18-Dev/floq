@@ -219,6 +219,12 @@ class NativeApiClient {
       }
 
       return res.json();
+    } catch (e: any) {
+      // fetch throws a bare TypeError ("Network request failed") offline and an
+      // AbortError on timeout; give the merchant words they can act on.
+      if (e?.name === 'AbortError') throw new Error('The connection is too slow right now. Check your internet and try again.');
+      if (e instanceof TypeError) throw new Error('No internet connection. Check your network and try again.');
+      throw e;
     } finally {
       clearTimeout(timeoutId);
     }

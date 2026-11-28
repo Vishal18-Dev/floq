@@ -133,7 +133,7 @@ router.post('/products', requireRole('OWNER', 'MANAGER'), async (req: Authentica
       await query(
         `INSERT INTO product_packs (id, product_id, store_id, size, price, wholesale_price, cost_price, stock, case_qty, daily_rate, sort_order)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0)`,
-        [`${id}_0`, id, req.storeId, k.size || '1 unit', Number(k.price) || 0, Number(k.wholesalePrice) || null, Number(k.costPrice) || null, Number(k.stock) || 0, Number(k.caseQty) || null, Number(k.dailyRate) || 0]
+        [`${id}_0`, id, req.storeId, k.size || '1 unit', Number(k.price) || 0, Number(k.wholesalePrice) || null, Number(k.costPrice) || null, Math.round(Number(k.stock) || 0), Math.round(Number(k.caseQty)) || null, Number(k.dailyRate) || 0]
       );
     }
     res.status(201).json({ id });
@@ -202,7 +202,7 @@ router.post('/stock/receive', async (req: AuthenticatedRequest, res: Response, n
       if (l.packId) {
         const cur = await queryOne('SELECT stock FROM product_packs WHERE id = $1 AND store_id = $2', [l.packId, req.storeId]);
         if (!cur) continue;
-        const next = Number(cur.stock) + Number(l.qty);
+        const next = Number(cur.stock) + Math.round(Number(l.qty)); // packs are whole units; the numeric keypad allows decimals
         if (l.cost != null) {
           await execute('UPDATE product_packs SET stock = $1, cost_price = $2 WHERE id = $3', [next, Number(l.cost), l.packId]);
         } else {
