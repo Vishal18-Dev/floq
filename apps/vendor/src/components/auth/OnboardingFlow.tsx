@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, StyleSheet, ActivityIndicator, Linking, Image,
 } from 'react-native';
 import { useAuthStore, NeedsOnboardingError } from '../../store/useAuthStore';
-import { sendOtp, confirmOtp, OtpConfirmation } from '../../services/firebaseOtp';
+import { sendOtp, confirmOtp, onAutoVerified, OtpConfirmation } from '../../services/firebaseOtp';
 import { api } from '../../services/api';
 import { palette, fonts, borders, shadow } from '../../theme';
 import { HeroCard } from '../common/ui';
@@ -82,6 +82,17 @@ export function OnboardingFlow() {
     return () => clearTimeout(t);
   }, [s.step, s.resendIn]);
 
+  // Android may verify the number without sending an SMS; carry on when it does.
+  // Skipped while busy so a typed code that's being confirmed isn't handled twice.
+  useEffect(() => {
+    if (s.step !== 'otp') return;
+    return onAutoVerified(s.phone, (idToken) => {
+      if (ref.current.step !== 'otp' || ref.current.busy) return;
+      set({ busy: true, error: null });
+      finishOtp(idToken);
+    });
+  }, [s.step, s.phone]);
+
   // Look up an invite as soon as a 6-char code is entered, so the join screen
   // can preview the store before asking for a number.
   useEffect(() => {
@@ -113,6 +124,36 @@ export function OnboardingFlow() {
   const isShop = s.type === 'shop';
   const lang = s.lang;
   const loc = (k: string) => local(lang, k);
+
+  // After the number is verified (typed code or Android auto-verify): join, log in, or continue to signup.
+  async function finishOtp(idToken: string) {
+    const st = ref.current;
+    set({ idToken });
+
+    // Joining a team: accept the invite with the verified number.
+    if (st.mode === 'join') {
+      try {
+        const session = await api.acceptInvite(st.invite.trim().toUpperCase(), idToken);
+        sessionRef.current = session;
+        set({ busy: false });
+        return go('done', { endKind: 'join' });
+      } catch (e: any) {
+        return fail(e?.message || 'Could not join the store.');
+      }
+    }
+
+    // Otherwise log in; an existing account lands straight in, a new number
+    // continues into setup (signup), whichever button they came from.
+    try {
+      await loginWithOtp(idToken, st.phone); // success → app swaps to authenticated
+    } catch (e: any) {
+      if (e instanceof NeedsOnboardingError) {
+        set({ busy: false, mode: 'signup' });
+        return go('profile');
+      }
+      return fail(e?.message || 'Could not sign you in. Try again.');
+    }
+  }
 
   // ---- account + data persistence ----
   async function createAccount(): Promise<boolean> {
@@ -223,32 +264,7 @@ export function OnboardingFlow() {
         } catch (e: any) {
           return set({ busy: false, otp: '', error: 'That code is wrong. Check it and try again.' });
         }
-        set({ idToken });
-
-        // Joining a team: accept the invite with the verified number.
-        if (st.mode === 'join') {
-          try {
-            const session = await api.acceptInvite(st.invite.trim().toUpperCase(), idToken);
-            sessionRef.current = session;
-            set({ busy: false });
-            return go('done', { endKind: 'join' });
-          } catch (e: any) {
-            return fail(e?.message || 'Could not join the store.');
-          }
-        }
-
-        // Otherwise log in; an existing account lands straight in, a new number
-        // continues into setup (signup), whichever button they came from.
-        try {
-          await loginWithOtp(idToken, st.phone); // success → app swaps to authenticated
-        } catch (e: any) {
-          if (e instanceof NeedsOnboardingError) {
-            set({ busy: false, mode: 'signup' });
-            return go('profile');
-          }
-          return fail(e?.message || 'Could not sign you in. Try again.');
-        }
-        return;
+        return finishOtp(idToken);
       }
 
       case 'profile':
