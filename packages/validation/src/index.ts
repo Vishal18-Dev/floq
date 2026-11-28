@@ -334,7 +334,7 @@ export type OnboardMerchantInput = z.input<typeof OnboardMerchantSchema>;
 // wizard runs while authenticated). The PIN is set after onboarding as the
 // device quick-unlock, so it is optional here.
 export const SelfSignupSchema = z.object({
-  idToken: str().min(1, 'OTP token is required'),
+  idToken: z.string().min(1, 'OTP token is required').max(4096), // Firebase ID tokens are ~1KB; str() caps at 500
   storeName: str().min(1, 'Store name is required'),
   storeNameLocal: str().optional(),
   ownerName: str().min(1).optional(),
@@ -377,7 +377,7 @@ export type CreateInviteInput = z.input<typeof CreateInviteSchema>;
 
 // Invitee accepts an invite: verified by OTP for the invited number.
 export const AcceptInviteSchema = z.object({
-  idToken: str().min(1, 'OTP token is required'),
+  idToken: z.string().min(1, 'OTP token is required').max(4096), // Firebase ID tokens are ~1KB; str() caps at 500
   name: str().min(1).optional(),
 });
 export type AcceptInviteInput = z.input<typeof AcceptInviteSchema>;
