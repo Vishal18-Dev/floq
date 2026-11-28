@@ -124,6 +124,19 @@ export default function App() {
     return () => unsub();
   }, [isAuthenticated, loadAll, upsertOrder]);
 
+  // A bill that timed out may still have been saved. Retrying the same cart
+  // reuses its order id, so the server hands back that sale instead of billing twice.
+  const pendingSale = React.useRef<{ key: string; id: string } | null>(null);
+  const saleId = (cart: unknown) => {
+    const key = JSON.stringify(cart);
+    if (pendingSale.current?.key !== key) {
+      pendingSale.current = { key, id: `sale_${Date.now()}_${Math.random().toString(36).slice(2, 10)}` };
+    }
+    return pendingSale.current.id;
+  };
+  // Only a network failure leaves the outcome unknown; any server answer settles it.
+  const settleSale = (e?: any) => { if (!e || e.status) pendingSale.current = null; };
+
   // Create a sale (online → API; offline → local queue). Works for catalogue
   // lines and ad-hoc quick-charge lines.
   const createSale = useCallback(
@@ -133,13 +146,16 @@ export default function App() {
         let res;
         try {
           res = await api.createOrder({
+            id: saleId({ lines, method }),
             storeId,
             source: 'STAFF_POS',
             items: lines,
             paymentMethod: method,
             immediatePayment: true,
           });
+          settleSale();
         } catch (e: any) {
+          settleSale(e);
           // Subscription lapsed mid-session: refresh status so the Sell tab
           // flips to the paywall, and surface a clear message.
           if (e?.status === 402) {
@@ -210,6 +226,7 @@ export default function App() {
       let res;
       try {
         res = await api.createOrder({
+          id: saleId(charge),
           storeId,
           source: 'STAFF_POS',
           items,
@@ -219,7 +236,9 @@ export default function App() {
           isWholesale: charge.isWholesale,
           cashTendered: charge.cashTendered,
         });
+        settleSale();
       } catch (e: any) {
+        settleSale(e);
         if (e?.status === 402) {
           loadSubscription();
           if (IS_PLAY_BUILD) e.message = PLAY_402_MESSAGE; // the server's text says "Subscribe"
